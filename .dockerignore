@@ -11,3 +11,8 @@ docker-compose.yml
 *.md
 deploy/lbvd-reference-data.sql
 deploy/lbvd-accounts.sql
+node_modules
+package.json
+package-lock.json
+wrangler.jsonc
+cf

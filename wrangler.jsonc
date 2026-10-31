@@ -1,0 +1,32 @@
+{
+  "$schema": "node_modules/wrangler/config-schema.json",
+  "name": "lscs-web-cf",
+  "main": "cf/worker.js",
+  "compatibility_date": "2026-10-30",
+  "containers": [
+    {
+      "class_name": "LbvdContainer",
+      "image": "./Dockerfile",
+      "max_instances": 1,
+      "instance_type": "basic"
+    }
+  ],
+  "durable_objects": {
+    "bindings": [
+      {
+        "class_name": "LbvdContainer",
+        "name": "LBVD_CONTAINER"
+      }
+    ]
+  },
+  "migrations": [
+    {
+      "new_sqlite_classes": ["LbvdContainer"],
+      "tag": "v1"
+    }
+  ],
+  "vars": {
+    "COOKIE_HTTPS_ONLY": "true",
+    "DEBUG": "false"
+  }
+}

@@ -76,7 +76,7 @@ def get_signed_in_user(request: Request):
 # ============================================================
 
 @app.post("/api/login")
-@limiter.limit("5/10 minute")  # ⭐ Rate Limit - ၁၀ မိနစ် ၅ ခါ
+@limiter.limit("15/10 minute")  # ⭐ Rate Limit - ၁၀ မိနစ် ၅ ခါ
 async def web_login(
     request: Request,
     username: str = Form(...),
@@ -145,7 +145,7 @@ async def web_login(
 
 
 @app.post("/api/mobile/login")
-@limiter.limit("30/10 minute")  # ⭐ Rate Limit - ၁၀ မိနစ် ၅ ခါ
+@limiter.limit("15/10 minute")  # ⭐ Rate Limit - ၁၀ မိနစ် ၅ ခါ
 async def mobile_login(
     request: Request,  # ⭐ Rate Limit အတွက် request မဖြစ်မနေ ပါရမယ်
     username: str = Form(...),
@@ -230,13 +230,15 @@ async def api_logout(request: Request):
     request.session.clear()
     return {"status": "success"}
 
-
 @app.post("/api/web-auto-logout")
 async def web_auto_logout(request: Request):
-    """Web Browser အတွက် သီးသန့် Auto Logout (၁၀ မိနစ် မလှုပ်ရှားရင်)"""
     if request.session.get("device_type") == "web":
-        request.session.clear()
-        return {"status": "success", "message": "Web session auto-logged out."}
+        request.session.clear() # Server ဘက်က Session ရှင်းမည်
+        
+        response = JSONResponse({"status": "success", "message": "Web session auto-logged out."})
+        response.delete_cookie("lbvd_session", path="/") # Cookie ဖျက်မည်
+        return response
+        
     return {"status": "ignored", "message": "Not a web session."}
 
 

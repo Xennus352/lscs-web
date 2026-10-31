@@ -88,7 +88,7 @@ app.add_middleware(
     SessionMiddleware,
     secret_key=SESSION_SECRET,
     session_cookie="lbvd_session",       # custom cookie name
-    max_age=60 * 60 * 8,                  # 8 hours (working day)
+    max_age=None,                  # 8 hours (working day)
     same_site="lax",
     https_only=COOKIE_HTTPS_ONLY,         # production: True
 )

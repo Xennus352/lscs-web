@@ -987,7 +987,7 @@
                     {% elif sid == 's10' %}{% set img_file = 'mandalay.png' %}{% set region_name = 'မန္တလေးတိုင်းဒေသကြီး' %}
                     {% elif sid == 's11' %}{% set img_file = 'rakhine.jpg' %}{% set region_name = 'ရခိုင်ပြည်နယ်' %}
                     {% elif sid == 's12' %}{% set img_file = 'yangon.png' %}{% set region_name = 'ရန်ကုန်တိုင်းဒေသကြီး' %}
-                    {% elif sid == 's13' %}{% set img_file = 'shan.png' %}{% set region_name = 'ရှမ်းပြည်နယ်' %}
+                                        {% elif sid == 's13' %}{% set img_file = 'shan.png' %}{% set region_name = 'ရှမ်းပြည်နယ်' %}
                     {% elif sid == 's14' %}{% set img_file = 'ayawady.jpg' %}{% set region_name = 'ဧရာဝတီတိုင်းဒေသကြီး' %}
                     {% elif sid == 's15' %}{% set img_file = 'naypyitaw.webp' %}{% set region_name = 'နေပြည်တော်' %}
                     {% endif %}
@@ -1054,56 +1054,62 @@
 
 
                                         
+{# ── Locked state — အားလုံးအတွက် ရွေးခွင့်ပိတ် ── #}
+{% set locked_state = (user.stateID if user and user.stateID else 's07') %}
 
+<!-- Hidden input: disabled select ရဲ့ value ကို form submit မှာ သယ်ဖို့ -->
+<input type="hidden" name="region_state" value="{{ locked_state }}">
+
+<!-- Disabled select: ပြသရန်သာ -->
 <select
     id="regionState"
-    name="region_state"
-    required
+    disabled
+    aria-disabled="true"
     class="region-select"
-    {% if role == 'enumerator' %}
-        disabled
-        aria-disabled="true"
-    {% endif %}
-    onchange="if (this.value) {
-        fetch('/sendStateValue/' + encodeURIComponent(this.value), {
-            credentials: 'same-origin'
-        });
-    }"
+    title="တည်နေရာကို ပြောင်းလဲ၍ မရပါ"
 >
-    <option value="" disabled
-        {% if not user or not user.stateID %}selected{% endif %}>
-        ရွေးချယ်ပါ...
-    </option>
+    <option value="" disabled>ရွေးချယ်ပါ...</option>
 
     {% if states %}
         {% for s in states %}
             <option
                 value="{{ s.stateID }}"
-                {% if user and user.stateID|string|trim == s.stateID|string|trim %}
-                    selected
-                {% endif %}
+                {% if locked_state|string|trim == s.stateID|string|trim %}selected{% endif %}
             >
                 {{ s.stateName }}
             </option>
         {% endfor %}
     {% else %}
-        <option value="s01" {% if user and user.stateID == 's01' %}selected{% endif %}>ကချင်ပြည်နယ်</option>
-        <option value="s02" {% if user and user.stateID == 's02' %}selected{% endif %}>ကယားပြည်နယ်</option>
-        <option value="s03" {% if user and user.stateID == 's03' %}selected{% endif %}>ကရင်ပြည်နယ်</option>
-        <option value="s04" {% if user and user.stateID == 's04' %}selected{% endif %}>ချင်းပြည်နယ်</option>
-        <option value="s05" {% if user and user.stateID == 's05' %}selected{% endif %}>စစ်ကိုင်းတိုင်းဒေသကြီး</option>
-        <option value="s06" {% if user and user.stateID == 's06' %}selected{% endif %}>တနင်္သာရီတိုင်းဒေသကြီး</option>
-        <option value="s07" {% if user and user.stateID == 's07' %}selected{% endif %}>ပဲခူးတိုင်းဒေသကြီး</option>
-        <option value="s08" {% if user and user.stateID == 's08' %}selected{% endif %}>မကွေးတိုင်းဒေသကြီး</option>
-        <option value="s09" {% if user and user.stateID == 's09' %}selected{% endif %}>မွန်ပြည်နယ်</option>
-        <option value="s10" {% if user and user.stateID == 's10' %}selected{% endif %}>မန္တလေးတိုင်းဒေသကြီး</option>
-        <option value="s11" {% if user and user.stateID == 's11' %}selected{% endif %}>ရခိုင်ပြည်နယ်</option>
-        <option value="s12" {% if user and user.stateID == 's12' %}selected{% endif %}>ရန်ကုန်တိုင်းဒေသကြီး</option>
-        <option value="s13" {% if user and user.stateID == 's13' %}selected{% endif %}>ရှမ်းပြည်နယ်</option>
-        <option value="s14" {% if user and user.stateID == 's14' %}selected{% endif %}>ဧရာဝတီတိုင်းဒေသကြီး</option>
-        <option value="s15" {% if user and user.stateID == 's15' %}selected{% endif %}>နေပြည်တော်</option>
+        <option value="s01" {% if locked_state == 's01' %}selected{% endif %}>ကချင်ပြည်နယ်</option>
+        <option value="s02" {% if locked_state == 's02' %}selected{% endif %}>ကယားပြည်နယ်</option>
+        <option value="s03" {% if locked_state == 's03' %}selected{% endif %}>ကရင်ပြည်နယ်</option>
+        <option value="s04" {% if locked_state == 's04' %}selected{% endif %}>ချင်းပြည်နယ်</option>
+        <option value="s05" {% if locked_state == 's05' %}selected{% endif %}>စစ်ကိုင်းတိုင်းဒေသကြီး</option>
+        <option value="s06" {% if locked_state == 's06' %}selected{% endif %}>တနင်္သာရီတိုင်းဒေသကြီး</option>
+        <option value="s07" {% if locked_state == 's07' %}selected{% endif %}>ပဲခူးတိုင်းဒေသကြီး</option>
+        <option value="s08" {% if locked_state == 's08' %}selected{% endif %}>မကွေးတိုင်းဒေသကြီး</option>
+        <option value="s09" {% if locked_state == 's09' %}selected{% endif %}>မွန်ပြည်နယ်</option>
+        <option value="s10" {% if locked_state == 's10' %}selected{% endif %}>မန္တလေးတိုင်းဒေသကြီး</option>
+        <option value="s11" {% if locked_state == 's11' %}selected{% endif %}>ရခိုင်ပြည်နယ်</option>
+        <option value="s12" {% if locked_state == 's12' %}selected{% endif %}>ရန်ကုန်တိုင်းဒေသကြီး</option>
+        <option value="s13" {% if locked_state == 's13' %}selected{% endif %}>ရှမ်းပြည်နယ်</option>
+        <option value="s14" {% if locked_state == 's14' %}selected{% endif %}>ဧရာဝတီတိုင်းဒေသကြီး</option>
+        <option value="s15" {% if locked_state == 's15' %}selected{% endif %}>နေပြည်တော်</option>
     {% endif %}
 </select>
+
+<script>
+    // ── Page load မှာ session ထဲ stateID သိမ်းပါ (onchange မဖြစ်တော့လို့) ──
+    (function () {
+        var locked = "{{ locked_state }}";
+        if (!locked) return;
+        fetch('/sendStateValue/' + encodeURIComponent(locked), {
+            credentials: 'same-origin'
+        }).catch(function (err) {
+            console.warn('State save failed:', err);
+        });
+    })();
+</script>
 
 
                                     </div>
@@ -1370,6 +1376,42 @@
             if (grp) grp.classList.remove('error-input');
         });
 
+/// ==================================================
+// ⭐ Web Inactivity Auto-Logout (၁၀ မိနစ်)
+// ==================================================
+(function() {
+    const isMobileApp = /Mobile|Android|iPhone|iPad/i.test(navigator.userAgent);
+    if (isMobileApp) return;
+
+    const INACTIVITY_LIMIT = 10 * 60 * 1000; // ၁၀ မိနစ် (Milliseconds)
+    let timeoutId;
+
+    function resetTimer() {
+        clearTimeout(timeoutId);
+        timeoutId = setTimeout(async () => {
+            try {
+                // Server ဘက်က Session ရှင်းဖို့ API ကို စောင့်မယ်
+                await fetch('/api/web-auto-logout', { 
+                    method: 'POST', 
+                    credentials: 'same-origin' 
+                });
+            } catch (error) {
+                console.error("Auto logout error:", error);
+            } finally {
+                // API ပြီးသွားမှ သို့မဟုတ် Error တက်sရင်တောင် Login စာမျက်နှာကို ပို့မယ်
+                window.location.href = '/'; 
+            }
+        }, INACTIVITY_LIMIT);
+    }
+
+    // Mouse လှုပ်ရှားမှု၊ ကီးဘုတ်ရိုက်မှု စတဲ့ Event တွေ ဖြစ်တိုင်း Timer ကို ပြန်စမယ်
+    ['mousemove', 'keydown', 'click', 'scroll', 'touchstart'].forEach(event => {
+        window.addEventListener(event, resetTimer, { passive: true });
+    });
+
+    // စတင်ချိန်မှာ Timer စမယ်
+    resetTimer();
+})();
         // ============================================================
         // LOGOUT
         // ============================================================
@@ -1488,9 +1530,50 @@
         }
         updateSidebarDate();
         setInterval(updateSidebarDate, 60000);
+
+
+// ============================================================
+// ⭐ TAB / BROWSER CLOSE AUTO LOGOUT
+// ============================================================
+(function() {
+    const isMobileApp = /Mobile|Android|iPhone|iPad/i.test(navigator.userAgent);
+    if (isMobileApp) return;
+
+    const FLAG_KEY = 'lbvd_is_refreshing';
+    let logoutFired = false;
+
+    // Page ပြန်တက်လာရင် Refresh ဖြစ်ခဲ့လား စစ်မယ်
+    window.addEventListener('load', function() {
+        if (sessionStorage.getItem(FLAG_KEY) === 'true') {
+            sessionStorage.removeItem(FLAG_KEY);
+        }
+    });
+
+    // ထွက်ခွာခါနီးမှာ Flag ထောင်မယ် (Refresh ဖြစ်ရင် ဒါက အလုပ်လုပ်မယ်)
+    window.addEventListener('beforeunload', function() {
+        sessionStorage.setItem(FLAG_KEY, 'true');
+    });
+
+    // Tab ပိတ်တဲ့အခါ
+    window.addEventListener('pagehide', function() {
+        if (sessionStorage.getItem(FLAG_KEY) !== 'true' && !logoutFired) {
+            logoutFired = true;
+            const url = '/api/web-auto-logout';
+            
+            // ⭐ Response ကို လက်ခံနိုင်ဖို့ fetch ကို keepalive နဲ့ သုံးမယ်
+            fetch(url, {
+                method: 'POST',
+                headers: {'Content-Type': 'application/json'},
+                body: JSON.stringify({ reason: 'tab_closed' }),
+                keepalive: true, 
+                credentials: 'same-origin'
+            }).catch(() => {});
+        }
+    });
+})();
+
     </script>
 
     {% block part_js %}{% endblock %}
 </body>
-
 </html>

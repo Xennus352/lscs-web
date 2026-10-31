@@ -1,8 +1,12 @@
 import os
+import re
 from pathlib import Path
 
 # Project root (the directory that contains app/ and assets/)
 BASE_DIR = Path(__file__).resolve().parent.parent
+
+# Regex to parse a version number (with named group "ver") from an APK filename.
+APK_VERSION_RE = re.compile(r"(?P<ver>\d+(?:\.\d+)+)")
 
 # Folder that serves the mobile APKs.
 # Override with APK_DIR when the files live somewhere else (e.g. a mounted volume).

@@ -1,9 +1,9 @@
 from . import (
     auth, locations, survey, enumerator, dashboard,
-    reports, households, settings, system_admin, exports, update,
+    reports, households, settings, system_admin, exports, updates,
 )
 
 __all__ = [
     "auth", "locations", "survey", "enumerator", "dashboard",
-    "reports", "households", "settings", "system_admin", "exports", "update",
+    "reports", "households", "settings", "system_admin", "exports", "updates",
 ]

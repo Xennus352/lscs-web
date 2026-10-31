@@ -986,5 +986,7 @@ INSERT IGNORE INTO `qv` (`districtID`,`QVID`,`QVName`,`stateID`,`townshipID`) VA
 
 -- Bootstrap admin account: loginName 'admin', password 'LBVDdemo#2026'
 INSERT IGNORE INTO `user` (`userID`,`userName`,`userRole`,`loginName`,`password`,`stateID`,`status`) VALUES (1,'LBVD Demo Admin',1,'admin','pbkdf2_sha256$310000$T6td6cYFSyx5rXr7s2TlPQ==$qMXItPUI6Z2HfY5Z0fbfBhVms_jRtChLO9fbNXLXN_s=','s07',1);
+-- Real superadmin profile (role 1), no contact details. userID 100 avoids the synthetic demo admin at ID 1.
+INSERT IGNORE INTO `user` (`userID`,`userName`,`userRole`,`loginName`,`password`,`stateID`,`districtID`,`townshipID`,`QVID`,`status`) VALUES (100,'BagoAdmin',1,'BagoAdmin','pbkdf2_sha256$310000$kM6cUq6YgFKubh-1s2rN7g==$4SuFP1VXHSZOVU2fnVmPW6YR0IiG8iou9PKvP2uLXXc=','s07','d04','t02','',1);
 -- Demo enumerator account matching the real "mgmg" profile, but without any real contact details.
 INSERT IGNORE INTO `user` (`userID`,`userName`,`userRole`,`loginName`,`password`,`stateID`,`districtID`,`townshipID`,`QVID`,`status`) VALUES (7,'Mg Mg',6,'mgmg','pbkdf2_sha256$310000$2ICgK_CmfT9v_Nvn2xwplw==$CDcg_f0a12McJZnUx7WWQ6_dugbQkgMulRLtTOMkUtE=','s07','d02','t01','W05',1);

@@ -66,6 +66,9 @@ The `Dockerfile` runs only FastAPI with Uvicorn. The database runs separately.
    (including `personcv`). The container does not start or seed a database.
    Provider URLs beginning with `mysql://` or `mariadb://` automatically use
    the installed PyMySQL driver; explicitly selected drivers are preserved.
+   Aiven's `ssl-mode=REQUIRED` parameter is translated to PyMySQL TLS settings.
+   This encrypts the connection; for certificate verification, also configure
+   `ssl_ca` with the provider CA file path and `ssl_check_hostname=true`.
 3. Deploy. Uvicorn binds to `0.0.0.0` and Render's `PORT` environment variable.
    Locally, the default port remains `5000` for Docker Compose.
 

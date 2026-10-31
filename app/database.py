@@ -27,6 +27,19 @@ def _database_url():
         # Use the PyMySQL driver included in the deployment image instead.
         if url.drivername in ("mysql", "mariadb"):
             url = url.set(drivername=f"{url.drivername}+pymysql")
+        if url.drivername in ("mysql+pymysql", "mariadb+pymysql"):
+            ssl_mode = url.query.get("ssl-mode")
+            if ssl_mode is not None:
+                if ssl_mode.upper() != "REQUIRED":
+                    raise ValueError(
+                        "PyMySQL URLs support ssl-mode=REQUIRED; use ssl_ca "
+                        "and ssl_check_hostname for certificate verification"
+                    )
+                # SQLAlchemy converts this option into a nonempty ssl dict,
+                # enabling PyMySQL TLS with REQUIRED's encryption-only semantics.
+                url = url.difference_update_query(["ssl-mode"])
+                if "ssl_check_hostname" not in url.query:
+                    url = url.update_query_dict({"ssl_check_hostname": "false"})
         return url
     return URL.create(
         "mysql+mysqlconnector",

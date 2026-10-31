@@ -64,6 +64,8 @@ The `Dockerfile` runs only FastAPI with Uvicorn. The database runs separately.
    URL-encode special characters in database credentials. The database must be
    reachable from Render and have the LBVD schema imported before startup
    (including `personcv`). The container does not start or seed a database.
+   Provider URLs beginning with `mysql://` or `mariadb://` automatically use
+   the installed PyMySQL driver; explicitly selected drivers are preserved.
 3. Deploy. Uvicorn binds to `0.0.0.0` and Render's `PORT` environment variable.
    Locally, the default port remains `5000` for Docker Compose.
 

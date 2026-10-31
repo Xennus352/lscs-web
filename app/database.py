@@ -12,7 +12,7 @@ from typing import Any
 
 from dotenv import load_dotenv
 from sqlalchemy import create_engine, text
-from sqlalchemy.engine import URL, Connection, Result
+from sqlalchemy.engine import URL, Connection, Result, make_url
 from sqlalchemy.exc import IntegrityError, SQLAlchemyError
 from sqlalchemy.orm import declarative_base, sessionmaker
 
@@ -22,7 +22,12 @@ load_dotenv()
 def _database_url():
     configured = os.getenv("DATABASE_URL")
     if configured:
-        return configured
+        url = make_url(configured)
+        # Provider URLs often omit the driver, which selects MySQLdb by default.
+        # Use the PyMySQL driver included in the deployment image instead.
+        if url.drivername in ("mysql", "mariadb"):
+            url = url.set(drivername=f"{url.drivername}+pymysql")
+        return url
     return URL.create(
         "mysql+mysqlconnector",
         username=os.getenv("DB_USER", "root"),

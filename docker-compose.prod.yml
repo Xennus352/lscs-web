@@ -1,0 +1,91 @@
+# Production stack for a VPS: app + MariaDB + Caddy (automatic HTTPS).
+#
+# Usage:
+#   cp .env.prod.example .env.prod   # then edit it
+#   docker compose --env-file .env.prod -f docker-compose.prod.yml up -d --build
+#
+# The database is seeded once, on first start, from deploy/seed.sql.
+# Only Caddy publishes ports; the app and database stay on the private network.
+
+name: lbvd
+
+services:
+  db:
+    image: mariadb:11
+    restart: unless-stopped
+    environment:
+      MARIADB_DATABASE: lbvd
+      MARIADB_USER: lbvd
+      MARIADB_PASSWORD: ${DB_PASSWORD:?set DB_PASSWORD in .env.prod}
+      MARIADB_ROOT_PASSWORD: ${DB_ROOT_PASSWORD:?set DB_ROOT_PASSWORD in .env.prod}
+    volumes:
+      - db_data:/var/lib/mysql
+      # Runs only when the data volume is empty.
+      - ./deploy/seed.sql:/docker-entrypoint-initdb.d/10-seed.sql:ro
+    healthcheck:
+      test: ["CMD", "healthcheck.sh", "--connect", "--innodb_initialized"]
+      interval: 10s
+      timeout: 5s
+      retries: 12
+      start_period: 30s
+
+  app:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    restart: unless-stopped
+    depends_on:
+      db:
+        condition: service_healthy
+    environment:
+      DATABASE_URL: mysql+pymysql://lbvd:${DB_PASSWORD}@db:3306/lbvd?charset=utf8mb4
+      APP_NAME: LBVD Dashboard
+      APP_VERSION: ${APP_VERSION:-1.0.0}
+      DEBUG: "false"
+      SESSION_SECRET: ${SESSION_SECRET:?set SESSION_SECRET in .env.prod}
+      JWT_SECRET_KEY: ${JWT_SECRET_KEY:?set JWT_SECRET_KEY in .env.prod}
+      SESSION_MAX_AGE_HOURS: ${SESSION_MAX_AGE_HOURS:-8}
+      COOKIE_HTTPS_ONLY: "true"
+    # Bypass the embedded-MariaDB entrypoint (DATABASE_URL is set) and let
+    # uvicorn trust Caddy's X-Forwarded-* headers.
+    command:
+      - uvicorn
+      - app.main:app
+      - --host
+      - 0.0.0.0
+      - --port
+      - "5000"
+      - --proxy-headers
+      - --forwarded-allow-ips=*
+    expose:
+      - "5000"
+    volumes:
+      # APK files survive redeploys; upload with `docker cp` or scp to the volume.
+      - apk_data:/app/assets/apk
+    healthcheck:
+      test: ["CMD-SHELL", "python -c 'import urllib.request; urllib.request.urlopen(\"http://127.0.0.1:5000/api/check-update\", timeout=3)'"]
+      interval: 30s
+      timeout: 5s
+      retries: 3
+      start_period: 40s
+
+  caddy:
+    image: caddy:2-alpine
+    restart: unless-stopped
+    depends_on:
+      - app
+    ports:
+      - "80:80"
+      - "443:443"
+    environment:
+      DOMAIN: ${DOMAIN:?set DOMAIN in .env.prod}
+    volumes:
+      - ./Caddyfile:/etc/caddy/Caddyfile:ro
+      - caddy_data:/data
+      - caddy_config:/config
+
+volumes:
+  db_data:
+  apk_data:
+  caddy_data:
+  caddy_config:

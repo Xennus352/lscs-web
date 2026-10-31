@@ -222,6 +222,143 @@
     #debugPanel .ok { color: #4ade80; }
     #debugPanel .warn { color: #fbbf24; }
 
+    /* ============================================
+       SAVE GRAPH BUTTON & SNAPSHOT STYLES
+       ============================================ */
+    .btn-save-graph {
+        background: linear-gradient(135deg, #1d4ed8, #2563eb);
+        color: #fff;
+        border: none;
+        padding: 9px 18px;
+        border-radius: 8px;
+        font-weight: 700;
+        font-size: 0.8rem;
+        display: inline-flex;
+        align-items: center;
+        gap: 6px;
+        box-shadow: 0 2px 6px rgba(37, 99, 235, 0.25);
+        transition: all 0.15s ease;
+        white-space: nowrap;
+    }
+
+    .btn-save-graph:hover {
+        color: #fff;
+        transform: translateY(-1px);
+        box-shadow: 0 4px 12px rgba(37, 99, 235, 0.35);
+    }
+
+    .btn-save-graph:disabled {
+        opacity: 0.65;
+        cursor: wait;
+        transform: none;
+    }
+
+    .btn-save-graph i {
+        font-size: 0.9rem;
+    }
+
+    /* Off-screen snapshot container */
+    #snapshotArea {
+        position: fixed;
+        left: -12000px;
+        top: 0;
+        width: 1080px;
+        background: #ffffff;
+        padding: 28px;
+        font-family: 'Noto Sans Myanmar', 'Pyidaungsu', sans-serif;
+        z-index: -1;
+        box-sizing: border-box;
+    }
+
+    #snapshotArea .snap-header {
+        border-bottom: 2px solid #047857;
+        padding-bottom: 10px;
+        margin-bottom: 16px;
+        display: flex;
+        justify-content: space-between;
+        align-items: flex-end;
+        gap: 12px;
+    }
+
+    #snapshotArea .snap-title {
+        font-size: 1.15rem;
+        font-weight: 700;
+        color: #047857;
+        margin: 0 0 3px 0;
+    }
+
+    #snapshotArea .snap-sub {
+        font-size: 0.72rem;
+        color: #6b7280;
+        margin: 0;
+    }
+
+    #snapshotArea .snap-meta {
+        font-size: 0.7rem;
+        color: #6b7280;
+        text-align: right;
+        line-height: 1.55;
+    }
+
+    #snapshotArea .snap-stats {
+        display: grid;
+        grid-template-columns: repeat(4, 1fr);
+        gap: 10px;
+        margin-bottom: 16px;
+    }
+
+    #snapshotArea .snap-stat {
+        border-radius: 10px;
+        padding: 10px 12px;
+        border: 1px solid #e5e7eb;
+    }
+
+    #snapshotArea .snap-stat .lbl {
+        font-size: 0.65rem;
+        font-weight: 700;
+        color: #6b7280;
+    }
+
+    #snapshotArea .snap-stat .val {
+        font-size: 1.1rem;
+        font-weight: 700;
+    }
+
+    #snapshotArea .snap-charts {
+        display: flex;
+        gap: 16px;
+        margin-bottom: 16px;
+    }
+
+    #snapshotArea .snap-charts > div {
+        flex: 1;
+        border: 1px solid #e5e7eb;
+        border-radius: 10px;
+        padding: 10px;
+        min-width: 0;
+    }
+
+    #snapshotArea .snap-charts h6 {
+        font-size: 0.78rem;
+        font-weight: 700;
+        color: #065f46;
+        margin-bottom: 8px;
+    }
+
+    #snapshotArea .snap-charts canvas {
+        max-height: 320px;
+        width: 100% !important;
+    }
+
+    #snapshotArea .snap-footer {
+        margin-top: 14px;
+        border-top: 1px dashed #d1d5db;
+        padding-top: 8px;
+        font-size: 0.65rem;
+        color: #9ca3af;
+        text-align: center;
+    }
+
     /* ============ MOBILE ============ */
     @media (max-width: 575.98px) {
         .filter-card .form-select, .filter-card .form-control { font-size: 0.75rem; }
@@ -268,6 +405,9 @@
      data-report-rows='{{ report_rows|tojson }}'
      hidden></div>
 
+<!-- ⭐ Snapshot rendering area (off-screen, hidden) -->
+<div id="snapshotArea" aria-hidden="true"></div>
+
 <!-- Page head -->
 <div class="page-head mb-3 d-flex justify-content-between align-items-start flex-wrap gap-2">
     <div>
@@ -278,12 +418,22 @@
             {% else %} တည်နေရာအမည် မသတ်မှတ်ရသေးပါ {% endif %}
         </p>
         <p class="text-muted mb-0">
-            တိုင်းဒေသကြီး / ပြည်နယ် / ခရိုင် / မြို့နယ် / ကျေးရွာအုပ်စုအလိုက် တိရစ္ဆာန်ကောင်ရေ စုစည်းစာရင်း
+            တိုင်းဒေသကြီး / ပြည်နယ် / ခရိုင် / မြို့နယ် / ကျေးရွာအုပ်စုအလိုက် တိရစ္စာန်ကောင်ရေ စုစည်းစာရင်း
         </p>
     </div>
-    <button type="button" id="btnExportExcel" class="btn-excel">
-        <i class="bi bi-file-earmark-excel-fill"></i> Excel ထုတ်ယူရန်
-    </button>
+
+    <div class="d-flex gap-2 flex-wrap">
+        <!-- ⭐ Graph & Chart Save Button -->
+        <button type="button" id="btnSaveGraph" class="btn-save-graph">
+            <i class="bi bi-download"></i>
+            <span>Graph များ Save ရန်</span>
+        </button>
+
+        <!-- ရှိပြီးသား Excel button -->
+        <button type="button" id="btnExportExcel" class="btn-excel">
+            <i class="bi bi-file-earmark-excel-fill"></i> Excel ထုတ်ယူရန်
+        </button>
+    </div>
 </div>
 
 <!-- ⭐⭐⭐ FILTER ⭐⭐⭐ -->
@@ -482,7 +632,7 @@
                         {% for gender in group.genders %}<th>{{ gender.name }}</th>{% endfor %}
                         <th class="total-col">အုပ်စု</th>
                     {% endfor %}
-                </tr>
+                                </tr>
             </thead>
             <tbody>
                 {% for row in report_rows %}
@@ -839,8 +989,6 @@
 
     if (form) {
         form.addEventListener('submit', function() {
-            // Date inputs are already part of the form (name="start_date" / "end_date"),
-            // so they submit automatically. Just show loading.
             showLoading();
         });
     }
@@ -865,7 +1013,6 @@
         return parts.length ? parts.join(' — ') : 'တည်နေရာအမည် မသတ်မှတ်ရသေးပါ';
     }
 
-    // ⭐ Date range label for title
     function getDateRangeLabel() {
         var s = (inputStartDate && inputStartDate.value) ? inputStartDate.value : '';
         var e = (inputEndDate && inputEndDate.value) ? inputEndDate.value : '';
@@ -879,7 +1026,7 @@
     var TITLE_LINES = [
         'စိုက်ပျိုးရေး၊ မွေးမြူရေးနှင့် ဆည်မြောင်းဝန်ကြီးဌာန',
         'မွေးမြူရေးနှင့် ကုသရေးဦးစီးဌာန',
-        'တိရစ္ဆာန်ကောင်ရေစာရင်း ကောက်ယူခြင်း',
+        'တိရစ္စာန်ကောင်ရေစာရင်း ကောက်ယူခြင်း',
         getReportLocationTitle()
     ];
 
@@ -935,7 +1082,6 @@
         var prefix = parts.length ? parts.join('_') : 'အားလုံး';
         var animalSlug = (ANIMAL_TYPE_NAME || 'report2').replace(/\s+/g, '_');
 
-        // ⭐ date tag
         var s = (inputStartDate && inputStartDate.value) ? inputStartDate.value : '';
         var e = (inputEndDate && inputEndDate.value) ? inputEndDate.value : '';
         var dateTag = '';
@@ -943,7 +1089,7 @@
         else if (s) dateTag = '_' + s;
         else if (e) dateTag = '_' + e;
 
-        var filename = 'တိရစ္ဆာန်စာရင်း_' + animalSlug + '_' + prefix + dateTag + '_' + ds + '.xlsx';
+        var filename = 'တိရစ္စာန်စာရင်း_' + animalSlug + '_' + prefix + dateTag + '_' + ds + '.xlsx';
         return filename.replace(/[\\/:*?"<>|]/g, '-');
     }
 
@@ -1167,7 +1313,7 @@
             confirmExcelModal.show();
         });
     }
-    var btnExcelContinue = document.getElementById('btnExcelContinue');
+        var btnExcelContinue = document.getElementById('btnExcelContinue');
     if (btnExcelContinue) {
         btnExcelContinue.addEventListener('click', function() {
             if (confirmExcelModal) confirmExcelModal.hide();
@@ -1188,6 +1334,258 @@
             }, 300);
         });
     });
+
+    dbg('Excel export initialized.', 'ok');
+
+    // ==================================================
+    // 6. GRAPH & CHART SAVE AS PNG (Table မပါ)
+    // ==================================================
+    (function initSaveGraph() {
+        var btn = document.getElementById('btnSaveGraph');
+        var snapArea = document.getElementById('snapshotArea');
+        if (!btn || !snapArea) {
+            dbg('Save Graph button or snapshot area not found.', 'warn');
+            return;
+        }
+
+        // ---- html2canvas CDN dynamic loader ----
+        function loadHtml2Canvas() {
+            return new Promise(function(resolve, reject) {
+                if (window.html2canvas) return resolve(window.html2canvas);
+                var s = document.createElement('script');
+                s.src = 'https://cdn.jsdelivr.net/npm/html2canvas@1.4.1/dist/html2canvas.min.js';
+                s.onload = function() { resolve(window.html2canvas); };
+                s.onerror = function() { reject(new Error('html2canvas load failed')); };
+                document.head.appendChild(s);
+            });
+        }
+
+        // ---- Canvas chart ကို ပုံအဖြစ် ပြောင်း ----
+        function canvasToImg(canvasEl) {
+            return new Promise(function(resolve) {
+                if (!canvasEl) return resolve(null);
+                try {
+                    var tmp = document.createElement('canvas');
+                    tmp.width = canvasEl.width;
+                    tmp.height = canvasEl.height;
+                    var ctx = tmp.getContext('2d');
+                    ctx.fillStyle = '#ffffff';
+                    ctx.fillRect(0, 0, tmp.width, tmp.height);
+                    ctx.drawImage(canvasEl, 0, 0);
+                    var img = new Image();
+                    img.src = tmp.toDataURL('image/png');
+                    img.style.width = '100%';
+                    img.style.maxHeight = '320px';
+                    img.style.objectFit = 'contain';
+                    img.onload = function() { resolve(img); };
+                    img.onerror = function() { resolve(null); };
+                } catch (e) {
+                    console.warn('canvasToImg failed:', e);
+                    resolve(null);
+                }
+            });
+        }
+
+        // ---- HTML Escape ----
+        function esc(str) {
+            return String(str == null ? '' : str)
+                .replace(/&/g, '&amp;')
+                .replace(/</g, '&lt;')
+                .replace(/>/g, '&gt;')
+                .replace(/"/g, '&quot;')
+                .replace(/'/g, '&#39;');
+        }
+
+        // ---- Snapshot တည်ဆောက် (Graph + Chart သာ) ----
+        function buildSnapshot() {
+            return new Promise(function(resolve) {
+                var regionName = (document.querySelector('.page-head h5')?.textContent || '').trim();
+                var locationName = '';
+                var stateEl = document.querySelector('.page-head p.text-success');
+                if (stateEl) locationName = (stateEl.textContent || '').trim();
+
+                var now = new Date();
+                var stamp = now.toLocaleString('en-GB', {
+                    year: 'numeric', month: '2-digit', day: '2-digit',
+                    hour: '2-digit', minute: '2-digit'
+                });
+
+                // Filter summary
+                var filterParts = [];
+                function selText(sel) {
+                    if (!sel || !sel.value) return '';
+                    var opt = sel.options[sel.selectedIndex];
+                    return opt ? opt.textContent : '';
+                }
+                if (selAnimal && selAnimal.value) {
+                    var atOpt = selAnimal.options[selAnimal.selectedIndex];
+                    if (atOpt) filterParts.push('အမျိုးအစား: ' + atOpt.textContent);
+                }
+                if (selText(selSpecificAnimal)) filterParts.push('အမည်: ' + selText(selSpecificAnimal));
+                if (selText(selSpecies))        filterParts.push('မျိုးစိတ်: ' + selText(selSpecies));
+                if (selText(selAge))            filterParts.push('အသက်: ' + selText(selAge));
+                if (selText(selGender))         filterParts.push('ကျား/မ: ' + selText(selGender));
+
+                var dateLabel = (typeof getDateRangeLabel === 'function') ? getDateRangeLabel() : '';
+                if (dateLabel) filterParts.push(dateLabel);
+
+                // Stat cards
+                var statDefs = [
+                    { label: 'ရွေးချယ်ထားသော အမျိုးအစား', value: ANIMAL_TYPE_NAME, color: '#047857', isText: true },
+                    { label: 'Location အရေအတွက်', value: REPORT_ROWS.length, color: '#1d4ed8' },
+                    { label: 'Animal မျိုးအရေအတွက်', value: COLUMN_GROUPS.length, color: '#b45309' },
+                    { label: 'စုစုပေါင်း ကောင်ရေ', value: GRAND_TOTAL, color: '#be185d' }
+                ];
+
+                var statHtml = statDefs.map(function(s) {
+                    var display = s.isText ? esc(s.value) : Number(s.value || 0).toLocaleString();
+                    return '<div class="snap-stat">' +
+                        '<div class="lbl">' + esc(s.label) + '</div>' +
+                        '<div class="val" style="color:' + s.color + ';' + (s.isText ? 'font-size:0.85rem;' : '') + '">' + display + '</div>' +
+                    '</div>';
+                }).join('');
+
+                // Snapshot DOM တည်ဆောက် (Table မပါ)
+                snapArea.innerHTML =
+                    '<div class="snap-header">' +
+                        '<div>' +
+                            '<h2 class="snap-title">' + esc(regionName || 'တိရစ္ဆာန်ကောင်ရေ အနှစ်ချုပ်') + '</h2>' +
+                            '<p class="snap-sub">' + esc(locationName || 'တိရစ္ဆာန်အရေအတွက် အနှစ်ချုပ် Graphs နှင့် Chart') + '</p>' +
+                        '</div>' +
+                        '<div class="snap-meta">' +
+                            'ရက်စွဲ: ' + esc(stamp) + '<br>' +
+                            (filterParts.length ? 'စစ်ထုတ်ချက်: ' + filterParts.map(esc).join(' • ') : 'စစ်ထုတ်ချက်: အားလုံး') +
+                        '</div>' +
+                    '</div>' +
+
+                    '<div class="snap-stats">' + statHtml + '</div>' +
+
+                    '<div class="snap-charts">' +
+                        '<div>' +
+                            '<h6>📊 တိရစ္ဆာန်မျိုးအလိုက် ကောင်ရေ</h6>' +
+                            '<div id="snapBarChart"></div>' +
+                        '</div>' +
+                        '<div>' +
+                            '<h6>🍩 အချိုးအစား</h6>' +
+                            '<div id="snapDoughnutChart"></div>' +
+                        '</div>' +
+                    '</div>' +
+
+                    '<div class="snap-footer">' +
+                        'LBVD Dashboard • ' + esc(regionName) + ' • Generated on ' + esc(stamp) +
+                    '</div>';
+
+                // Charts ကို <img> အဖြစ် ထည့်
+                var barCanvas = document.getElementById('barChart');
+                var doughnutCanvas = document.getElementById('doughnutChart');
+
+                Promise.all([
+                    canvasToImg(barCanvas),
+                    canvasToImg(doughnutCanvas)
+                ]).then(function(imgs) {
+                    var barHolder = document.getElementById('snapBarChart');
+                    var doughnutHolder = document.getElementById('snapDoughnutChart');
+
+                    if (imgs[0] && barHolder) barHolder.appendChild(imgs[0]);
+                    else if (barHolder) barHolder.innerHTML = '<p style="font-size:0.7rem;color:#9ca3af;">Chart မရပါ</p>';
+
+                    if (imgs[1] && doughnutHolder) doughnutHolder.appendChild(imgs[1]);
+                    else if (doughnutHolder) doughnutHolder.innerHTML = '<p style="font-size:0.7rem;color:#9ca3af;">Chart မရပါ</p>';
+
+                    // Font load ပြီးတဲ့အထိ စောင့်
+                    if (document.fonts && document.fonts.ready) {
+                        document.fonts.ready.then(function() {
+                            setTimeout(resolve, 150);
+                        }).catch(function() {
+                            setTimeout(resolve, 150);
+                        });
+                    } else {
+                        setTimeout(resolve, 150);
+                    }
+                });
+            });
+        }
+
+        // ---- Download trigger ----
+        function downloadDataURL(dataURL, filename) {
+            var a = document.createElement('a');
+            a.href = dataURL;
+            a.download = filename;
+            document.body.appendChild(a);
+            a.click();
+            document.body.removeChild(a);
+        }
+
+        function buildGraphFilename() {
+            var region = (document.querySelector('.page-head h5')?.textContent || 'dashboard')
+                .replace(/တိရစ္စာန်စာရင်း\s*စုစည်းမှုအစီရင်ခံစာ\s*—?\s*/g, '')
+                .replace(/[^\w\u1000-\u109F\-]+/g, '_')
+                .trim() || 'dashboard';
+            var d = new Date();
+            var pad = function(n) { return String(n).padStart(2, '0'); };
+            var stamp = d.getFullYear() + pad(d.getMonth()+1) + pad(d.getDate())
+                      + '_' + pad(d.getHours()) + pad(d.getMinutes());
+
+            // Animal type ထည့်
+            var animalType = (ANIMAL_TYPE_NAME || 'report2').replace(/\s+/g, '_');
+
+            // Date range ပါ ထည့်
+            var s = (inputStartDate && inputStartDate.value) ? inputStartDate.value : '';
+            var e = (inputEndDate && inputEndDate.value) ? inputEndDate.value : '';
+            var dateTag = '';
+            if (s && e) dateTag = '_' + s + '_to_' + e;
+            else if (s) dateTag = '_' + s;
+            else if (e) dateTag = '_' + e;
+
+            return 'LBVD_Graph_' + region + '_' + animalType + dateTag + '_' + stamp + '.png';
+        }
+
+        // ---- Button click ----
+        btn.addEventListener('click', function() {
+            var originalHtml = btn.innerHTML;
+            btn.disabled = true;
+            btn.innerHTML = '<span class="spinner-border spinner-border-sm" role="status" aria-hidden="true"></span><span>ပြင်ဆင်နေသည်...</span>';
+
+            loadHtml2Canvas()
+                .then(function(html2canvas) {
+                    return buildSnapshot().then(function() {
+                        return html2canvas(snapArea, {
+                            backgroundColor: '#ffffff',
+                            scale: 2,
+                            useCORS: true,
+                            logging: false,
+                            width: snapArea.scrollWidth,
+                            height: snapArea.scrollHeight,
+                            windowWidth: snapArea.scrollWidth,
+                            windowHeight: snapArea.scrollHeight
+                        });
+                    });
+                })
+                .then(function(canvas) {
+                    var dataURL = canvas.toDataURL('image/png');
+                    downloadDataURL(dataURL, buildGraphFilename());
+                    snapArea.innerHTML = '';
+
+                    btn.innerHTML = '<i class="bi bi-check-circle-fill"></i><span>Save ပြီးပါပြီ</span>';
+                    setTimeout(function() {
+                        btn.innerHTML = originalHtml;
+                        btn.disabled = false;
+                    }, 1600);
+                })
+                .catch(function(err) {
+                    console.error('Save graph failed:', err);
+                    snapArea.innerHTML = '';
+                    btn.innerHTML = '<i class="bi bi-exclamation-triangle-fill"></i><span>မအောင်မြင်ပါ</span>';
+                    setTimeout(function() {
+                        btn.innerHTML = originalHtml;
+                        btn.disabled = false;
+                    }, 1800);
+                    alert('ပုံ Save မအောင်မြင်ပါ။ Internet ချိတ်ဆက်မှုကို စစ်ဆေးပြီး ပြန်ကြိုးစားပါ။');
+                });
+        });
+
+        dbg('Save Graph button initialized.', 'ok');
+    })();
 
     dbg('=== Report2 Init Complete ===', 'ok');
 </script>

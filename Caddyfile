@@ -1,0 +1,13 @@
+# Caddy gets TLS certificates for DOMAIN automatically.
+# Point an A/AAAA record at the VPS before starting the stack.
+
+{$DOMAIN} {
+	encode zstd gzip
+
+	# Room for APK uploads/downloads and survey exports.
+	request_body {
+		max_size 64MB
+	}
+
+	reverse_proxy app:5000
+}

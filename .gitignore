@@ -7,3 +7,7 @@ deploy/lbvd-accounts.sql
 __pycache__/
 *.pyc
 .venv/
+
+# Production secrets and backups
+.env.prod
+backups/

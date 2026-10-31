@@ -17,7 +17,7 @@ from app.database import engine
 from app.extensions import limiter
 from app.routers import (
     auth, dashboard, enumerator, exports, households, locations,
-    reports, settings, survey, system_admin, update,
+    reports, settings, survey, system_admin, updates,
 )
 from fastapi.responses import JSONResponse
 
@@ -104,7 +104,7 @@ app.include_router(households.router)
 app.include_router(settings.router)
 app.include_router(system_admin.router)
 app.include_router(exports.router)
-app.include_router(update.router)   # public: /api/check-update, /api/download-latest
+app.include_router(updates.router)   # public: /api/check-update, /api/download-latest
 
 # ---------- Static ----------
 _current_dir = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))

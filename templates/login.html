@@ -1,0 +1,819 @@
+<!doctype html>
+<html lang="my">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Login — အသုံးပြုသူ ဝင်ရောက်ခြင်း</title>
+
+    <link
+      href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css"
+      rel="stylesheet"
+    />
+    <link
+      href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css"
+      rel="stylesheet"
+    />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Noto+Sans+Myanmar:wght@400;500;600;700&display=swap"
+      rel="stylesheet"
+    />
+
+    <style>
+      * {
+        -webkit-tap-highlight-color: transparent;
+        box-sizing: border-box;
+      }
+
+      body {
+        font-family: "Noto Sans Myanmar", "Pyidaungsu", sans-serif;
+        margin: 0;
+        background: #f3f4f6;
+        background-image:
+          radial-gradient(
+            at 20% 0%,
+            rgba(16, 185, 129, 0.08) 0px,
+            transparent 50%
+          ),
+          radial-gradient(
+            at 80% 100%,
+            rgba(20, 184, 166, 0.08) 0px,
+            transparent 50%
+          );
+        background-attachment: fixed;
+        min-height: 100vh;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        padding: 2rem 1rem;
+        color: #111827;
+      }
+
+      .login-card {
+        max-width: 820px;
+        width: 100%;
+        border-radius: 18px;
+        overflow: hidden;
+        box-shadow:
+          0 1px 3px rgba(0, 0, 0, 0.03),
+          0 20px 45px rgba(0, 0, 0, 0.08);
+        border: 1px solid #f1f5f9;
+        background: #fff;
+        display: grid;
+        grid-template-columns: 1fr 1.05fr;
+        min-height: 500px;
+      }
+
+      .brand-panel {
+        background: linear-gradient(
+          160deg,
+          #047857 0%,
+          #0d9488 55%,
+          #14b8a6 100%
+        );
+        color: #fff;
+        padding: 2rem 2.25rem;
+        display: flex;
+        flex-direction: column;
+        justify-content: space-between;
+        position: relative;
+        overflow: hidden;
+      }
+
+      .brand-panel::before {
+        content: "";
+        position: absolute;
+        width: 280px;
+        height: 280px;
+        border-radius: 50%;
+        background: rgba(255, 255, 255, 0.06);
+        top: -80px;
+        right: -80px;
+        pointer-events: none;
+      }
+      .brand-panel::after {
+        content: "";
+        position: absolute;
+        width: 200px;
+        height: 200px;
+        border-radius: 50%;
+        background: rgba(255, 255, 255, 0.05);
+        bottom: -70px;
+        left: -70px;
+        pointer-events: none;
+      }
+      .brand-panel > * {
+        position: relative;
+        z-index: 2;
+      }
+
+      .brand-top-bar {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 0.85rem;
+        padding-bottom: 1.15rem;
+        border-bottom: 1px solid rgba(255, 255, 255, 0.12);
+        min-height: 48px;
+      }
+
+      .logo-item {
+        width: 42px;
+        height: 42px;
+        border-radius: 9px;
+        background: #fff;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        overflow: hidden;
+        box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);
+        flex-shrink: 0;
+      }
+      .logo-item img {
+        width: 100%;
+        height: 100%;
+        object-fit: contain;
+        display: block;
+        padding: 4px;
+      }
+
+      .brand-middle {
+        display: flex;
+        flex-direction: column;
+        justify-content: center;
+        align-items: center;
+        text-align: center;
+        flex-grow: 1;
+        padding: 1.25rem 0;
+      }
+
+      .brand-title {
+        font-size: 1.15rem;
+        font-weight: 700;
+        line-height: 1.65;
+        letter-spacing: -0.015em;
+        margin: 0;
+        color: #fff;
+        text-align: center;
+      }
+
+      .brand-bottom {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        padding-top: 1.15rem;
+        border-top: 1px solid rgba(255, 255, 255, 0.12);
+      }
+      .brand-bottom small {
+        font-size: 0.68rem;
+        color: rgba(255, 255, 255, 0.75);
+        letter-spacing: 0.02em;
+      }
+      .brand-dot {
+        width: 6px;
+        height: 6px;
+        border-radius: 50%;
+        background: #fff;
+        box-shadow: 0 0 0 3px rgba(255, 255, 255, 0.2);
+      }
+
+      .form-panel {
+        padding: 2rem 2.25rem;
+        display: flex;
+        flex-direction: column;
+        justify-content: center;
+        background: #fff;
+      }
+
+      .form-header {
+        margin-bottom: 1.5rem;
+      }
+
+      .form-header h1 {
+        font-size: 1.35rem;
+        font-weight: 700;
+        color: #047857;
+        margin: 0 0 0.25rem 0;
+        letter-spacing: -0.02em;
+        line-height: 1.3;
+      }
+
+      .form-header p {
+        font-size: 0.82rem;
+        color: #6b7280;
+        margin: 0;
+        line-height: 1.6;
+      }
+
+      .form-label {
+        font-weight: 600;
+        font-size: 0.78rem;
+        color: #1f2937;
+        margin-bottom: 0.4rem;
+        letter-spacing: 0.01em;
+      }
+
+      .input-icon-group {
+        position: relative;
+      }
+
+      .input-icon-group .input-icon {
+        position: absolute;
+        left: 14px;
+        top: 50%;
+        transform: translateY(-50%);
+        color: #9ca3af;
+        font-size: 1rem;
+        pointer-events: none;
+        z-index: 5;
+        transition: color 0.2s ease;
+      }
+      .input-icon-group:focus-within .input-icon {
+        color: #059669;
+      }
+
+      .form-control-icon {
+        padding: 11px 14px 11px 42px;
+        border: 1.5px solid #e5e7eb;
+        border-radius: 11px;
+        background: #f9fafb;
+        font-size: 0.9rem;
+        color: #111827;
+        font-family: inherit;
+        width: 100%;
+        transition: all 0.25s ease;
+        font-weight: 500;
+      }
+      .form-control-icon::placeholder {
+        color: #9ca3af;
+        font-size: 0.84rem;
+        font-weight: 400;
+      }
+      .form-control-icon:hover:not(:focus) {
+        border-color: #d1d5db;
+        background: #fff;
+      }
+      .form-control-icon:focus {
+        outline: none;
+        border-color: #059669;
+        background: #fff;
+        box-shadow: 0 0 0 4px rgba(16, 185, 129, 0.15);
+      }
+      .form-control-icon.error-input {
+        border-color: #ef4444 !important;
+        background-color: #fef2f2 !important;
+      }
+      .form-control-icon.error-input:focus {
+        box-shadow: 0 0 0 4px rgba(239, 68, 68, 0.15);
+      }
+
+      .eye-btn {
+        position: absolute;
+        right: 7px;
+        top: 50%;
+        transform: translateY(-50%);
+        width: 32px;
+        height: 32px;
+        border: none;
+        background: transparent;
+        color: #9ca3af;
+        border-radius: 9px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        transition: all 0.2s ease;
+        cursor: pointer;
+        z-index: 5;
+      }
+      .eye-btn:hover {
+        color: #047857;
+        background: #ecfdf5;
+      }
+
+      .field-error {
+        font-size: 0.73rem;
+        color: #dc2626;
+        font-weight: 500;
+        margin-top: 5px;
+        padding-left: 2px;
+      }
+
+      .btn-login {
+        background: linear-gradient(90deg, #047857, #0d9488);
+        border: none;
+        color: #fff;
+        font-weight: 700;
+        font-size: 0.9rem;
+        letter-spacing: 0.01em;
+        padding: 11px;
+        border-radius: 11px;
+        width: 100%;
+        box-shadow: 0 8px 20px rgba(4, 120, 87, 0.25);
+        transition: all 0.2s ease;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        gap: 8px;
+        cursor: pointer;
+      }
+      .btn-login:hover {
+        background: linear-gradient(90deg, #065f46, #0f766e);
+        color: #fff;
+        transform: translateY(-1px);
+        box-shadow: 0 10px 24px rgba(4, 120, 87, 0.32);
+      }
+      .btn-login:active {
+        transform: scale(0.99);
+      }
+      .btn-login:disabled {
+        opacity: 0.75;
+        cursor: wait;
+        transform: none;
+      }
+
+      .error-banner {
+        background: #fef2f2;
+        border: 1px solid #fecaca;
+        border-left: 3px solid #dc2626;
+        border-radius: 8px;
+        padding: 10px 12px;
+        margin-bottom: 1rem;
+      }
+
+      .modal-content {
+        border: none;
+        border-radius: 16px;
+        overflow: hidden;
+        box-shadow: 0 25px 50px rgba(0, 0, 0, 0.15);
+      }
+      .modal-icon-wrap {
+        width: 56px;
+        height: 56px;
+        margin: 0 auto 0.9rem;
+        border-radius: 50%;
+        background: #fee2e2;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+      }
+
+      .shake {
+        animation: shake 0.4s ease;
+      }
+      @keyframes shake {
+        0%,
+        100% {
+          transform: translateX(0);
+        }
+        25% {
+          transform: translateX(-6px);
+        }
+        75% {
+          transform: translateX(6px);
+        }
+      }
+
+      .spinner {
+        display: inline-block;
+        width: 15px;
+        height: 15px;
+        border: 2px solid rgba(255, 255, 255, 0.4);
+        border-top-color: #fff;
+        border-radius: 50%;
+        animation: spin 0.7s linear infinite;
+      }
+      @keyframes spin {
+        to {
+          transform: rotate(360deg);
+        }
+      }
+
+      @media (max-width: 900px) {
+        .login-card {
+          grid-template-columns: 1fr;
+          max-width: 440px;
+          min-height: auto;
+        }
+        .brand-panel {
+          padding: 1.75rem 1.75rem;
+        }
+        .brand-middle {
+          padding: 1.25rem 0;
+        }
+        .brand-bottom {
+          display: none;
+        }
+        .brand-title {
+          font-size: 1.05rem;
+        }
+        .form-panel {
+          padding: 1.75rem 1.5rem;
+        }
+      }
+
+      @media (max-width: 520px) {
+        body {
+          padding: 1rem 0.75rem;
+        }
+        .login-card {
+          border-radius: 14px;
+        }
+        .brand-panel {
+          padding: 1.25rem 1.1rem;
+        }
+        .brand-title {
+          font-size: 0.98rem;
+        }
+        .form-panel {
+          padding: 1.5rem 1.1rem;
+        }
+        .form-header h1 {
+          font-size: 1.2rem;
+        }
+        .form-header p {
+          font-size: 0.78rem;
+        }
+        .form-control-icon,
+        .btn-login {
+          font-size: 16px;
+        }
+        .logo-item {
+          width: 34px;
+          height: 34px;
+        }
+      }
+    </style>
+  </head>
+  <body>
+    <!-- ERROR MODAL -->
+    <div class="modal fade" id="errorModal" tabindex="-1" aria-hidden="true">
+      <div class="modal-dialog modal-dialog-centered modal-sm">
+        <div class="modal-content text-center">
+          <div class="modal-body p-4">
+            <div class="modal-icon-wrap">
+              <i
+                class="bi bi-exclamation-triangle-fill text-danger"
+                style="font-size: 1.6rem"
+              ></i>
+            </div>
+            <h6 class="fw-bold mb-2">သတိပေးချက်</h6>
+            <p id="modalMessage" class="text-muted small mb-4 lh-base"></p>
+            <button
+              type="button"
+              class="btn w-100 fw-bold py-2 text-white"
+              data-bs-dismiss="modal"
+              style="
+                background: #047857;
+                border: none;
+                border-radius: 10px;
+                font-size: 0.9rem;
+              "
+            >
+              OK
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- LOGIN CARD -->
+    <div class="login-card" id="loginCard">
+      <!-- ========== LEFT BRAND PANEL ========== -->
+      <div class="brand-panel">
+        <!-- TOP — three logos -->
+        <div class="brand-top-bar">
+          <div class="logo-item">
+            <img
+              src="https://lbvd.gov.mm/sites/default/files/articles/moali.png"
+              alt="MOALI Logo"
+            />
+          </div>
+          <div class="logo-item">
+            <img src="/assets/images/logos/bago.jpg" alt="Bago Logo" />
+          </div>
+          <div class="logo-item">
+            <img
+              src="https://lbvd.gov.mm/sites/default/files/Logo_LBVD.png"
+              alt="LBVD Logo"
+            />
+          </div>
+        </div>
+
+        <!-- MIDDLE -->
+        <div class="brand-middle">
+          <h1 class="brand-title">
+            ပဲခူးတိုင်းဒေသကြီးအစိုးရ<br />
+            မွေးမြူရေးနှင့်ကုသရေးဦးစီးဌာန<br />
+            တိရစ္ဆာန်ကောင်ရေ စာရင်းကောက်ယူခြင်း
+          </h1>
+        </div>
+
+        <!-- BOTTOM -->
+        <div class="brand-bottom">
+          <small>Developed by University of Computer Studies (Taungoo)</small>
+          <span class="brand-dot"></span>
+        </div>
+      </div>
+
+      <!-- ========== RIGHT FORM PANEL ========== -->
+      <div class="form-panel">
+        <!-- FORM HEADER -->
+        <div class="form-header">
+          <h1>Login ဝင်ရောက်ခြင်း</h1>
+          <p>သင့်အကောင့် အချက်အလက်များကို ဖြည့်စွက်ပါ</p>
+        </div>
+
+        <!-- Global error banner -->
+        <div id="errorAlert" class="d-none error-banner">
+          <div class="d-flex align-items-start gap-2">
+            <i
+              class="bi bi-exclamation-triangle-fill text-danger mt-1"
+              style="font-size: 0.9rem"
+            ></i>
+            <div class="flex-grow-1">
+              <strong class="d-block text-danger mb-1" style="font-size: 0.8rem"
+                >သတိပေးချက်!</strong
+              >
+              <ul
+                id="errorList"
+                class="text-danger mb-0 ps-3"
+                style="font-size: 0.76rem"
+              ></ul>
+            </div>
+          </div>
+        </div>
+
+        <form id="loginForm" novalidate>
+          <!-- Username -->
+          <div class="mb-3">
+            <label for="username" class="form-label">
+              အသုံးပြုသူအမည် <span class="text-danger">*</span>
+            </label>
+            <div class="input-icon-group">
+              <i class="bi bi-person input-icon"></i>
+              <input
+                type="text"
+                id="username"
+                name="username"
+                autocomplete="username"
+                placeholder="Username ရိုက်ထည့်ပါ"
+                class="form-control-icon"
+              />
+            </div>
+            <p class="d-none field-error" id="usernameError"></p>
+          </div>
+
+          <!-- Password -->
+          <div class="mb-3">
+            <label for="password" class="form-label">
+              စကားဝှက် <span class="text-danger">*</span>
+            </label>
+            <div class="input-icon-group">
+              <i class="bi bi-lock input-icon"></i>
+              <input
+                type="password"
+                id="password"
+                name="password"
+                autocomplete="current-password"
+                placeholder="စကားဝှက် ရိုက်ထည့်ပါ"
+                class="form-control-icon"
+                style="padding-right: 44px"
+              />
+              <button
+                type="button"
+                onclick="togglePassword()"
+                class="eye-btn"
+                aria-label="Show password"
+              >
+                <i
+                  id="eyeIcon"
+                  class="bi bi-eye"
+                  style="font-size: 0.95rem"
+                ></i>
+              </button>
+            </div>
+            <p class="d-none field-error" id="passwordError"></p>
+          </div>
+
+          <!-- Submit -->
+          <button type="submit" class="btn-login" id="btnLogin">
+            <i class="bi bi-box-arrow-in-right fs-5" id="btnIcon"></i>
+            <span id="btnText">Login ဝင်မည်</span>
+          </button>
+        </form>
+
+        <p
+          class="text-center mt-3 mb-0"
+          style="font-size: 0.66rem; color: #cbd5e1; letter-spacing: 0.02em"
+        >
+          © မွေးမြူရေးနှင့် ကုသရေးဦးစီးဌာန
+        </p>
+
+        <!-- ⭐ APK Download Link -->
+        <div class="text-center mt-4">
+          <a
+            href="/assets/apk/BagoLSCS.apk"
+            download
+            class="text-success text-decoration-none"
+            style="font-size: 0.8rem; font-weight: 600; transition: 0.2s"
+            onmouseover="this.style.color = '#065f46'"
+            onmouseout="this.style.color = '#047857'"
+          >
+            <i class="bi bi-android2"></i> Application ဒေါင်းလုဒ်ဆွဲရန် (APK)
+          </a>
+        </div>
+        <div class="text-center mt-4">
+          <a
+            href="/assets/UserGuide/BagoLSCS_User_Manual_Guide.mp4"
+            download
+            class="text-success text-decoration-none"
+            style="font-size: 0.85rem; font-weight: 600"
+          >
+            <i class="bi bi-download"></i> User Guide Video Download ဆွဲရန်
+          </a>
+        </div>
+      </div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
+
+    <script>
+      const errorModalEl = document.getElementById("errorModal");
+      const errorModal = new bootstrap.Modal(errorModalEl);
+
+      function showModal(message) {
+        document.getElementById("modalMessage").textContent = message;
+        errorModal.show();
+      }
+
+      function togglePassword() {
+        const inp = document.getElementById("password");
+        const icon = document.getElementById("eyeIcon");
+        if (inp.type === "password") {
+          inp.type = "text";
+          icon.className = "bi bi-eye-slash";
+        } else {
+          inp.type = "password";
+          icon.className = "bi bi-eye";
+        }
+      }
+
+      function setFieldError(fieldId, message) {
+        const input = document.getElementById(fieldId);
+        const err = document.getElementById(fieldId + "Error");
+        if (message) {
+          input.classList.add("error-input");
+          if (err) {
+            err.textContent = message;
+            err.classList.remove("d-none");
+          }
+        } else {
+          input.classList.remove("error-input");
+          if (err) {
+            err.textContent = "";
+            err.classList.add("d-none");
+          }
+        }
+      }
+
+      function clearAllErrors() {
+        ["username", "password"].forEach((id) => setFieldError(id, ""));
+        document.getElementById("errorAlert").classList.add("d-none");
+        document.getElementById("errorList").innerHTML = "";
+      }
+
+      ["username", "password"].forEach((id) => {
+        const el = document.getElementById(id);
+        el.addEventListener("input", () => setFieldError(id, ""));
+      });
+
+      function setLoading(loading) {
+        const btn = document.getElementById("btnLogin");
+        const icon = document.getElementById("btnIcon");
+        const text = document.getElementById("btnText");
+        btn.disabled = loading;
+        if (loading) {
+          icon.outerHTML = '<span class="spinner" id="btnIcon"></span>';
+          text.textContent = "ဝင်ရောက်နေသည်...";
+        } else {
+          const sp = document.getElementById("btnIcon");
+          if (sp)
+            sp.outerHTML =
+              '<i class="bi bi-box-arrow-in-right fs-5" id="btnIcon"></i>';
+          text.textContent = "Login ဝင်မည်";
+        }
+      }
+
+      document
+        .getElementById("loginForm")
+        .addEventListener("submit", async function (e) {
+          e.preventDefault();
+          clearAllErrors();
+
+          const username = document.getElementById("username").value.trim();
+          const password = document.getElementById("password").value;
+
+          const errors = [];
+          let firstErrorEl = null;
+
+          if (!username) {
+            setFieldError("username", "အသုံးပြုသူအမည် ဖြည့်စွက်ပေးပါ။");
+            errors.push("အသုံးပြုသူအမည် ဖြည့်စွက်ပေးပါ။");
+            if (!firstErrorEl)
+              firstErrorEl = document.getElementById("username");
+          } else if (username.length < 3) {
+            setFieldError(
+              "username",
+              "အသုံးပြုသူအမည် အနည်းဆုံး ၃ လုံး ရှိရပါမည်။",
+            );
+            errors.push("အသုံးပြုသူအမည် အနည်းဆုံး ၃ လုံး ရှိရပါမည်။");
+            if (!firstErrorEl)
+              firstErrorEl = document.getElementById("username");
+          }
+
+          if (!password) {
+            setFieldError("password", "စကားဝှက် ဖြည့်စွက်ပေးပါ။");
+            errors.push("စကားဝှက် ဖြည့်စွက်ပေးပါ။");
+            if (!firstErrorEl)
+              firstErrorEl = document.getElementById("password");
+          } else if (password.length < 5) {
+            setFieldError("password", "စကားဝှက် အနည်းဆုံး ၈ လုံး ရှိရပါမည်။");
+            errors.push("စကားဝှက် အနည်းဆုံး ၈ လုံး ရှိရပါမည်။");
+            if (!firstErrorEl)
+              firstErrorEl = document.getElementById("password");
+          }
+
+          if (errors.length > 0) {
+            const list = document.getElementById("errorList");
+            list.innerHTML = errors.map((err) => `<li>${err}</li>`).join("");
+            document.getElementById("errorAlert").classList.remove("d-none");
+
+            const modalMsg =
+              errors.length === 1 ? errors[0] : errors.join(" ၊ ");
+            showModal(modalMsg);
+
+            const card = document.getElementById("loginCard");
+            card.classList.add("shake");
+            setTimeout(() => card.classList.remove("shake"), 400);
+
+            if (firstErrorEl) setTimeout(() => firstErrorEl.focus(), 300);
+            return;
+          }
+
+          setLoading(true);
+
+          try {
+            const formData = new FormData();
+            formData.append("username", username);
+            formData.append("password", password);
+            // ⭐ device_type ကို ဖြုတ်လိုက်ပါပြီ
+
+            const res = await fetch("/api/login", {
+              method: "POST",
+              body: formData,
+              credentials: "same-origin",
+            });
+
+            const data = await res.json();
+
+            if (res.ok && data.status === "success") {
+              // ⭐ Role အလိုက် သွားရောက်ရမည့် စာမျက်နှာများ
+              if (data.role === "admin") {
+                window.location.href = "/system/dashboard"; // Admin Dashboard သို့
+              } else if (data.role === "enumerator") {
+                window.location.href = "/survey/dashboard"; // Enumerator Dashboard သို့
+              } else if (
+                ["union", "state", "district", "township"].includes(data.role)
+              ) {
+                window.location.href = "/admin"; // ကျန်တဲ့သူတွေ အတွက် ပင်မ စာမျက်နှာ
+              } else {
+                showModal("အသုံးပြုသူအမျိုးအစားကို မသိရှိပါ။");
+                setLoading(false);
+              }
+            } else {
+              const msg = data.detail || "Login ဝင်၍ မရပါ။";
+              showModal(msg);
+
+              if (msg.includes("Username") || msg.includes("Password")) {
+                setFieldError("username", "");
+                setFieldError("password", msg);
+              } else if (msg.includes("username")) {
+                setFieldError("username", msg);
+              }
+
+              const card = document.getElementById("loginCard");
+              card.classList.add("shake");
+              setTimeout(() => card.classList.remove("shake"), 400);
+
+              setLoading(false);
+            }
+          } catch (err) {
+            console.error(err);
+            showModal("Server ချိတ်ဆက်မှု အဆင်မပြေပါ။ နောက်တစ်ခါ ပြန်စမ်းပါ။");
+            setLoading(false);
+          }
+        });
+
+      document.getElementById("username").focus();
+    </script>
+  </body>
+</html>

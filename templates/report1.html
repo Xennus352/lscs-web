@@ -1,0 +1,1458 @@
+{% extends 'reportBase.html' %} 
+{% set active_page = 'report1' %}
+
+{% block title %}နယ်မြေဒေသအလိုက် အနှစ်ချုပ်စာရင်း - LBVD{% endblock %}
+
+{% block topbar_title %}<i class="bi bi-geo-alt me-2"></i>နယ်မြေဒေသအလိုက် အနှစ်ချုပ်စာရင်း{% endblock %}
+
+{% block extra_css %}
+<style>
+    .page-head h5 { font-size: 1.05rem; }
+    .page-head p  { font-size: 0.78rem; }
+
+    .filter-card {
+        border: none; border-radius: 12px;
+        box-shadow: 0 2px 10px rgba(0,0,0,0.05);
+        background: #ffffff;
+    }
+    .filter-card .filter-label {
+        font-size: 0.72rem; font-weight: 700;
+        color: #065f46; margin-bottom: 3px; display: block;
+    }
+    .filter-card .form-select,
+    .filter-card .form-control {
+        font-size: 0.8rem;
+        border: 1px solid #d1fae5;
+        border-radius: 8px;
+        padding: 6px 10px;
+        color: #374151; font-weight: 500;
+        background-color: #f9fafb;
+    }
+    .filter-card .form-select {
+        padding: 6px 28px 6px 10px;
+    }
+    .filter-card .form-select:focus,
+    .filter-card .form-control:focus {
+        border-color: #10b981;
+        box-shadow: 0 0 0 0.15rem rgba(16,185,129,0.2);
+        background-color: #fff;
+    }
+    .filter-card .form-select:disabled {
+        background-color: #f3f4f6; color: #4b5563;
+        cursor: not-allowed; opacity: 1; font-weight: 700;
+    }
+
+    /* ⭐ Date range row */
+    .date-range-row {
+        border-top: 1px dashed #d1fae5;
+        margin-top: 10px;
+        padding-top: 10px;
+    }
+    .date-range-row .filter-label i { color: #10b981; margin-right: 4px; }
+    .date-hint {
+        font-size: 0.68rem; color: #6b7280;
+        margin-top: 3px; display: block;
+    }
+
+    .filter-actions {
+        display: flex; justify-content: flex-end;
+        gap: 8px; margin-top: 14px;
+    }
+    .btn-filter-submit {
+        background: linear-gradient(135deg, #10b981, #34d399);
+        color: #fff; border: none;
+        padding: 8px 20px; border-radius: 8px;
+        font-weight: 700; font-size: 0.8rem;
+        display: inline-flex; align-items: center; gap: 6px;
+        box-shadow: 0 2px 6px rgba(16, 185, 129, 0.2);
+    }
+    .btn-filter-submit:hover { color: #fff; transform: translateY(-1px); }
+    .btn-filter-reset {
+        background: #fff; color: #4b5563;
+        border: 1px solid #d1d5db;
+        padding: 8px 20px; border-radius: 8px;
+        font-weight: 700; font-size: 0.8rem;
+        text-decoration: none;
+        display: inline-flex; align-items: center; gap: 6px;
+    }
+    .btn-filter-reset:hover { background: #f9fafb; color: #111827; }
+
+    .btn-excel {
+        background: linear-gradient(135deg, #10b981, #34d399);
+        color: #fff; border: none;
+        padding: 9px 18px; border-radius: 8px;
+        font-weight: 700; font-size: 0.8rem;
+        display: inline-flex; align-items: center; gap: 6px;
+        box-shadow: 0 2px 6px rgba(16, 185, 129, 0.2);
+        transition: all 0.15s ease;
+        white-space: nowrap;
+    }
+    .btn-excel:hover { color: #fff; transform: translateY(-1px); }
+    .btn-excel:disabled { opacity: 0.6; cursor: wait; }
+
+    .info-note {
+        background: #fffbeb; border: 1px solid #fde68a;
+        border-radius: 10px; padding: 10px 14px;
+        font-size: 0.78rem; color: #92400e;
+        display: flex; align-items: flex-start; gap: 8px;
+        margin-bottom: 12px;
+    }
+    .info-note i { color: #f59e0b; flex-shrink: 0; margin-top: 2px; }
+
+    .table-section {
+        border: none; border-radius: 12px;
+        box-shadow: 0 2px 10px rgba(0,0,0,0.05);
+        overflow: hidden; background: #ffffff;
+        margin-bottom: 20px;
+    }
+
+    .table-section .sec-header {
+        background: #ecfdf5;
+        color: #065f46;
+        padding: 12px 18px;
+        display: flex; align-items: center; justify-content: space-between;
+        flex-wrap: wrap; gap: 8px;
+        border-bottom: 1px solid #a7f3d0;
+    }
+    .table-section .sec-header h6 {
+        font-size: 0.9rem; font-weight: 700; margin: 0;
+        display: flex; align-items: center; gap: 8px;
+        color: #065f46;
+    }
+    .table-section .sec-header .badge-count {
+        font-size: 0.7rem; font-weight: 700;
+        background: #ffffff;
+        color: #047857;
+        padding: 3px 10px; border-radius: 999px;
+        box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+    }
+
+    .report-table {
+        width: 100%; min-width: 950px;
+        border-collapse: collapse;
+        font-size: 0.78rem; margin: 0;
+    }
+
+    .report-table thead tr:first-child th {
+        background: #f8fafc; color: #065f46;
+        font-weight: 700; font-size: 0.7rem;
+        text-transform: uppercase; letter-spacing: 0.3px;
+        padding: 9px 8px; text-align: center;
+        border: 1px solid #e2e8f0;
+    }
+    .report-table thead tr:nth-child(2) th {
+        background: #ffffff; color: #047857;
+        font-weight: 700; font-size: 0.68rem;
+        padding: 7px 6px; text-align: center;
+        border: 1px solid #e2e8f0;
+    }
+
+    .report-table tbody td {
+        padding: 8px 8px; text-align: center;
+        border: 1px solid #e5e7eb;
+        color: #374151; font-weight: 600;
+    }
+    .report-table tbody td.animal-name {
+        text-align: left; font-weight: 700;
+        color: #065f46; background: #f9fafb;
+        padding-left: 12px;
+    }
+    .report-table tbody td.total-col {
+        background: #f0fdf4; color: #047857; font-weight: 800;
+    }
+    .report-table tbody tr:hover td:not(.animal-name):not(.total-col) {
+        background: #f0fdf4;
+    }
+    .report-table .empty-row td {
+        text-align: center; color: #9ca3af;
+        font-style: italic; padding: 20px;
+    }
+
+    .stat-mini {
+        border: none; border-radius: 10px;
+        box-shadow: 0 2px 8px rgba(0,0,0,0.05);
+        padding: 10px 12px; height: 100%; background: #fff;
+    }
+    .stat-mini .sm-icon {
+        width: 40px; height: 40px; border-radius: 10px;
+        display: flex; align-items: center; justify-content: center;
+        font-size: 1.25rem; flex-shrink: 0; line-height: 1;
+    }
+    .stat-mini .sm-label { font-size: 0.68rem; color: #6b7280; font-weight: 600; margin-bottom: 1px; }
+    .stat-mini .sm-value { font-size: 1.05rem; font-weight: 700; line-height: 1.15; }
+
+    .chart-card {
+        border: none; border-radius: 12px;
+        box-shadow: 0 2px 10px rgba(0,0,0,0.05);
+        height: 100%;
+    }
+    .chart-card .card-header {
+        background: transparent;
+        border-bottom: 1px solid #f1f5f9;
+        padding: 12px 16px;
+    }
+    .chart-card .card-header h6 { font-size: 0.85rem; }
+    .chart-card .card-body { padding: 12px 16px; }
+
+    .loading-overlay {
+        position: fixed; inset: 0;
+        background: rgba(255, 255, 255, 0.6);
+        backdrop-filter: blur(2px);
+        z-index: 9999; display: none;
+        align-items: center; justify-content: center;
+    }
+    .loading-overlay.show { display: flex; }
+    .loading-spinner {
+        width: 48px; height: 48px;
+        border: 4px solid rgba(4, 120, 87, 0.15);
+        border-top-color: #047857;
+        border-radius: 50%;
+        animation: spin 0.8s linear infinite;
+    }
+    @keyframes spin { to { transform: rotate(360deg); } }
+
+    .sheet-option {
+        display: flex; align-items: center; gap: 12px;
+        padding: 12px 14px; background: #fff;
+        border: 2px solid #e5e7eb; border-radius: 10px;
+        text-align: left; cursor: pointer;
+        transition: all 0.15s ease; width: 100%;
+    }
+    .sheet-option:hover {
+        border-color: #10b981; background: #f0fdf4;
+        transform: translateY(-1px);
+    }
+    .sheet-option-icon {
+        width: 42px; height: 42px; border-radius: 10px;
+        display: flex; align-items: center; justify-content: center;
+        font-size: 1.25rem; flex-shrink: 0;
+    }
+    .sheet-option-text { flex: 1; min-width: 0; }
+    .sheet-option-title {
+        font-size: 0.85rem; font-weight: 700;
+        color: #111827; margin-bottom: 2px;
+    }
+    .sheet-option-desc {
+        font-size: 0.7rem; color: #6b7280; line-height: 1.3;
+    }
+    .sheet-option-arrow {
+        color: #9ca3af; font-size: 0.9rem; flex-shrink: 0;
+    }
+
+    @media (max-width: 575.98px) {
+        .filter-card .form-select,
+        .filter-card .form-control { font-size: 0.75rem; }
+        .report-table { font-size: 0.7rem; min-width: 800px; }
+        .report-table thead tr:first-child th { font-size: 0.62rem; padding: 7px 4px; }
+        .report-table thead tr:nth-child(2) th { font-size: 0.6rem; padding: 5px 4px; }
+        .report-table tbody td { padding: 6px 4px; }
+    }
+</style>
+{% endblock %}
+
+{% block page_content %}
+
+<div class="loading-overlay" id="loadingOverlay">
+    <div class="loading-spinner"></div>
+</div>
+
+<!-- ⭐ Data Element (start_date / end_date ပါဝင်) -->
+<div id="report1Data"
+     data-stats='{{ stats|tojson }}'
+     data-role="{{ role }}"
+     data-user-state-id="{{ user_state_id }}"
+     data-user-state-name="{{ user_state_name|default('') }}"
+     data-user-district-id="{{ user_district_id }}"
+     data-user-district-name="{{ user_district_name|default('') }}"
+     data-user-township-id="{{ user_township_id }}"
+     data-user-township-name="{{ user_township_name|default('') }}" 
+     data-filter-state="{{ filters.state or user_state_id or '' }}"
+     data-filter-district="{{ filters.district or user_district_id or '' }}"
+     data-filter-township="{{ filters.township or user_township_id or '' }}"
+     data-filter-qv="{{ filters.qv or '' }}"
+     data-filter-start-date="{{ filters.start_date or '' }}"
+     data-filter-end-date="{{ filters.end_date or '' }}"
+     data-large-rows='{{ large_rows|tojson }}'
+     data-small-rows='{{ small_rows|tojson }}'
+     data-poultry-rows='{{ poultry_rows|tojson }}'
+     data-breeding-rows='{{ breeding_rows|tojson }}'
+     hidden></div>
+
+<div class="page-head mb-3 d-flex justify-content-between align-items-start flex-wrap gap-2">
+    <div>
+        <h5 class="fw-bold text-success mb-1">
+            နယ်မြေဒေသအလိုက် အနှစ်ချုပ်စာရင်း
+            {% if region_name %} — {{ region_name }}{% endif %}
+        </h5>
+        <p class="text-muted mb-0">သက်ဆိုင်ရာတိုင်း/ ခရိုင် / မြို့နယ် / ကျေးရွာအုပ်စု အလိုက် တိရစ္စာန်ကောင်ရေ စုစည်းစာရင်း</p>
+    </div>
+    <button type="button" id="btnExportExcel" class="btn-excel">
+        <i class="bi bi-file-earmark-excel-fill"></i> Excel ထုတ်ယူရန်
+    </button>
+</div>
+
+<form method="GET" action="/report/1" id="filterForm">
+    <div class="filter-card p-3 mb-3">
+        <div class="d-flex align-items-center gap-2 mb-2">
+            <span class="fw-bold" style="font-size:0.85rem; color:#065f46;">တည်နေရာအလိုက် ကြည့်ရှုရန်</span>
+        </div>
+
+        <div class="row g-2">
+            <div class="col-6 col-md-3">
+                <label class="filter-label">တိုင်းဒေသကြီး/ပြည်နယ်</label>
+                <select id="filterState" name="state" class="form-select form-select-sm">
+                    <option value="">အားလုံး</option>
+                </select>
+            </div>
+            <div class="col-6 col-md-3">
+                <label class="filter-label">ခရိုင်</label>
+                <select id="filterDistrict" name="district" class="form-select form-select-sm" disabled>
+                    <option value="">အားလုံး</option>
+                </select>
+            </div>
+            <div class="col-6 col-md-3">
+                <label class="filter-label">မြို့နယ်</label>
+                <select id="filterTownship" name="township" class="form-select form-select-sm" disabled>
+                    <option value="">အားလုံး</option>
+                </select>
+            </div>
+            <div class="col-6 col-md-3">
+                <label class="filter-label">ကျေးရွာအုပ်စု</label>
+                <select id="filterVillage" name="qv" class="form-select form-select-sm" disabled>
+                    <option value="">အားလုံး</option>
+                </select>
+            </div>
+        </div>
+
+        <!-- ⭐ DATE RANGE ROW -->
+        <div class="date-range-row">
+            <div class="d-flex align-items-center gap-2 mb-2">
+                <span class="fw-bold" style="font-size:0.85rem; color:#065f46;">
+                    <i class="bi bi-calendar-range"></i> ရက်စွဲအလိုက် ကြည့်ရှုရန်
+                </span>
+            </div>
+            <div class="row g-2">
+                <div class="col-6 col-md-3">
+                    <label class="filter-label"><i class="bi bi-calendar-event"></i>စတင်သည့်ရက်</label>
+                    <input type="date" id="filterStartDate" name="start_date"
+                           class="form-control form-control-sm"
+                           value="{{ filters.start_date or '' }}">
+                </div>
+                <div class="col-6 col-md-3">
+                    <label class="filter-label"><i class="bi bi-calendar-check"></i>ပြီးဆုံးသည့်ရက်</label>
+                    <input type="date" id="filterEndDate" name="end_date"
+                           class="form-control form-control-sm"
+                           value="{{ filters.end_date or '' }}">
+                </div>
+                <div class="col-12 col-md-6 d-flex align-items-center">
+                    <span class="date-hint mb-0">
+                        <i class="bi bi-info-circle"></i>
+                        ရက်တစ်ရက်ပဲ ထည့်လိုပါက — စတင်ရက် သို့မဟုတ် ပြီးဆုံးရက် တစ်ခုတည်းကို ဖြည့်ပါ။
+                    </span>
+                </div>
+            </div>
+        </div>
+
+        <div class="filter-actions">
+            <a href="/report/1" class="btn-filter-reset">
+                <i class="bi bi-arrow-clockwise"></i> ဒေသပြန်ရွေးရန်
+            </a>
+            <button type="submit" class="btn-filter-submit" id="btnFilterSubmit">
+                <i class="bi bi-search"></i> ကြည့်ရှုမည်
+            </button>
+        </div>
+    </div>
+</form>
+
+<div class="row g-2 g-md-3 mb-3">
+    <div class="col-6 col-lg-3">
+        <div class="stat-mini d-flex align-items-center gap-2">
+            <div class="sm-icon" style="background:#d1fae5;">🐄</div>
+            <div>
+                <div class="sm-label">တိရစ္စာန်ကြီး</div>
+                <div class="sm-value" style="color:#047857;" id="countLarge">0</div>
+            </div>
+        </div>
+    </div>
+    <div class="col-6 col-lg-3">
+        <div class="stat-mini d-flex align-items-center gap-2">
+            <div class="sm-icon" style="background:#dbeafe;">🐐</div>
+            <div>
+                <div class="sm-label">တိရစ္စာန်ငယ်</div>
+                <div class="sm-value" style="color:#1d4ed8;" id="countSmall">0</div>
+            </div>
+        </div>
+    </div>
+    <div class="col-6 col-lg-3">
+        <div class="stat-mini d-flex align-items-center gap-2">
+            <div class="sm-icon" style="background:#fef3c7;">🐔</div>
+            <div>
+                <div class="sm-label">ကြက်၊ ဘဲ၊ ငုံး</div>
+                <div class="sm-value" style="color:#b45309;" id="countPoultry">0</div>
+            </div>
+        </div>
+    </div>
+    <div class="col-6 col-lg-3">
+        <div class="stat-mini d-flex align-items-center gap-2">
+            <div class="sm-icon" style="background:#fce7f3;">💗</div>
+            <div>
+                <div class="sm-label">မျိုးတိရစ္စာန်</div>
+                <div class="sm-value" style="color:#be185d;" id="countBreeding">0</div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="row g-2 g-md-3 mb-3">
+    <div class="col-lg-8">
+        <div class="chart-card card">
+            <div class="card-header">
+                <h6 class="fw-bold mb-0">
+                    <i class="bi bi-bar-chart-line text-success me-2"></i>တိရစ္စာန် အုပ်စုအလိုက် ကောင်ရေ
+                </h6>
+            </div>
+            <div class="card-body">
+                <div style="position:relative;height:260px;"><canvas id="barChart"></canvas></div>
+            </div>
+        </div>
+    </div>
+    <div class="col-lg-4">
+        <div class="chart-card card">
+            <div class="card-header">
+                <h6 class="fw-bold mb-0">
+                    <i class="bi bi-pie-chart text-success me-2"></i>အချိုးအစား
+                </h6>
+            </div>
+            <div class="card-body">
+                <div style="position:relative;height:260px;"><canvas id="doughnutChart"></canvas></div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="table-section">
+    <div class="sec-header">
+        <h6>(က) တိရစ္စာန်ကြီး — နွား၊ ကျွဲ၊ မြင်း စသည်</h6>
+        <span class="badge-count">{{ large_rows|length }} မျိုး</span>
+    </div>
+    <div class="table-responsive">
+        <table class="report-table">
+            <thead>
+                <tr>
+                    <th rowspan="2" style="min-width:140px;">တိရစ္စာန်မျိုး</th>
+                    <th colspan="3">(၁) နှစ်အောက်</th>
+                    <th colspan="3">(၁) နှစ်မှ (၃) နှစ်</th>
+                    <th colspan="3">(၃) နှစ်အထက်</th>
+                    <th rowspan="2" style="min-width:70px;">စုစုပေါင်း</th>
+                </tr>
+                <tr>
+                    <th>အထီး</th><th>သင်းကွပ်</th><th>အမ</th>
+                    <th>အထီး</th><th>သင်းကွပ်</th><th>အမ</th>
+                    <th>အထီး</th><th>သင်းကွပ်</th><th>အမ</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for row in large_rows %}
+                <tr>
+                    <td class="animal-name">{{ row.animalName }}</td>
+                    <td>{{ row.u1_male }}</td>
+                    <td>{{ row.u1_castrated }}</td>
+                    <td>{{ row.u1_female }}</td>
+                    <td>{{ row.y1_3_male }}</td>
+                    <td>{{ row.y1_3_castrated }}</td>
+                    <td>{{ row.y1_3_female }}</td>
+                    <td>{{ row.o3_male }}</td>
+                    <td>{{ row.o3_castrated }}</td>
+                    <td>{{ row.o3_female }}</td>
+                    <td class="total-col">{{ row.total }}</td>
+                </tr>
+                {% else %}
+                <tr class="empty-row"><td colspan="11">မှတ်တမ်း မရှိပါ</td></tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</div>
+
+<div class="table-section">
+    <div class="sec-header">
+        <h6>(ခ) တိရစ္စာန်ငယ် — ဆိတ်၊ သိုး၊ ဝက် စသည်</h6>
+        <span class="badge-count">{{ small_rows|length }} မျိုး</span>
+    </div>
+    <div class="table-responsive">
+        <table class="report-table">
+            <thead>
+                <tr>
+                    <th rowspan="2" style="min-width:140px;">တိရစ္စာန်မျိုး</th>
+                    <th colspan="3">(၂) လအောက်</th>
+                    <th colspan="3">(၂) လ မှ (၆) လ</th>
+                    <th colspan="3">(၆) လအထက်</th>
+                    <th rowspan="2" style="min-width:70px;">စုစုပေါင်း</th>
+                </tr>
+                <tr>
+                    <th>အထီး</th><th>သင်းကွပ်</th><th>အမ</th>
+                    <th>အထီး</th><th>သင်းကွပ်</th><th>အမ</th>
+                    <th>အထီး</th><th>သင်းကွပ်</th><th>အမ</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for row in small_rows %}
+                <tr>
+                    <td class="animal-name">{{ row.animalName }}</td>
+                    <td>{{ row.u2m_male }}</td>
+                    <td>{{ row.u2m_castrated }}</td>
+                    <td>{{ row.u2m_female }}</td>
+                    <td>{{ row.m2_6m_male }}</td>
+                    <td>{{ row.m2_6m_castrated }}</td>
+                    <td>{{ row.m2_6m_female }}</td>
+                    <td>{{ row.o6m_male }}</td>
+                    <td>{{ row.o6m_castrated }}</td>
+                    <td>{{ row.o6m_female }}</td>
+                    <td class="total-col">{{ row.total }}</td>
+                </tr>
+                {% else %}
+                <tr class="empty-row"><td colspan="11">မှတ်တမ်း မရှိပါ</td></tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</div>
+
+<div class="table-section">
+    <div class="sec-header">
+        <h6>(ဂ) ကြက်၊ ဘဲ၊ ငုံး</h6>
+        <span class="badge-count">{{ poultry_rows|length }} မျိုး</span>
+    </div>
+    <div class="table-responsive">
+        <table class="report-table">
+            <thead>
+                <tr>
+                    <th rowspan="2" style="min-width:140px;">အမျိုးအစား</th>
+                    <th colspan="2">ငယ်</th>
+                    <th colspan="2">လတ်</th>
+                    <th colspan="2">ကြီး</th>
+                    <th rowspan="2" style="min-width:70px;">စုစုပေါင်း</th>
+                </tr>
+                <tr>
+                    <th>အထီး</th><th>အမ</th>
+                    <th>အထီး</th><th>အမ</th>
+                    <th>အထီး</th><th>အမ</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for row in poultry_rows %}
+                <tr>
+                    <td class="animal-name">{{ row.animalName }}</td>
+                    <td>{{ row.young_male }}</td>
+                    <td>{{ row.young_female }}</td>
+                    <td>{{ row.medium_male }}</td>
+                    <td>{{ row.medium_female }}</td>
+                    <td>{{ row.adult_male }}</td>
+                    <td>{{ row.adult_female }}</td>
+                    <td class="total-col">{{ row.total }}</td>
+                </tr>
+                {% else %}
+                <tr class="empty-row"><td colspan="8">မှတ်တမ်း မရှိပါ</td></tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</div>
+
+<div class="table-section">
+    <div class="sec-header">
+        <h6>(ဃ) မျိုးတိရစ္စာန် မွေးမြူမှု — ဒေသနွား၊ ဒေသကျွဲ၊ နို့စားကျွဲ၊ ဝက်၊ ဆိတ်၊ သိုး</h6>
+        <span class="badge-count">{{ breeding_rows|length }} မျိုး</span>
+    </div>
+    <div class="table-responsive">
+        <table class="report-table">
+            <thead>
+                <tr>
+                    <th style="min-width:180px;">အမျိုးအစား</th>
+                    <th>အထီး</th>
+                    <th>အမ</th>
+                    <th style="min-width:70px;">စုစုပေါင်း</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for row in breeding_rows %}
+                <tr>
+                    <td class="animal-name">{{ row.animalName }}</td>
+                    <td>{{ row.male }}</td>
+                    <td>{{ row.female }}</td>
+                    <td class="total-col">{{ row.total }}</td>
+                </tr>
+                {% else %}
+                <tr class="empty-row"><td colspan="4">မှတ်တမ်း မရှိပါ</td></tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</div>
+
+<!-- CONFIRM EXPORT MODAL -->
+<div class="modal fade" id="confirmExcelModal" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content border-0 rounded-4 shadow-lg">
+            <div class="modal-body text-center p-4">
+                <div class="mx-auto mb-3 d-flex align-items-center justify-content-center rounded-circle"
+                     style="width:64px;height:64px;background:#d1fae5;">
+                    <i class="bi bi-file-earmark-excel-fill" style="font-size:1.8rem;color:#047857;"></i>
+                </div>
+                <h5 class="fw-bold mb-2">Excel ဖိုင် ထုတ်ယူမှာ သေချာပါသလား?</h5>
+                <p class="text-muted small mb-4">
+                    လက်ရှိ Filter လုပ်ထားသည့် နေရာဒေသနှင့် ရက်စွဲအပိုင်းအခြားအလိုက်
+                    ဒေတာများကို Excel ဖိုင်အဖြစ် ထုတ်ယူပါမည်။
+                </p>
+                <div class="d-flex gap-2">
+                    <button type="button" class="btn-filter-reset flex-fill" data-bs-dismiss="modal">
+                        <i class="bi bi-x-lg"></i> မလုပ်တော့ပါ
+                    </button>
+                    <button type="button" class="btn-excel flex-fill" id="btnExcelContinue">
+                        <i class="bi bi-arrow-right-circle"></i> ဆက်လုပ်မည်
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- SHEET TYPE MODAL -->
+<div class="modal fade" id="sheetTypeModal" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content border-0 rounded-4 shadow-lg">
+            <div class="modal-body p-4">
+                <div class="text-center mb-3">
+                    <div class="mx-auto mb-3 d-flex align-items-center justify-content-center rounded-circle"
+                         style="width:64px;height:64px;background:#dbeafe;">
+                        <i class="bi bi-layers-fill" style="font-size:1.8rem;color:#2563eb;"></i>
+                    </div>
+                    <h5 class="fw-bold mb-2">Sheet ပုံစံ ရွေးချယ်ပါ</h5>
+                    <p class="text-muted small mb-0">Excel ဖိုင်ကို ဘယ်လိုပုံစံနဲ့ ထုတ်ယူမှာလဲ?</p>
+                </div>
+
+                <div class="d-flex flex-column gap-2 mb-3">
+                    <button type="button" class="sheet-option" data-split="1">
+                        <div class="sheet-option-icon" style="background:#d1fae5;color:#047857;">
+                            <i class="bi bi-grid-3x3-gap-fill"></i>
+                        </div>
+                        <div class="sheet-option-text">
+                            <div class="sheet-option-title">Sheet ၄ ခု ခွဲထုတ်</div>
+                            <div class="sheet-option-desc">တိရစ္ဆာန်ကြီး / ငယ် / ကြက် / မျိုး — Sheet သီးသန့်စီ</div>
+                        </div>
+                        <i class="bi bi-chevron-right sheet-option-arrow"></i>
+                    </button>
+                    <button type="button" class="sheet-option" data-split="0">
+                        <div class="sheet-option-icon" style="background:#dbeafe;color:#2563eb;">
+                            <i class="bi bi-file-earmark-spreadsheet-fill"></i>
+                        </div>
+                        <div class="sheet-option-text">
+                            <div class="sheet-option-title">Sheet ၁ ခုတည်း ထုတ်</div>
+                            <div class="sheet-option-desc">ဇယားအားလုံးကို Sheet တစ်ခုတည်းမှာ စုစည်းထုတ်</div>
+                        </div>
+                        <i class="bi bi-chevron-right sheet-option-arrow"></i>
+                    </button>
+                </div>
+
+                <button type="button" class="btn-filter-reset w-100" data-bs-dismiss="modal">
+                    <i class="bi bi-x-lg"></i> မလုပ်တော့ပါ
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+
+{% endblock %}
+
+{% block extra_js %}
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/xlsx-js-style@1.2.0/dist/xlsx.bundle.js"></script>
+<script>
+// ==================================================
+// 1. DATA
+// ==================================================
+var dataEl = document.getElementById('report1Data');
+
+var ROLE              = dataEl.dataset.role || 'admin';
+var USER_STATE_ID     = dataEl.dataset.userStateId       || '';
+var USER_STATE_NAME   = dataEl.dataset.userStateName     || '';
+var USER_DIST_ID      = dataEl.dataset.userDistrictId    || '';
+var USER_DIST_NAME    = dataEl.dataset.userDistrictName  || '';
+var USER_TOWN_ID      = dataEl.dataset.userTownshipId    || '';
+var USER_TOWN_NAME    = dataEl.dataset.userTownshipName  || '';
+
+var INIT_STATE    = dataEl.dataset.filterState    || '';
+var INIT_DISTRICT = dataEl.dataset.filterDistrict || '';
+var INIT_TOWNSHIP = dataEl.dataset.filterTownship || '';
+var INIT_QV       = dataEl.dataset.filterQv       || '';
+// ⭐ NEW: Start / End date
+var INIT_START_DATE = dataEl.dataset.filterStartDate || '';
+var INIT_END_DATE   = dataEl.dataset.filterEndDate   || '';
+
+var LARGE_ROWS    = [];
+var SMALL_ROWS    = [];
+var POULTRY_ROWS  = [];
+var BREEDING_ROWS = [];
+try {
+    LARGE_ROWS    = JSON.parse(dataEl.dataset.largeRows    || '[]');
+    SMALL_ROWS    = JSON.parse(dataEl.dataset.smallRows    || '[]');
+    POULTRY_ROWS  = JSON.parse(dataEl.dataset.poultryRows  || '[]');
+    BREEDING_ROWS = JSON.parse(dataEl.dataset.breedingRows || '[]');
+} catch (e) { console.error('Row data parse error:', e); }
+
+var STATS = { large: 0, small: 0, poultry: 0, breeding: 0, total: 0 };
+try { STATS = JSON.parse(dataEl.dataset.stats || '{}'); } catch (e) {}
+
+STATS.large    = Number(STATS.large)    || 0;
+STATS.small    = Number(STATS.small)    || 0;
+STATS.poultry  = Number(STATS.poultry)  || 0;
+STATS.breeding = Number(STATS.breeding) || 0;
+
+var countLarge    = STATS.large;
+var countSmall    = STATS.small;
+var countPoultry  = STATS.poultry;
+var countBreeding = STATS.breeding;
+var TOTAL = countLarge + countSmall + countPoultry + countBreeding;
+
+function fmt(n) { return Number(n || 0).toLocaleString(); }
+document.getElementById('countLarge').textContent    = fmt(countLarge);
+document.getElementById('countSmall').textContent    = fmt(countSmall);
+document.getElementById('countPoultry').textContent  = fmt(countPoultry);
+document.getElementById('countBreeding').textContent = fmt(countBreeding);
+
+var loadingOverlay = document.getElementById('loadingOverlay');
+function showLoading() { loadingOverlay.classList.add('show'); }
+function hideLoading() { loadingOverlay.classList.remove('show'); }
+
+// ==================================================
+// 2. CHARTS
+// ==================================================
+Chart.defaults.font.family = "'Noto Sans Myanmar', 'Pyidaungsu', sans-serif";
+Chart.defaults.font.size = 11;
+Chart.defaults.color = '#4b5563';
+
+var LABELS = ['တိရစ္ဆာန်ကြီး', 'တိရစ္ဆာန်ငယ်', 'ကြက်၊ ဘဲ၊ ငုံး', 'မျိုးတိရစ္ဆာန်'];
+var VALUES = [countLarge, countSmall, countPoultry, countBreeding];
+var COLORS = ['#10b981', '#3b82f6', '#f59e0b', '#ef4444'];
+
+new Chart(document.getElementById('barChart').getContext('2d'), {
+    type: 'bar',
+    data: { labels: LABELS, datasets: [{
+        data: VALUES, backgroundColor: COLORS,
+        borderColor: COLORS, borderWidth: 1.5,
+        borderRadius: 0, borderSkipped: false,
+        barPercentage: 0.35, categoryPercentage: 0.6, maxBarThickness: 28
+    }]},
+    options: {
+        responsive: true, maintainAspectRatio: false,
+        animation: { duration: 1000, easing: 'easeOutQuart' },
+        plugins: {
+            legend: { display: false },
+            tooltip: {
+                backgroundColor: 'rgba(0,0,0,0.85)', padding: 10, cornerRadius: 8,
+                callbacks: {
+                    label: function(ctx) {
+                        var v = ctx.parsed.y;
+                        var p = TOTAL > 0 ? ((v / TOTAL) * 100).toFixed(1) : 0;
+                        return ' ကောင်ရေ: ' + v.toLocaleString() + ' (' + p + '%)';
+                    }
+                }
+            }
+        },
+        scales: {
+            y: { beginAtZero: true, grid: { color: '#f1f5f9' },
+                 ticks: { callback: function(v) { return v.toLocaleString(); } } },
+            x: { grid: { display: false } }
+        }
+    }
+});
+
+new Chart(document.getElementById('doughnutChart').getContext('2d'), {
+    type: 'doughnut',
+    data: { labels: LABELS, datasets: [{
+        data: VALUES, backgroundColor: COLORS,
+        borderColor: '#ffffff', borderWidth: 2.5, hoverOffset: 6
+    }]},
+    options: {
+        responsive: true, maintainAspectRatio: false, cutout: '62%',
+        animation: { animateRotate: true, duration: 1100 },
+        plugins: {
+            legend: {
+                position: 'bottom',
+                labels: { padding: 8, boxWidth: 10, boxHeight: 10, font: { size: 10, weight: '600' } }
+            },
+            tooltip: {
+                backgroundColor: 'rgba(0,0,0,0.85)', padding: 10, cornerRadius: 8,
+                callbacks: {
+                    label: function(ctx) {
+                        var v = ctx.parsed;
+                        var p = TOTAL > 0 ? ((v / TOTAL) * 100).toFixed(1) : 0;
+                        return ' ' + ctx.label + ': ' + v.toLocaleString() + ' (' + p + '%)';
+                    }
+                }
+            }
+        }
+    },
+    plugins: [{
+        id: 'centerText',
+        beforeDraw: function(chart) {
+            var ctx = chart.ctx;
+            var area = chart.chartArea;
+            if (!area) return;
+            ctx.save();
+            var cx = (area.left + area.right) / 2;
+            var cy = (area.top + area.bottom) / 2;
+            ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
+            ctx.font = 'bold 17px "Noto Sans Myanmar", sans-serif';
+            ctx.fillStyle = '#047857';
+            ctx.fillText(TOTAL.toLocaleString(), cx, cy - 5);
+            ctx.font = '600 10px "Noto Sans Myanmar", sans-serif';
+            ctx.fillStyle = '#6b7280';
+            ctx.fillText('စုစုပေါင်း', cx, cy + 12);
+            ctx.restore();
+        }
+    }]
+});
+
+// ==================================================
+// 3. CASCADING FILTER
+// ==================================================
+var form        = document.getElementById('filterForm');
+var selState    = document.getElementById('filterState');
+var selDistrict = document.getElementById('filterDistrict');
+var selTownship = document.getElementById('filterTownship');
+var selVillage  = document.getElementById('filterVillage');
+var inputStart  = document.getElementById('filterStartDate');
+var inputEnd    = document.getElementById('filterEndDate');
+var ALL = 'အားလုံး';
+
+// ⭐ Date validation — start > end ဖြစ်ရင် swap လုပ်ပေးမယ် (UX အတွက်)
+function normalizeDateRange() {
+    if (inputStart && inputEnd && inputStart.value && inputEnd.value) {
+        if (inputStart.value > inputEnd.value) {
+            var tmp = inputStart.value;
+            inputStart.value = inputEnd.value;
+            inputEnd.value = tmp;
+        }
+    }
+}
+[inputStart, inputEnd].forEach(function(el) {
+    if (!el) return;
+    el.addEventListener('change', normalizeDateRange);
+});
+
+var LOCK = {
+    state:    { state: true,  district: false, township: false, village: false },
+    district: { state: true,  district: true,  township: false, village: false },
+    township: { state: true,  district: true,  township: true,  village: false },
+    admin:    { state: false, district: false, township: false, village: false }
+}[ROLE] || { state: false, district: false, township: false, village: false };
+
+async function fetchLocations(params) {
+    params = params || {};
+    var q = new URLSearchParams(params);
+    var url = '/api/locations' + (q.toString() ? '?' + q : '');
+    try {
+        var res = await fetch(url, { credentials: 'same-origin' });
+        if (!res.ok) return [];
+        return await res.json();
+    } catch (e) { console.error('fetchLocations error:', e); return []; }
+}
+
+function resetSelect(sel) {
+    sel.innerHTML = '<option value="">' + ALL + '</option>';
+    sel.value = ''; sel.disabled = true;
+}
+
+function fillSelect(sel, rows, valueKey, textKey, selectedValue, disableAfter) {
+    sel.innerHTML = '';
+    if (!disableAfter) {
+        var allOpt = document.createElement('option');
+        allOpt.value = '';
+        allOpt.textContent = ALL;
+        sel.appendChild(allOpt);
+    }
+    rows.forEach(function(r) {
+        var opt = document.createElement('option');
+        opt.value = String(r[valueKey]);
+        opt.textContent = r[textKey];
+        sel.appendChild(opt);
+    });
+    if (selectedValue !== null && selectedValue !== undefined && String(selectedValue) !== '') {
+        var target = String(selectedValue);
+        for (var i = 0; i < sel.options.length; i++) {
+            if (sel.options[i].value === target) {
+                sel.selectedIndex = i;
+                break;
+            }
+        }
+    }
+    sel.disabled = !!disableAfter;
+}
+
+async function loadStates() {
+    if (LOCK.state) {
+        var stateID   = USER_STATE_ID;
+        var stateName = USER_STATE_NAME || USER_STATE_ID || '— မသတ်မှတ်ရသေးပါ —';
+        selState.innerHTML = '<option value="' + stateID + '">' + stateName + '</option>';
+        selState.value = stateID;
+        selState.disabled = true;
+        return;
+    }
+    var data = await fetchLocations({});
+    fillSelect(selState, data, 'stateID', 'stateName', INIT_STATE, false);
+}
+
+async function loadDistricts() {
+    var sid = selState.value || (LOCK.state ? USER_STATE_ID : '');
+    if (!sid) { resetSelect(selDistrict); return; }
+    if (LOCK.district) {
+        var targetID = USER_DIST_ID;
+        var targetName = USER_DIST_NAME || targetID; 
+        selDistrict.innerHTML = '<option value="' + targetID + '">' + targetName + '</option>';
+        selDistrict.value = targetID;
+        selDistrict.disabled = true;
+        return;
+    }
+    selDistrict.innerHTML = '<option value="">⏳...</option>';
+    selDistrict.disabled = true;
+    var data = await fetchLocations({ state_id: sid });
+    var preselected = INIT_DISTRICT || '';
+    fillSelect(selDistrict, data, 'districtID', 'districtName', preselected, false);
+}
+
+async function loadTownships() {
+    var sid = selState.value || (LOCK.state ? USER_STATE_ID : '');
+    var did = selDistrict.value || (LOCK.district ? USER_DIST_ID : '');
+    if (!sid || !did) { resetSelect(selTownship); return; }
+    if (LOCK.township) {
+        var targetID = USER_TOWN_ID;
+        var targetName = USER_TOWN_NAME || targetID;
+        selTownship.innerHTML = '<option value="' + targetID + '">' + targetName + '</option>';
+        selTownship.value = targetID;
+        selTownship.disabled = true;
+        return;
+    }
+    selTownship.innerHTML = '<option value="">⏳...</option>';
+    selTownship.disabled = true;
+    var data2 = await fetchLocations({ state_id: sid, district_id: did });
+    var preselected = INIT_TOWNSHIP || '';
+    fillSelect(selTownship, data2, 'townshipID', 'townshipName', preselected, false);
+}
+
+async function loadVillages() {
+    var sid = selState.value || (LOCK.state ? USER_STATE_ID : '');
+    var did = selDistrict.value || (LOCK.district ? USER_DIST_ID : '');
+    var tid = selTownship.value || (LOCK.township ? USER_TOWN_ID : '');
+    if (!sid || !did || !tid) { resetSelect(selVillage); return; }
+    selVillage.innerHTML = '<option value="">⏳...</option>';
+    selVillage.disabled = true;
+    var data = await fetchLocations({ state_id: sid, district_id: did, township_id: tid });
+    fillSelect(selVillage, data, 'QVID', 'QVName', INIT_QV, false);
+}
+
+selState.addEventListener('change', async function() {
+    resetSelect(selDistrict); resetSelect(selTownship); resetSelect(selVillage);
+    if (!selState.value) return;
+    await loadDistricts();
+});
+selDistrict.addEventListener('change', async function() {
+    resetSelect(selTownship); resetSelect(selVillage);
+    if (!selDistrict.value) return;
+    await loadTownships();
+});
+selTownship.addEventListener('change', async function() {
+    resetSelect(selVillage);
+    if (!selTownship.value) return;
+    await loadVillages();
+});
+
+form.addEventListener('submit', function() {
+    showLoading();
+    [selState, selDistrict, selTownship, selVillage].forEach(function(s) { s.disabled = false; });
+});
+
+(async function initFilters() {
+    // ⭐ date input တွေကို ပြန်ဖြည့် (HTML value မှာ ရှိပြီးသားဖြစ်ပေမယ့် safety အတွက်)
+    if (inputStart) inputStart.value = INIT_START_DATE;
+    if (inputEnd)   inputEnd.value   = INIT_END_DATE;
+
+    await loadStates();
+    if (ROLE === 'state') {
+        await loadDistricts();
+        if (INIT_DISTRICT) { await loadTownships(); if (INIT_TOWNSHIP) await loadVillages(); }
+    } else if (ROLE === 'district') {
+        await loadDistricts();
+        await loadTownships(); 
+        if (INIT_TOWNSHIP) await loadVillages();
+    } else if (ROLE === 'township') {
+        await loadDistricts();
+        await loadTownships();
+        await loadVillages();
+    } else if (ROLE === 'admin' || ROLE === 'union') {
+        if (INIT_STATE) {
+            await loadDistricts();
+            if (INIT_DISTRICT) { await loadTownships(); if (INIT_TOWNSHIP) await loadVillages(); }
+        }
+    }
+    hideLoading();
+})();
+
+// ==================================================
+// 4. EXCEL EXPORT
+// ==================================================
+var confirmExcelModal = null;
+var sheetTypeModal    = null;
+
+var TITLE_LINES = [
+    'စိုက်ပျိုးရေး၊ မွေးမြူရေးနှင့် ဆည်မြောင်းဝန်ကြီးဌာန',
+    'မွေးမြူရေးနှင့် ကုသရေးဦးစီးဌာန',
+    'တိရစ္စာန်ကောင်ရေစာရင်း ကောက်ယူခြင်း'
+];
+var TITLE_ROW_COUNT = TITLE_LINES.length;
+var FILTER_ROW      = TITLE_ROW_COUNT;
+var BLANK_ROW       = TITLE_ROW_COUNT + 1;
+var SECTION_START   = TITLE_ROW_COUNT + 2;
+
+// ⭐ Date range ကို ဖတ်ပြီး label ပြန်ပေးတဲ့ helper
+function getDateRangeLabel() {
+    var s = (inputStart && inputStart.value) ? inputStart.value : '';
+    var e = (inputEnd && inputEnd.value)     ? inputEnd.value   : '';
+    if (!s && !e) return '';
+    if (s && !e) return 'ရက်စွဲ: ' + s + ' (တစ်ရက်တည်း)';
+    if (!s && e) return 'ရက်စွဲ: ' + e + ' (တစ်ရက်တည်း)';
+    if (s === e) return 'ရက်စွဲ: ' + s + ' (တစ်ရက်တည်း)';
+    return 'ရက်စွဲ: ' + s + ' မှ ' + e + ' အထိ';
+}
+
+function getFilterTitle() {
+    var parts = [];
+    function addText(sel) {
+        if (!sel || !sel.value) return;
+        if (sel.selectedIndex < 0) return;
+        var txt = sel.options[sel.selectedIndex].text || '';
+        if (txt.indexOf('အားလုံး') !== -1) return;
+        if (txt === ALL) return;
+        parts.push(txt);
+    }
+    addText(selState); addText(selDistrict); addText(selTownship); addText(selVillage);
+    var locPart = (parts.length === 0)
+        ? 'တိုင်းဒေသကြီး/ပြည်နယ်အားလုံးအတွင်း'
+        : (parts.join('၊ ') + ' အတွင်း');
+
+    var datePart = getDateRangeLabel();
+    return locPart + ' တိရစ္စာန်ကောင်ရေစာရင်း' + (datePart ? ' (' + datePart + ')' : '');
+}
+
+function buildFilename() {
+    var stamp = new Date();
+    var p = function(n) { return String(n).padStart(2, '0'); };
+    var ds = stamp.getFullYear() + p(stamp.getMonth()+1) + p(stamp.getDate())
+           + '_' + p(stamp.getHours()) + p(stamp.getMinutes());
+    var parts = [];
+    function addText(sel) {
+        if (!sel || !sel.value) return;
+        if (sel.selectedIndex < 0) return;
+        var txt = sel.options[sel.selectedIndex].text || '';
+        if (txt.indexOf('အားလုံး') !== -1) return;
+        parts.push(txt);
+    }
+    addText(selState); addText(selDistrict); addText(selTownship); addText(selVillage);
+    var prefix = parts.length > 0 ? parts.join('_') : 'အားလုံး';
+
+    // ⭐ Date range ပါ ထည့်
+    var s = (inputStart && inputStart.value) ? inputStart.value : '';
+    var e = (inputEnd && inputEnd.value)     ? inputEnd.value   : '';
+    var dateTag = '';
+    if (s && e) dateTag = '_' + s + '_to_' + e;
+    else if (s) dateTag = '_' + s;
+    else if (e) dateTag = '_' + e;
+
+    return 'တိရစ္စာန်စာရင်း_' + prefix + dateTag + '_' + ds + '.xlsx';
+}
+
+function allBorders() {
+    var b = { style: 'thin', color: { rgb: '000000' } };
+    return { top: b, bottom: b, left: b, right: b };
+}
+function titleStyle() {
+    return {
+        font: { name: 'Pyidaungsu', sz: 14, bold: true, color: { rgb: '000000' } },
+        alignment: { horizontal: 'center', vertical: 'center' }
+    };
+}
+function filterTitleStyle() {
+    return {
+        font: { name: 'Pyidaungsu', sz: 12, bold: true, color: { rgb: '000000' } },
+        alignment: { horizontal: 'center', vertical: 'center', wrapText: true }
+    };
+}
+function subTitleStyle() {
+    return {
+        font: { name: 'Pyidaungsu', sz: 12, bold: true, color: { rgb: '000000' } },
+        alignment: { horizontal: 'left', vertical: 'center', wrapText: true },
+        border: allBorders()
+    };
+}
+function headerStyle() {
+    return {
+        font: { name: 'Pyidaungsu', sz: 11, bold: true, color: { rgb: '000000' } },
+        alignment: { horizontal: 'center', vertical: 'center', wrapText: true },
+        border: allBorders()
+    };
+}
+function cellStyle() {
+    return {
+        font: { name: 'Pyidaungsu', sz: 10, color: { rgb: '000000' } },
+        alignment: { horizontal: 'center', vertical: 'center' },
+        border: allBorders()
+    };
+}
+function nameCellStyle() {
+    var s = cellStyle();
+    s.font.bold = true;
+    s.font.sz = 11;
+    s.alignment.horizontal = 'left';
+    return s;
+}
+function totalCellStyle() {
+    var s = cellStyle();
+    s.font.bold = true;
+    return s;
+}
+
+function applyStyles(ws, merges, sections) {
+    var range = XLSX.utils.decode_range(ws['!ref']);
+    for (var R = range.s.r; R <= range.e.r; R++) {
+        for (var C = range.s.c; C <= range.e.c; C++) {
+            var addr = XLSX.utils.encode_cell({ r: R, c: C });
+            if (!ws[addr]) continue;
+            ws[addr].s = cellStyle();
+        }
+    }
+    for (var tr = 0; tr < TITLE_ROW_COUNT; tr++) {
+        for (var Ct = range.s.c; Ct <= range.e.c; Ct++) {
+            var at = XLSX.utils.encode_cell({ r: tr, c: Ct });
+            if (ws[at]) ws[at].s = titleStyle();
+        }
+    }
+    for (var Cf = range.s.c; Cf <= range.e.c; Cf++) {
+        var af = XLSX.utils.encode_cell({ r: FILTER_ROW, c: Cf });
+        if (ws[af]) ws[af].s = filterTitleStyle();
+    }
+    sections.forEach(function(sec) {
+        for (var C3 = range.s.c; C3 <= range.e.c; C3++) {
+            var a3 = XLSX.utils.encode_cell({ r: sec.titleRow, c: C3 });
+            if (ws[a3]) ws[a3].s = subTitleStyle();
+        }
+        sec.headerRows.forEach(function(hr) {
+            for (var C4 = range.s.c; C4 <= range.e.c; C4++) {
+                var a4 = XLSX.utils.encode_cell({ r: hr, c: C4 });
+                if (ws[a4]) ws[a4].s = headerStyle();
+            }
+        });
+        for (var R2 = sec.dataStart; R2 <= sec.dataEnd; R2++) {
+            var nameAddr = XLSX.utils.encode_cell({ r: R2, c: 0 });
+            if (ws[nameAddr]) ws[nameAddr].s = nameCellStyle();
+            var totalAddr = XLSX.utils.encode_cell({ r: R2, c: sec.lastCol });
+            if (ws[totalAddr]) ws[totalAddr].s = totalCellStyle();
+        }
+    });
+    ws['!merges'] = merges;
+}
+
+function setRowHeights(ws, aoa, sections) {
+    var rows = [];
+    rows[0] = { hpt: 22 };
+    rows[1] = { hpt: 22 };
+    rows[2] = { hpt: 22 };
+    rows[FILTER_ROW] = { hpt: 22 };
+    rows[BLANK_ROW] = { hpt: 6 };
+    sections.forEach(function(sec) {
+        rows[sec.titleRow] = { hpt: 22 };
+        sec.headerRows.forEach(function(hr) {
+            rows[hr] = { hpt: 28 };
+        });
+    });
+    var out = new Array(aoa.length);
+    for (var i = 0; i < aoa.length; i++) {
+        out[i] = rows[i] || { hpt: 18 };
+    }
+    ws['!rows'] = out;
+}
+
+function autoWidth(ws, aoa) {
+    var widths = [];
+    aoa.forEach(function(row) {
+        (row || []).forEach(function(cell, i) {
+            var len = String(cell == null ? '' : cell).length;
+            if (!widths[i] || widths[i] < len) widths[i] = len;
+        });
+    });
+    ws['!cols'] = widths.map(function(w) {
+        return { wch: Math.min(Math.max((w || 10) + 2, 12), 35) };
+    });
+}
+
+function buildSheetContent(typeLabel, filterTitle, rows) {
+    var lastCol = 0;
+    var sectionTitle = '';
+    var headerRows = [];
+
+    if (typeLabel === 'large') {
+        lastCol = 10;
+        sectionTitle = '(က) တိရစ္ဆာန်ကြီး — နွား၊ ကျွဲ၊ မြင်း စသည်';
+        headerRows = [
+            ['တိရစ္ဆာန်မျိုး', '(၁) နှစ်အောက်', '', '', '(၁) နှစ်မှ (၃) နှစ်', '', '', '(၃) နှစ်အထက်', '', '', 'စုစုပေါင်း'],
+            ['', 'အထီး', 'သင်းကွပ်', 'အမ', 'အထီး', 'သင်းကွပ်', 'အမ', 'အထီး', 'သင်းကွပ်', 'အမ', '']
+        ];
+    } else if (typeLabel === 'small') {
+        lastCol = 10;
+        sectionTitle = '(ခ) တိရစ္ဆာန်ငယ် — ဆိတ်၊ သိုး၊ ဝက် စသည်';
+        headerRows = [
+            ['တိရစ္ဆာန်မျိုး', '(၂) လအောက်', '', '', '(၂) လ မှ (၆) လ', '', '', '(၆) လအထက်', '', '', 'စုစုပေါင်း'],
+            ['', 'အထီး', 'သင်းကွပ်', 'အမ', 'အထီး', 'သင်းကွပ်', 'အမ', 'အထီး', 'သင်းကွပ်', 'အမ', '']
+        ];
+    } else if (typeLabel === 'poultry') {
+        lastCol = 7;
+        sectionTitle = '(ဂ) ကြက်၊ ဘဲ၊ ငုံး';
+        headerRows = [
+            ['အမျိုးအစား', 'ငယ်', '', 'လတ်', '', 'ကြီး', '', 'စုစုပေါင်း'],
+            ['', 'အထီး', 'အမ', 'အထီး', 'အမ', 'အထီး', 'အမ', '']
+        ];
+    } else if (typeLabel === 'breeding') {
+        lastCol = 4;
+        sectionTitle = '(ဃ) မျိုးတိရစ္ဆာန် မွေးမြူမှု — ဒေသနွား၊ ဒေသကျွဲ၊ နို့စားကျွဲ၊ ဝက်၊ ဆိတ်၊ သိုး';
+        headerRows = [
+            ['အမျိုးအစား', 'အထီး', 'အမ', 'စုစုပေါင်း']
+        ];
+    }
+
+    var dataRows = [];
+    rows.forEach(function(r) {
+        if (typeLabel === 'large') {
+            dataRows.push([
+                r.animalName || '',
+                r.u1_male || 0, r.u1_castrated || 0, r.u1_female || 0,
+                r.y1_3_male || 0, r.y1_3_castrated || 0, r.y1_3_female || 0,
+                r.o3_male || 0, r.o3_castrated || 0, r.o3_female || 0,
+                r.total || 0
+            ]);
+        } else if (typeLabel === 'small') {
+            dataRows.push([
+                r.animalName || '',
+                r.u2m_male || 0, r.u2m_castrated || 0, r.u2m_female || 0,
+                r.m2_6m_male || 0, r.m2_6m_castrated || 0, r.m2_6m_female || 0,
+                r.o6m_male || 0, r.o6m_castrated || 0, r.o6m_female || 0,
+                r.total || 0
+            ]);
+        } else if (typeLabel === 'poultry') {
+            dataRows.push([
+                r.animalName || '',
+                r.young_male || 0, r.young_female || 0,
+                r.medium_male || 0, r.medium_female || 0,
+                r.adult_male || 0, r.adult_female || 0,
+                r.total || 0
+            ]);
+        } else if (typeLabel === 'breeding') {
+            dataRows.push([
+                r.animalName || '',
+                r.male || 0, r.female || 0,
+                r.total || 0
+            ]);
+        }
+    });
+
+    var aoa = [];
+    var merges = [];
+
+    for (var ti = 0; ti < TITLE_LINES.length; ti++) {
+        aoa.push([TITLE_LINES[ti]]);
+        merges.push({ s:{r:ti,c:0}, e:{r:ti,c:lastCol} });
+    }
+
+    aoa.push([filterTitle || '']);
+    merges.push({ s:{r:FILTER_ROW,c:0}, e:{r:FILTER_ROW,c:lastCol} });
+
+    aoa.push([]);
+
+    aoa.push([sectionTitle]);
+    merges.push({ s:{r:SECTION_START,c:0}, e:{r:SECTION_START,c:lastCol} });
+    var titleRow = SECTION_START;
+
+    var hrIndexes = [];
+    headerRows.forEach(function(hr) {
+        var rowArr = [];
+        for (var i = 0; i <= lastCol; i++) rowArr.push(hr[i] || '');
+        aoa.push(rowArr);
+        hrIndexes.push(aoa.length - 1);
+    });
+
+    if (typeLabel === 'large' || typeLabel === 'small') {
+        var h1 = hrIndexes[0];
+        merges.push({ s:{r:h1,c:0},   e:{r:h1+1,c:0} });
+        merges.push({ s:{r:h1,c:1},   e:{r:h1,c:3}   });
+        merges.push({ s:{r:h1,c:4},   e:{r:h1,c:6}   });
+        merges.push({ s:{r:h1,c:7},   e:{r:h1,c:9}   });
+        merges.push({ s:{r:h1,c:10},  e:{r:h1+1,c:10} });
+    } else if (typeLabel === 'poultry') {
+        var h2 = hrIndexes[0];
+        merges.push({ s:{r:h2,c:0}, e:{r:h2+1,c:0} });
+        merges.push({ s:{r:h2,c:1}, e:{r:h2,c:2}   });
+        merges.push({ s:{r:h2,c:3}, e:{r:h2,c:4}   });
+        merges.push({ s:{r:h2,c:5}, e:{r:h2,c:6}   });
+        merges.push({ s:{r:h2,c:7}, e:{r:h2+1,c:7} });
+    }
+
+    var dataStart = aoa.length;
+    dataRows.forEach(function(dr) { aoa.push(dr); });
+    var dataEnd = aoa.length - 1;
+
+    return {
+        aoa: aoa, merges: merges, lastCol: lastCol,
+        sections: [{
+            titleRow: titleRow,
+            headerRows: hrIndexes,
+            dataStart: dataStart,
+            dataEnd: dataEnd,
+            lastCol: lastCol
+        }]
+    };
+}
+
+var SECTION_GAP = 4;
+
+function buildSingleSheetContent(filterTitle) {
+    var allAoa = [];
+    var allMerges = [];
+    var allSections = [];
+
+    var types = [
+        { label: 'large',    rows: LARGE_ROWS    },
+        { label: 'small',    rows: SMALL_ROWS    },
+        { label: 'poultry',  rows: POULTRY_ROWS  },
+        { label: 'breeding', rows: BREEDING_ROWS }
+    ];
+
+    var maxCols = 11;
+
+    for (var ti = 0; ti < TITLE_LINES.length; ti++) {
+        allAoa.push([TITLE_LINES[ti]]);
+        allMerges.push({ s:{r:ti,c:0}, e:{r:ti,c:maxCols-1} });
+    }
+
+    allAoa.push([filterTitle || '']);
+    allMerges.push({ s:{r:FILTER_ROW,c:0}, e:{r:FILTER_ROW,c:maxCols-1} });
+
+    allAoa.push([]);
+
+    types.forEach(function(t, idx) {
+        var content = buildSheetContent(t.label, '', t.rows);
+        var startIdx = SECTION_START;
+
+        if (idx > 0) {
+            for (var g = 0; g < SECTION_GAP; g++) allAoa.push([]);
+        }
+
+        var offsetRows = allAoa.length;
+
+        content.merges.forEach(function(m) {
+            if (m.s.r < startIdx) return;
+            allMerges.push({
+                s: { r: m.s.r + offsetRows - startIdx, c: m.s.c },
+                e: { r: m.e.r + offsetRows - startIdx, c: m.e.c }
+            });
+        });
+
+        content.sections.forEach(function(sec) {
+            allSections.push({
+                titleRow:  sec.titleRow  + offsetRows - startIdx,
+                headerRows: sec.headerRows.map(function(hr) { return hr + offsetRows - startIdx; }),
+                dataStart: sec.dataStart + offsetRows - startIdx,
+                dataEnd:   sec.dataEnd   + offsetRows - startIdx,
+                lastCol:   sec.lastCol
+            });
+        });
+
+        for (var i = startIdx; i < content.aoa.length; i++) {
+            allAoa.push(content.aoa[i]);
+        }
+    });
+
+    return { aoa: allAoa, merges: allMerges, sections: allSections };
+}
+
+function doExportExcel(splitSheets) {
+    try {
+        var filterTitle = getFilterTitle();
+        var wb = XLSX.utils.book_new();
+
+        if (splitSheets) {
+            var sheets = [
+                { name: 'တိရစ္ဆာန်ကြီး',   label: 'large',    rows: LARGE_ROWS    },
+                { name: 'တိရစ္ဆာန်ငယ်',   label: 'small',    rows: SMALL_ROWS    },
+                { name: 'ကြက်-ဘဲ-ငုံး',   label: 'poultry',  rows: POULTRY_ROWS  },
+                { name: 'မျိုးတိရစ္ဆာန်',  label: 'breeding', rows: BREEDING_ROWS }
+            ];
+
+            sheets.forEach(function(s) {
+                var content = buildSheetContent(s.label, filterTitle, s.rows);
+                var ws = XLSX.utils.aoa_to_sheet(content.aoa);
+                applyStyles(ws, content.merges, content.sections);
+                setRowHeights(ws, content.aoa, content.sections);
+                autoWidth(ws, content.aoa);
+                XLSX.utils.book_append_sheet(wb, ws, s.name);
+            });
+        } else {
+            var content = buildSingleSheetContent(filterTitle);
+            var ws = XLSX.utils.aoa_to_sheet(content.aoa);
+            applyStyles(ws, content.merges, content.sections);
+            setRowHeights(ws, content.aoa, content.sections);
+            autoWidth(ws, content.aoa);
+            XLSX.utils.book_append_sheet(wb, ws, 'တိရစ္ဆာန်စာရင်း');
+        }
+
+        var fname = buildFilename();
+        XLSX.writeFile(wb, fname, { bookType: 'xlsx', type: 'binary' });
+        return true;
+    } catch (e) {
+        console.error('Excel export error:', e);
+        return false;
+    }
+}
+
+var btnExportExcel = document.getElementById('btnExportExcel');
+if (btnExportExcel) {
+    btnExportExcel.addEventListener('click', function() {
+        if (!confirmExcelModal) {
+            confirmExcelModal = new bootstrap.Modal(document.getElementById('confirmExcelModal'));
+        }
+        confirmExcelModal.show();
+    });
+}
+var btnExcelContinue = document.getElementById('btnExcelContinue');
+if (btnExcelContinue) {
+    btnExcelContinue.addEventListener('click', function() {
+        if (confirmExcelModal) confirmExcelModal.hide();
+        setTimeout(function() {
+            if (!sheetTypeModal) {
+                sheetTypeModal = new bootstrap.Modal(document.getElementById('sheetTypeModal'));
+            }
+            sheetTypeModal.show();
+        }, 250);
+    });
+}
+document.querySelectorAll('.sheet-option').forEach(function(btn) {
+    btn.addEventListener('click', function() {
+        var split = this.dataset.split === '1';
+        if (sheetTypeModal) sheetTypeModal.hide();
+        showLoading();
+        setTimeout(function() {
+            var ok = doExportExcel(split);
+            hideLoading();
+            if (!ok) alert('Excel ထုတ်ယူမှု မအောင်မြင်ပါ။ နောက်တစ်ခါ ပြန်စမ်းပါ။');
+        }, 300);
+    });
+});
+</script>
+{% endblock %}

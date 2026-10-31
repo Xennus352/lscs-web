@@ -1,0 +1,1194 @@
+{% extends 'reportBase.html' %} {% set active_page = 'report2' %} {% block title %}တိရစ္စာန်စာရင်း Report - LBVD{% endblock %} {% block topbar_title %}<i class="bi bi-bar-chart-line me-2"></i>တိရစ္စာန်စာရင်း စုစည်းမှုအစီရင်ခံစာ{% endblock %} {% block extra_css %}
+<style>
+    /* ⭐⭐⭐ CRITICAL — Page ကို horizontal scroll မဖြစ်စေရန် ⭐⭐⭐ */
+    html, body { overflow-x: hidden !important; max-width: 100vw; }
+
+    .page-head h5 { font-size: 1.05rem; }
+    .page-head p { font-size: 0.78rem; }
+
+    /* ============ FILTER CARD ============ */
+    .filter-card {
+        border: none; border-radius: 12px;
+        box-shadow: 0 2px 10px rgba(0, 0, 0, 0.05); background: #ffffff;
+        max-width: 100%; box-sizing: border-box;
+    }
+    .filter-card .filter-label {
+        font-size: 0.72rem; font-weight: 700; color: #065f46;
+        margin-bottom: 3px; display: block; white-space: nowrap;
+    }
+    .filter-card .form-select,
+    .filter-card .form-control {
+        font-size: 0.8rem; border: 1px solid #d1fae5; border-radius: 8px;
+        padding: 6px 10px; color: #374151; font-weight: 500;
+        background-color: #f9fafb; width: 100%;
+    }
+    .filter-card .form-select { padding: 6px 28px 6px 10px; }
+    .filter-card .form-select:focus,
+    .filter-card .form-control:focus {
+        border-color: #10b981; box-shadow: 0 0 0 0.15rem rgba(16, 185, 129, 0.2);
+        background-color: #fff;
+    }
+    .filter-card .form-select:disabled,
+    .filter-card .form-control:disabled {
+        background-color: #f3f4f6; color: #4b5563;
+        cursor: not-allowed; opacity: 1; font-weight: 700;
+    }
+
+    /* ⭐ Filter row — responsive grid */
+    .filter-row {
+        display: grid;
+        grid-template-columns: repeat(4, minmax(0, 1fr));
+        gap: 10px;
+    }
+    @media (max-width: 991.98px) { .filter-row { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
+    @media (max-width: 575.98px) { .filter-row { grid-template-columns: repeat(1, minmax(0, 1fr)); } }
+
+    /* ============ FILTER ACTIONS ============ */
+    .filter-actions {
+        display: flex; justify-content: flex-end;
+        gap: 8px; margin-top: 14px; flex-wrap: wrap;
+        align-items: center;
+    }
+    .btn-filter-submit {
+        background: linear-gradient(135deg, #047857, #059669); color: #fff;
+        border: none; padding: 8px 22px; border-radius: 8px;
+        font-weight: 700; font-size: 0.8rem;
+        display: inline-flex; align-items: center; gap: 6px;
+        box-shadow: 0 2px 6px rgba(4, 120, 87, 0.25);
+        transition: all 0.15s ease; white-space: nowrap;
+    }
+    .btn-filter-submit:hover { color: #fff; transform: translateY(-1px); }
+    .btn-filter-submit:disabled { opacity: 0.6; cursor: wait; }
+
+    .btn-excel {
+        background: linear-gradient(135deg, #047857, #059669); color: #fff;
+        border: none; padding: 9px 18px; border-radius: 8px;
+        font-weight: 700; font-size: 0.8rem;
+        display: inline-flex; align-items: center; gap: 6px;
+        box-shadow: 0 2px 6px rgba(4, 120, 87, 0.25); white-space: nowrap;
+    }
+    .btn-excel:hover { color: #fff; transform: translateY(-1px); }
+
+    .btn-filter-reset {
+        background: #fff; color: #4b5563;
+        border: 1px solid #d1d5db; padding: 8px 20px; border-radius: 8px;
+        font-weight: 700; font-size: 0.8rem; text-decoration: none;
+        display: inline-flex; align-items: center; gap: 6px;
+    }
+    .btn-filter-reset:hover { background: #f9fafb; color: #111827; }
+
+    /* ============ INFO NOTE ============ */
+    .info-note {
+        background: #fffbeb; border: 1px solid #fde68a; border-radius: 10px;
+        padding: 10px 14px; font-size: 0.78rem; color: #92400e;
+        display: flex; align-items: flex-start; gap: 8px; margin-bottom: 12px;
+    }
+    .info-note i { color: #f59e0b; flex-shrink: 0; margin-top: 2px; }
+
+    /* ============ STATS ============ */
+    .stat-mini {
+        border: none; border-radius: 10px; box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
+        padding: 10px 12px; height: 100%; background: #fff;
+    }
+    .stat-mini .sm-icon {
+        width: 40px; height: 40px; border-radius: 10px;
+        display: flex; align-items: center; justify-content: center;
+        font-size: 1.25rem; flex-shrink: 0; line-height: 1;
+    }
+    .stat-mini .sm-label { font-size: 0.68rem; color: #6b7280; font-weight: 600; margin-bottom: 1px; }
+    .stat-mini .sm-value { font-size: 1.05rem; font-weight: 700; line-height: 1.15; }
+
+    /* ============ CHART ============ */
+    .chart-card { border: none; border-radius: 12px; box-shadow: 0 2px 10px rgba(0, 0, 0, 0.05); height: 100%; }
+    .chart-card .card-header { background: transparent; border-bottom: 1px solid #f1f5f9; padding: 12px 16px; }
+    .chart-card .card-header h6 { font-size: 0.85rem; }
+    .chart-card .card-body { padding: 12px 16px; }
+
+    /* ============ TABLE SECTION ============ */
+    .table-section {
+        border: none; border-radius: 12px; box-shadow: 0 2px 10px rgba(0, 0, 0, 0.05);
+        background: #ffffff; margin-bottom: 20px; overflow: hidden;
+        width: 100%; max-width: 100%; box-sizing: border-box; position: relative;
+    }
+    .table-section .sec-header {
+        background: linear-gradient(90deg, #047857, #059669); color: #fff;
+        padding: 12px 18px; display: flex; align-items: center;
+        justify-content: space-between; flex-wrap: wrap; gap: 8px;
+    }
+    .table-section .sec-header h6 {
+        font-size: 0.9rem; font-weight: 700; margin: 0;
+        display: flex; align-items: center; gap: 8px;
+    }
+    .table-section .sec-header .badge-count {
+        font-size: 0.7rem; font-weight: 700;
+        background: rgba(255, 255, 255, 0.22);
+        padding: 3px 10px; border-radius: 999px;
+    }
+
+    .table-scroll-wrap {
+        display: block; width: 100%; max-width: 100%;
+        box-sizing: border-box; max-height: 65vh;
+        overflow-x: auto !important; overflow-y: auto !important;
+        position: relative; -webkit-overflow-scrolling: touch;
+    }
+    .table-scroll-wrap::-webkit-scrollbar { width: 10px; height: 10px; }
+    .table-scroll-wrap::-webkit-scrollbar-track { background: #f1f5f9; }
+    .table-scroll-wrap::-webkit-scrollbar-thumb { background: #94a3b8; border-radius: 5px; }
+    .table-scroll-wrap::-webkit-scrollbar-thumb:hover { background: #64748b; }
+    .table-scroll-wrap::-webkit-scrollbar-corner { background: #f1f5f9; }
+
+    .report-table {
+        width: auto; min-width: 100%; border-collapse: collapse;
+        font-size: 0.76rem; margin: 0; white-space: nowrap;
+    }
+    .report-table thead tr:first-child th {
+        background: #ecfdf5; color: #065f46; font-weight: 700;
+        font-size: 0.68rem; padding: 8px 6px; text-align: center;
+        border: 1px solid #a7f3d0; border-bottom: none;
+        position: sticky; top: 0; z-index: 5; white-space: nowrap;
+    }
+    .report-table thead tr:nth-child(2) th {
+        background: #f0fdf4; color: #047857; font-weight: 700;
+        font-size: 0.66rem; padding: 6px 5px; text-align: center;
+        border: 1px solid #a7f3d0; border-top: none;
+        position: sticky; top: 32px; z-index: 5; white-space: nowrap;
+    }
+    .report-table tbody td {
+        padding: 6px 6px; text-align: center;
+        border: 1px solid #e5e7eb; color: #374151;
+        font-weight: 600; background: #fff; white-space: nowrap;
+    }
+    .report-table tbody td.animal-name {
+        text-align: left; font-weight: 700; color: #065f46;
+        background: #f9fafb; padding-left: 12px;
+        position: sticky; left: 0; z-index: 2;
+        box-shadow: 2px 0 4px rgba(0, 0, 0, 0.04);
+    }
+    .report-table tbody td.total-col { background: #f0fdf4; color: #047857; font-weight: 800; }
+    .report-table tbody tr:hover td:not(.animal-name):not(.total-col) { background: #f0fdf4; }
+
+    .report-table tfoot td {
+        padding: 7px 6px; text-align: center;
+        border: 1px solid #e5e7eb; background: #dcebe0;
+        font-weight: 800; color: #065f46;
+        position: sticky; bottom: 0; z-index: 4; white-space: nowrap;
+    }
+    .report-table tfoot td.animal-name {
+        text-align: left; padding-left: 12px;
+        position: sticky; left: 0; bottom: 0; z-index: 5;
+        background: #dcebe0; box-shadow: 2px 0 4px rgba(0, 0, 0, 0.04);
+    }
+
+    /* ============ LOADING ============ */
+    .loading-overlay {
+        position: fixed; inset: 0; background: rgba(255, 255, 255, 0.6);
+        backdrop-filter: blur(2px); z-index: 9999; display: none;
+        align-items: center; justify-content: center;
+    }
+    .loading-overlay.show { display: flex; }
+    .loading-spinner {
+        width: 48px; height: 48px; border: 4px solid rgba(4, 120, 87, 0.15);
+        border-top-color: #047857; border-radius: 50%;
+        animation: spin 0.8s linear infinite;
+    }
+    @keyframes spin { to { transform: rotate(360deg); } }
+
+    /* ============ MODAL ============ */
+    .sheet-option {
+        display: flex; align-items: center; gap: 12px;
+        padding: 12px 14px; background: #fff;
+        border: 2px solid #e5e7eb; border-radius: 10px;
+        text-align: left; cursor: pointer; transition: all 0.15s ease; width: 100%;
+    }
+    .sheet-option:hover { border-color: #10b981; background: #f0fdf4; }
+    .sheet-option-icon {
+        width: 42px; height: 42px; border-radius: 10px;
+        display: flex; align-items: center; justify-content: center;
+        font-size: 1.25rem; flex-shrink: 0;
+    }
+    .sheet-option-title { font-size: 0.85rem; font-weight: 700; color: #111827; margin-bottom: 2px; }
+    .sheet-option-desc { font-size: 0.7rem; color: #6b7280; line-height: 1.3; }
+
+    /* ============ DEBUG PANEL ============ */
+    #debugPanel {
+        display: none; background: #1e293b; color: #e2e8f0;
+        border-radius: 8px; padding: 10px 14px;
+        font-family: 'Courier New', monospace; font-size: 0.7rem;
+        margin-bottom: 12px; max-height: 200px; overflow-y: auto;
+    }
+    #debugPanel.show { display: block; }
+    #debugPanel b { color: #34d399; }
+    #debugPanel .err { color: #f87171; }
+    #debugPanel .ok { color: #4ade80; }
+    #debugPanel .warn { color: #fbbf24; }
+
+    /* ============ MOBILE ============ */
+    @media (max-width: 575.98px) {
+        .filter-card .form-select, .filter-card .form-control { font-size: 0.75rem; }
+        .report-table { font-size: 0.68rem; }
+        .report-table thead tr:first-child th { font-size: 0.6rem; padding: 6px 4px; }
+        .report-table thead tr:nth-child(2) th { font-size: 0.58rem; padding: 5px 4px; top: 30px; }
+        .report-table tbody td { padding: 5px 4px; }
+    }
+</style>
+{% endblock %} {% block page_content %}
+
+<div class="loading-overlay" id="loadingOverlay">
+    <div class="loading-spinner"></div>
+</div>
+
+{# ⭐ Template variable fallback #}
+{% set init_state    = (selected_state    if selected_state    is defined and selected_state    else (filters.state    if filters is defined and filters and filters.state    is defined else '')) %}
+{% set init_district = (selected_district if selected_district is defined and selected_district else (filters.district if filters is defined and filters and filters.district is defined else '')) %}
+{% set init_township = (selected_township if selected_township is defined and selected_township else (filters.township if filters is defined and filters and filters.township is defined else '')) %}
+{% set init_qv       = (selected_qv       if selected_qv       is defined and selected_qv       else (filters.qv       if filters is defined and filters and filters.qv       is defined else '')) %}
+{% set init_start    = (filters.start_date if filters is defined and filters and filters.start_date is defined else '') %}
+{% set init_end      = (filters.end_date   if filters is defined and filters and filters.end_date   is defined else '') %}
+
+<!-- Data container -->
+<div id="report2Data"
+     data-role="{{ role }}"
+     data-user-state-id="{{ user_state_id }}"
+     data-user-state-name="{{ user_state_name|default('') }}"
+     data-user-district-id="{{ user_district_id }}"
+     data-user-township-id="{{ user_township_id }}"
+     data-filter-state="{{ init_state }}"
+     data-filter-district="{{ init_district }}"
+     data-filter-township="{{ init_township }}"
+     data-filter-qv="{{ init_qv }}"
+     data-filter-start-date="{{ init_start }}"
+     data-filter-end-date="{{ init_end }}"
+     data-user-district-name="{{ user_district_name|default('') }}"
+     data-user-township-name="{{ user_township_name|default('') }}"
+     data-animal-type="{{ animal_type }}"
+     data-animal-type-name="{{ animal_type_name }}"
+     data-row-level="{{ row_level }}"
+     data-grand-total="{{ grand_total }}"
+     data-column-groups='{{ column_groups|tojson }}'
+     data-report-rows='{{ report_rows|tojson }}'
+     hidden></div>
+
+<!-- Page head -->
+<div class="page-head mb-3 d-flex justify-content-between align-items-start flex-wrap gap-2">
+    <div>
+        <h5 class="fw-bold text-success mb-1">တိရစ္ဆာန်စာရင်း စုစည်းမှုအစီရင်ခံစာ</h5>
+        <p class="text-success fw-bold mb-1">
+            {% if region_name %} {{ region_name }}
+            {% elif user_state_name %} {{ user_state_name }}
+            {% else %} တည်နေရာအမည် မသတ်မှတ်ရသေးပါ {% endif %}
+        </p>
+        <p class="text-muted mb-0">
+            တိုင်းဒေသကြီး / ပြည်နယ် / ခရိုင် / မြို့နယ် / ကျေးရွာအုပ်စုအလိုက် တိရစ္ဆာန်ကောင်ရေ စုစည်းစာရင်း
+        </p>
+    </div>
+    <button type="button" id="btnExportExcel" class="btn-excel">
+        <i class="bi bi-file-earmark-excel-fill"></i> Excel ထုတ်ယူရန်
+    </button>
+</div>
+
+<!-- ⭐⭐⭐ FILTER ⭐⭐⭐ -->
+<form method="GET" action="/report/2" id="filterForm">
+    <div class="filter-card p-3 mb-3">
+        <div class="d-flex align-items-center justify-content-between gap-2 mb-2">
+            <div class="d-flex align-items-center gap-2">
+                <i class="bi bi-funnel-fill text-success"></i>
+                <span class="fw-bold" style="font-size:0.85rem; color:#065f46;">တည်နေရာနှင့် တိရစ္စာန်အလိုက် စစ်ထုတ်ရန်</span>
+            </div>
+        </div>
+
+        <div class="filter-row">
+            <!-- ၁။ တိရစ္စာန်အမျိုးအစား -->
+            <div>
+                <label class="filter-label"><i class="bi bi-tags-fill me-1"></i>တိရစ္စာန်အမျိုးအစား</label>
+                <select id="animalType" name="animal_type" class="form-select form-select-sm">
+                    {% for item in animal_types %}
+                    <option value="{{ item.id }}" {% if item.id == animal_type %}selected{% endif %}>{{ item.name }}</option>
+                    {% endfor %}
+                </select>
+            </div>
+
+            <!-- ၂။ တိရစ္ဆာန်အမည် -->
+            <div>
+                <label class="filter-label"><i class="bi bi-list-ul me-1"></i>တိရစ္ဆာန်အမည်</label>
+                <select id="filterAnimal" name="animal" class="form-select form-select-sm">
+                    <option value="">— အားလုံး —</option>
+                    {% for item in animal_rows %}
+                    <option value="{{ item.animalID }}" {% if item.animalID|string == selected_animal|string %}selected{% endif %}>{{ item.animalName }}</option>
+                    {% endfor %}
+                </select>
+            </div>
+
+            {% if animal_type != "atID04" %}
+            <div>
+                <label class="filter-label"><i class="bi bi-diagram-2-fill me-1"></i>မျိုးစိတ် / မျိုးရင်း</label>
+                <select id="filterSpecies" name="species" class="form-select form-select-sm" {% if not filter_species %}disabled{% endif %}>
+                    <option value="">— အားလုံး —</option>
+                    {% for item in filter_species %}
+                    <option value="{{ item.id }}" {% if item.id == selected_species %}selected{% endif %}>{{ item.name }}</option>
+                    {% endfor %}
+                </select>
+            </div>
+            <div>
+                <label class="filter-label"><i class="bi bi-calendar-range me-1"></i>အသက်အပိုင်းအခြား</label>
+                <select id="filterAge" name="age" class="form-select form-select-sm" {% if not filter_ages %}disabled{% endif %}>
+                    <option value="">— အားလုံး —</option>
+                    {% for item in filter_ages %}
+                    <option value="{{ item.id }}" {% if item.id == selected_age %}selected{% endif %}>{{ item.name }}</option>
+                    {% endfor %}
+                </select>
+            </div>
+            {% endif %}
+
+            <!-- ၄။ ကျား/မ -->
+            <div>
+                <label class="filter-label"><i class="bi bi-gender-ambiguous me-1"></i>အထီး/အမ</label>
+                <select id="filterGender" name="gender" class="form-select form-select-sm">
+                    <option value="">— အားလုံး —</option>
+                    {% for item in filter_genders %}
+                    <option value="{{ item.id }}" {% if item.id == selected_gender %}selected{% endif %}>{{ item.name }}</option>
+                    {% endfor %}
+                </select>
+            </div>
+
+            <!-- ⭐ ၅။ စတင်သည့်ရက် -->
+            <div>
+                <label class="filter-label"><i class="bi bi-calendar-event me-1"></i>စတင်သည့်ရက်</label>
+                <input type="date" id="filterStartDate" name="start_date"
+                       class="form-control form-control-sm"
+                       value="{{ init_start }}">
+            </div>
+
+            <!-- ⭐ ၆။ ပြီးဆုံးသည့်ရက် -->
+            <div>
+                <label class="filter-label"><i class="bi bi-calendar-check me-1"></i>ပြီးဆုံးသည့်ရက်</label>
+                <input type="date" id="filterEndDate" name="end_date"
+                       class="form-control form-control-sm"
+                       value="{{ init_end }}">
+            </div>
+        </div>
+
+        <div class="filter-actions">
+            <span class="text-muted small me-auto" style="font-size:0.7rem;">
+                <i class="bi bi-info-circle"></i>
+                ရက်တစ်ရက်ပဲ စစ်လိုပါက စတင်ရက် သို့မဟုတ် ပြီးဆုံးရက် တစ်ခုတည်းကို ဖြည့်ပါ။
+            </span>
+            <a href="/report/2" class="btn-filter-reset">
+                <i class="bi bi-arrow-clockwise"></i> ပြန်စမည်
+            </a>
+            <button type="submit" class="btn-filter-submit" id="btnFilterSubmit">
+                <i class="bi bi-search"></i> စစ်ထုတ်မည်
+            </button>
+        </div>
+    </div>
+</form>
+
+<!-- Stat cards -->
+<div class="row g-2 g-md-3 mb-3">
+    <div class="col-6 col-lg-3">
+        <div class="stat-mini d-flex align-items-center gap-2">
+            <div class="sm-icon" style="background:#d1fae5;">📊</div>
+            <div>
+                <div class="sm-label">ရွေးချယ်ထားသော အမျိုးအစား</div>
+                <div class="sm-value" style="color:#047857; font-size:0.9rem;">{{ animal_type_name }}</div>
+            </div>
+        </div>
+    </div>
+    <div class="col-6 col-lg-3">
+        <div class="stat-mini d-flex align-items-center gap-2">
+            <div class="sm-icon" style="background:#dbeafe;">📍</div>
+            <div>
+                <div class="sm-label">Location အရေအတွက်</div>
+                <div class="sm-value" style="color:#1d4ed8;">{{ report_rows|length }}</div>
+            </div>
+        </div>
+    </div>
+    <div class="col-6 col-lg-3">
+        <div class="stat-mini d-flex align-items-center gap-2">
+            <div class="sm-icon" style="background:#fef3c7;">🐾</div>
+            <div>
+                <div class="sm-label">Animal မျိုးအရေအတွက်</div>
+                <div class="sm-value" style="color:#b45309;">{{ column_groups|length }}</div>
+            </div>
+        </div>
+    </div>
+    <div class="col-6 col-lg-3">
+        <div class="stat-mini d-flex align-items-center gap-2">
+            <div class="sm-icon" style="background:#fce7f3;">💗</div>
+            <div>
+                <div class="sm-label">စုစုပေါင်း ကောင်ရေ</div>
+                <div class="sm-value" style="color:#be185d;">{{ "{:,}".format(grand_total) }}</div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Charts -->
+{% if column_groups %}
+<div class="row g-2 g-md-3 mb-3">
+    <div class="col-lg-8">
+        <div class="chart-card card">
+            <div class="card-header">
+                <h6 class="fw-bold mb-0"><i class="bi bi-bar-chart-line text-success me-2"></i>တိရစ္စာန်မျိုးအလိုက် ကောင်ရေ</h6>
+            </div>
+            <div class="card-body"><div style="position:relative;height:260px;"><canvas id="barChart"></canvas></div></div>
+        </div>
+    </div>
+    <div class="col-lg-4">
+        <div class="chart-card card">
+            <div class="card-header">
+                <h6 class="fw-bold mb-0"><i class="bi bi-pie-chart text-success me-2"></i>အချိုးအစား</h6>
+            </div>
+            <div class="card-body"><div style="position:relative;height:260px;"><canvas id="doughnutChart"></canvas></div></div>
+        </div>
+    </div>
+</div>
+{% endif %}
+
+<!-- ⭐⭐⭐ Table ⭐⭐⭐ -->
+<div class="table-section">
+    <div class="sec-header">
+        <h6><i class="bi bi-table"></i> {{ animal_type_name }} — Location အလိုက် အသေးစိတ်စာရင်း</h6>
+        <span class="badge-count">
+            {% if row_level == "state" %}တိုင်းဒေသကြီး အဆင့်
+            {% elif row_level == "district" %}ခရိုင် အဆင့်
+            {% elif row_level == "township" %}မြို့နယ် အဆင့်
+            {% else %}ကျေးရွာအုပ်စုအဆင့်{% endif %}
+            · {{ report_rows|length }} ခု
+        </span>
+    </div>
+
+    {% if report_rows and column_groups %}
+    <div class="table-scroll-wrap">
+        <table class="report-table">
+            <thead>
+                <tr>
+                    <th rowspan="2" style="min-width:180px;">
+                        {% if row_level == "state" %}တိုင်းဒေသကြီး/ပြည်နယ်
+                        {% elif row_level == "district" %}ခရိုင်
+                        {% elif row_level == "township" %}မြို့နယ်
+                        {% else %}ကျေးရွာအုပ်စုအစု{% endif %}
+                    </th>
+                    {% for group in column_groups %}
+                    <th colspan="{{ group.genders|length + 1 }}">
+                        {{ group.animal_name }}
+                        {% if group.species_name %}<br><small>{{ group.species_name }}</small>{% endif %}
+                        {% if group.age_name %}<br><small>{{ group.age_name }}</small>{% endif %}
+                    </th>
+                    {% endfor %}
+                    <th rowspan="2" style="min-width:80px;">စုစုပေါင်း</th>
+                </tr>
+                <tr>
+                    {% for group in column_groups %}
+                        {% for gender in group.genders %}<th>{{ gender.name }}</th>{% endfor %}
+                        <th class="total-col">အုပ်စု</th>
+                    {% endfor %}
+                </tr>
+            </thead>
+            <tbody>
+                {% for row in report_rows %}
+                <tr>
+                    <td class="animal-name">{{ row.row_name or row.row_id }}</td>
+                    {% for cell in row.cells %}
+                        {% for gender_value in cell.gender_values %}
+                        <td>{{ "{:,}".format(gender_value.value) }}</td>
+                        {% endfor %}
+                        <td class="total-col">{{ "{:,}".format(cell.group_total) }}</td>
+                    {% endfor %}
+                    <td class="total-col">{{ "{:,}".format(row.row_total) }}</td>
+                </tr>
+                {% endfor %}
+            </tbody>
+            <tfoot>
+                <tr>
+                    <td class="animal-name">စုစုပေါင်း</td>
+                    {% for col_idx in range(column_groups|length) %}
+                        {% for g in range(column_groups[col_idx].genders|length) %}
+                        <td id="gcol-{{ col_idx }}-{{ g }}">0</td>
+                        {% endfor %}
+                        <td id="gtotal-{{ col_idx }}">0</td>
+                    {% endfor %}
+                    <td>{{ "{:,}".format(grand_total) }}</td>
+                </tr>
+            </tfoot>
+        </table>
+    </div>
+
+    {% elif not report_rows %}
+    <div style="text-align:center; padding:40px; color:#9ca3af;">
+        <i class="bi bi-inbox" style="font-size:2rem; display:block; margin-bottom:8px;"></i>
+        ရွေးချယ်ထားသော Location အတွက် Report Data မရှိသေးပါ။
+    </div>
+    {% else %}
+    <div style="text-align:center; padding:40px; color:#9ca3af;">
+        <i class="bi bi-slash-circle" style="font-size:2rem; display:block; margin-bottom:8px;"></i>
+        ရွေးချယ်ထားသော စစ်ထုတ်မှုများအတွက် ပြသရန် ဒေတာ မရှိပါ။
+    </div>
+    {% endif %}
+</div>
+
+<!-- CONFIRM EXPORT MODAL -->
+<div class="modal fade" id="confirmExcelModal" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content border-0 rounded-4 shadow-lg">
+            <div class="modal-body text-center p-4">
+                <div class="mx-auto mb-3 d-flex align-items-center justify-content-center rounded-circle" style="width:64px;height:64px;background:#d1fae5;">
+                    <i class="bi bi-file-earmark-excel-fill" style="font-size:1.8rem;color:#047857;"></i>
+                </div>
+                <h5 class="fw-bold mb-2">Excel ဖိုင် ထုတ်ယူမှာ သေချာပါသလား?</h5>
+                <p class="text-muted small mb-4">လက်ရှိ Filter လုပ်ထားသည့် ဒေတာများကို Excel ဖိုင်အဖြစ် ထုတ်ယူပါမည်။</p>
+                <div class="d-flex gap-2">
+                    <button type="button" class="btn-filter-reset flex-fill" data-bs-dismiss="modal">
+                        <i class="bi bi-x-lg"></i> မလုပ်တော့ပါ
+                    </button>
+                    <button type="button" class="btn-excel flex-fill" id="btnExcelContinue">
+                        <i class="bi bi-arrow-right-circle"></i> ဆက်လုပ်မည်
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- SHEET TYPE MODAL -->
+<div class="modal fade" id="sheetTypeModal" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content border-0 rounded-4 shadow-lg">
+            <div class="modal-body p-4">
+                <div class="text-center mb-3">
+                    <div class="mx-auto mb-3 d-flex align-items-center justify-content-center rounded-circle" style="width:64px;height:64px;background:#dbeafe;">
+                        <i class="bi bi-layers-fill" style="font-size:1.8rem;color:#2563eb;"></i>
+                    </div>
+                    <h5 class="fw-bold mb-2">Excel ထုတ်ယူမည်</h5>
+                </div>
+                <div class="d-flex flex-column gap-2 mb-3">
+                    <button type="button" class="sheet-option" data-split="0">
+                        <div class="sheet-option-icon" style="background:#d1fae5;color:#047857;"><i class="bi bi-grid-3x3-gap-fill"></i></div>
+                        <div class="sheet-option-text">
+                            <div class="sheet-option-title">Single Sheet</div>
+                            <div class="sheet-option-desc">Table တစ်ခုတည်းမှာ စုစည်းထုတ်</div>
+                        </div>
+                    </button>
+                </div>
+                <button type="button" class="btn-filter-reset w-100" data-bs-dismiss="modal">
+                    <i class="bi bi-x-lg"></i> မလုပ်တော့ပါ
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+
+{% endblock %} {% block extra_js %}
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/xlsx-js-style@1.2.0/dist/xlsx.bundle.js"></script>
+<script>
+    // ==================================================
+    // 0. DEBUG HELPER
+    // ==================================================
+    var debugPanel = document.getElementById('debugPanel');
+    function dbg(msg, cls) {
+        cls = cls || '';
+        if (debugPanel) {
+            var line = document.createElement('div');
+            line.className = cls;
+            line.textContent = '[' + new Date().toLocaleTimeString() + '] ' + msg;
+            debugPanel.appendChild(line);
+            debugPanel.scrollTop = debugPanel.scrollHeight;
+        }
+        console.log('[Report2] ' + msg);
+    }
+    window.addEventListener('error', function(e) {
+        dbg('❌ ERROR: ' + e.message + ' at ' + e.filename + ':' + e.lineno, 'err');
+    });
+    window.addEventListener('unhandledrejection', function(e) {
+        dbg('❌ PROMISE REJECTION: ' + (e.reason && e.reason.message ? e.reason.message : e.reason), 'err');
+    });
+    dbg('=== Report2 Init Start ===');
+
+    // ==================================================
+    // 1. DATA
+    // ==================================================
+    var dataEl = document.getElementById('report2Data');
+
+    var ROLE = dataEl.dataset.role || 'admin';
+    var USER_STATE_ID = dataEl.dataset.userStateId || '';
+    var USER_STATE_NAME = dataEl.dataset.userStateName || '';
+    var USER_DIST_ID = dataEl.dataset.userDistrictId || '';
+    var USER_TOWN_ID = dataEl.dataset.userTownshipId || '';
+
+    var INIT_STATE = dataEl.dataset.filterState || '';
+    var INIT_DISTRICT = dataEl.dataset.filterDistrict || '';
+    var INIT_TOWNSHIP = dataEl.dataset.filterTownship || '';
+    var INIT_QV = dataEl.dataset.filterQv || '';
+    // ⭐ Date
+    var INIT_START_DATE = dataEl.dataset.filterStartDate || '';
+    var INIT_END_DATE   = dataEl.dataset.filterEndDate   || '';
+
+    var ANIMAL_TYPE = dataEl.dataset.animalType || 'atID01';
+    var ANIMAL_TYPE_NAME = dataEl.dataset.animalTypeName || '';
+    var ROW_LEVEL = dataEl.dataset.rowLevel || 'state';
+    var GRAND_TOTAL = Number(dataEl.dataset.grandTotal || 0);
+
+    var COLUMN_GROUPS = [];
+    var REPORT_ROWS = [];
+    try {
+        COLUMN_GROUPS = JSON.parse(dataEl.dataset.columnGroups || '[]');
+        REPORT_ROWS = JSON.parse(dataEl.dataset.reportRows || '[]');
+    } catch (e) {
+        dbg('Data parse error: ' + e.message, 'err');
+    }
+
+    var loadingOverlay = document.getElementById('loadingOverlay');
+    function showLoading() { loadingOverlay.classList.add('show'); }
+    function hideLoading() { loadingOverlay.classList.remove('show'); }
+    function fmt(n) { return Number(n || 0).toLocaleString(); }
+
+    dbg('Role=' + ROLE + ', INIT_STATE=[' + INIT_STATE + ']', 'ok');
+    dbg('Date range: [' + INIT_START_DATE + '] → [' + INIT_END_DATE + ']', 'ok');
+    dbg('Row level=' + ROW_LEVEL + ', Rows=' + REPORT_ROWS.length + ', ColGroups=' + COLUMN_GROUPS.length, 'ok');
+
+    // ==================================================
+    // 2. Grand Total per column
+    // ==================================================
+    (function computeGrandTotals() {
+        if (!REPORT_ROWS.length || !COLUMN_GROUPS.length) return;
+        var colTotals = [], groupTotals = [];
+        for (var c = 0; c < COLUMN_GROUPS.length; c++) {
+            colTotals[c] = [];
+            for (var g = 0; g < COLUMN_GROUPS[c].genders.length; g++) colTotals[c][g] = 0;
+            groupTotals[c] = 0;
+        }
+        REPORT_ROWS.forEach(function(row) {
+            (row.cells || []).forEach(function(cell, ci) {
+                if (!colTotals[ci]) return;
+                (cell.gender_values || []).forEach(function(gv, gi) {
+                    if (colTotals[ci][gi] !== undefined) colTotals[ci][gi] += Number(gv.value || 0);
+                });
+                groupTotals[ci] += Number(cell.group_total || 0);
+            });
+        });
+        for (var c2 = 0; c2 < COLUMN_GROUPS.length; c2++) {
+            for (var g2 = 0; g2 < COLUMN_GROUPS[c2].genders.length; g2++) {
+                var el = document.getElementById('gcol-' + c2 + '-' + g2);
+                if (el) el.textContent = fmt(colTotals[c2][g2]);
+            }
+            var gtEl = document.getElementById('gtotal-' + c2);
+            if (gtEl) gtEl.textContent = fmt(groupTotals[c2]);
+        }
+    })();
+
+    // ==================================================
+    // 3. CHARTS
+    // ==================================================
+    function buildChartData() {
+        var animalTotals = {}, animalOrder = [];
+        REPORT_ROWS.forEach(function(row) {
+            (row.cells || []).forEach(function(cell, ci) {
+                var grp = COLUMN_GROUPS[ci];
+                if (!grp) return;
+                var key = grp.animal_id;
+                if (animalTotals[key] === undefined) {
+                    animalTotals[key] = 0;
+                    animalOrder.push({ id: key, name: grp.animal_name });
+                }
+                animalTotals[key] += Number(cell.group_total || 0);
+            });
+        });
+        var labels = [], values = [];
+        animalOrder.forEach(function(a) {
+            labels.push(a.name);
+            values.push(animalTotals[a.id] || 0);
+        });
+        return { labels: labels, values: values };
+    }
+
+    if (COLUMN_GROUPS.length && typeof Chart !== 'undefined') {
+        Chart.defaults.font.family = "'Noto Sans Myanmar', 'Pyidaungsu', sans-serif";
+        Chart.defaults.font.size = 11;
+        Chart.defaults.color = '#4b5563';
+
+        var chartData = buildChartData();
+        var LABELS = chartData.labels;
+        var VALUES = chartData.values;
+        var TOTAL = VALUES.reduce(function(a, b) { return a + b; }, 0);
+        var PALETTE = ['#10b981', '#3b82f6', '#f59e0b', '#ef4444', '#8b5cf6', '#ec4899', '#14b8a6', '#f97316'];
+        var barColors = LABELS.map(function(_, i) { return PALETTE[i % PALETTE.length]; });
+
+        var barEl = document.getElementById('barChart');
+        if (barEl) {
+            new Chart(barEl.getContext('2d'), {
+                type: 'bar',
+                data: {
+                    labels: LABELS,
+                    datasets: [{
+                        data: VALUES, backgroundColor: barColors, borderColor: barColors,
+                        borderWidth: 1.5, barPercentage: 0.35, categoryPercentage: 0.6, maxBarThickness: 28
+                    }]
+                },
+                options: {
+                    responsive: true, maintainAspectRatio: false,
+                    plugins: {
+                        legend: { display: false },
+                        tooltip: {
+                            callbacks: {
+                                label: function(ctx) {
+                                    var v = ctx.parsed.y;
+                                    var p = TOTAL > 0 ? ((v / TOTAL) * 100).toFixed(1) : 0;
+                                    return ' ကောင်ရေ: ' + v.toLocaleString() + ' (' + p + '%)';
+                                }
+                            }
+                        }
+                    },
+                    scales: {
+                        y: { beginAtZero: true, grid: { color: '#f1f5f9' }, ticks: { callback: function(v) { return v.toLocaleString(); } } },
+                        x: { grid: { display: false } }
+                    }
+                }
+            });
+        }
+        var dEl = document.getElementById('doughnutChart');
+        if (dEl) {
+            new Chart(dEl.getContext('2d'), {
+                type: 'doughnut',
+                data: {
+                    labels: LABELS,
+                    datasets: [{ data: VALUES, backgroundColor: barColors, borderColor: '#ffffff', borderWidth: 2.5, hoverOffset: 6 }]
+                },
+                options: {
+                    responsive: true, maintainAspectRatio: false, cutout: '62%',
+                    plugins: {
+                        legend: { position: 'bottom', labels: { padding: 8, boxWidth: 10, boxHeight: 10 } }
+                    }
+                }
+            });
+        }
+    }
+
+    // ==================================================
+    // 4. ANIMAL FILTERS + DATE FILTER
+    // ==================================================
+    var form = document.getElementById('filterForm');
+    var selAnimal = document.getElementById('animalType');
+    var selSpecificAnimal = document.getElementById('filterAnimal');
+    var selSpecies = document.getElementById('filterSpecies');
+    var selAge = document.getElementById('filterAge');
+    var selGender = document.getElementById('filterGender');
+
+    // ⭐ Date elements
+    var inputStartDate = document.getElementById('filterStartDate');
+    var inputEndDate   = document.getElementById('filterEndDate');
+
+    var ALL = '— အားလုံး —';
+
+    // ⭐ Restore date inputs from data attributes
+    if (inputStartDate) inputStartDate.value = INIT_START_DATE;
+    if (inputEndDate)   inputEndDate.value   = INIT_END_DATE;
+
+    // ⭐ Auto-swap if start > end
+    function normalizeDateRange() {
+        if (inputStartDate && inputEndDate && inputStartDate.value && inputEndDate.value
+            && inputStartDate.value > inputEndDate.value) {
+            var tmp = inputStartDate.value;
+            inputStartDate.value = inputEndDate.value;
+            inputEndDate.value = tmp;
+        }
+    }
+    [inputStartDate, inputEndDate].forEach(function(el) {
+        if (el) el.addEventListener('change', normalizeDateRange);
+    });
+
+    function fillFilterSelect(sel, rows, selectedValue) {
+        if (!sel) return;
+        sel.innerHTML = '';
+        var allOption = document.createElement('option');
+        allOption.value = '';
+        allOption.textContent = ALL;
+        sel.appendChild(allOption);
+        (rows || []).forEach(function(item) {
+            var opt = document.createElement('option');
+            opt.value = String(item.id);
+            opt.textContent = item.name;
+            sel.appendChild(opt);
+        });
+        sel.value = selectedValue || '';
+        sel.disabled = (rows || []).length === 0;
+    }
+
+    async function loadReport2Options(keepSelection) {
+        if (!selAnimal) return;
+        var previousSpecies = keepSelection && selSpecies ? selSpecies.value : '';
+        var previousAge = keepSelection && selAge ? selAge.value : '';
+        var previousGender = keepSelection && selGender ? selGender.value : '';
+        try {
+            var url = '/api/report2/options?animal_type=' + encodeURIComponent(selAnimal.value);
+            var res = await fetch(url, { credentials: 'same-origin' });
+            if (!res.ok) { console.error('Report2 options error:', res.status); return; }
+            var data = await res.json();
+            fillFilterSelect(selSpecies, data.species || [], previousSpecies);
+            fillFilterSelect(selAge, data.ages || [], previousAge);
+            fillFilterSelect(selGender, data.genders || [], previousGender);
+        } catch (error) {
+            console.error('Cannot load Report2 options:', error);
+        }
+    }
+
+    if (selAnimal) {
+        selAnimal.addEventListener('change', function() {
+            loadReport2Options(false);
+        });
+    }
+
+    if (form) {
+        form.addEventListener('submit', function() {
+            // Date inputs are already part of the form (name="start_date" / "end_date"),
+            // so they submit automatically. Just show loading.
+            showLoading();
+        });
+    }
+
+    dbg('Animal + date filters initialized.', 'ok');
+
+    // ==================================================
+    // 5. EXCEL EXPORT
+    // ==================================================
+    var confirmExcelModal = null;
+    var sheetTypeModal = null;
+
+    function getReportLocationTitle() {
+        var el = document.getElementById('report2Data');
+        var stateName = el.dataset.userStateName || '';
+        var districtName = el.dataset.userDistrictName || '';
+        var townshipName = el.dataset.userTownshipName || '';
+        var parts = [];
+        if (stateName) parts.push(stateName);
+        if (districtName) parts.push(districtName);
+        if (townshipName) parts.push(townshipName);
+        return parts.length ? parts.join(' — ') : 'တည်နေရာအမည် မသတ်မှတ်ရသေးပါ';
+    }
+
+    // ⭐ Date range label for title
+    function getDateRangeLabel() {
+        var s = (inputStartDate && inputStartDate.value) ? inputStartDate.value : '';
+        var e = (inputEndDate && inputEndDate.value) ? inputEndDate.value : '';
+        if (!s && !e) return '';
+        if (s && !e) return 'ရက်စွဲ: ' + s + ' (တစ်ရက်တည်း)';
+        if (!s && e) return 'ရက်စွဲ: ' + e + ' (တစ်ရက်တည်း)';
+        if (s === e) return 'ရက်စွဲ: ' + s + ' (တစ်ရက်တည်း)';
+        return 'ရက်စွဲ: ' + s + ' မှ ' + e + ' အထိ';
+    }
+
+    var TITLE_LINES = [
+        'စိုက်ပျိုးရေး၊ မွေးမြူရေးနှင့် ဆည်မြောင်းဝန်ကြီးဌာန',
+        'မွေးမြူရေးနှင့် ကုသရေးဦးစီးဌာန',
+        'တိရစ္ဆာန်ကောင်ရေစာရင်း ကောက်ယူခြင်း',
+        getReportLocationTitle()
+    ];
+
+    function getLocationLabel() {
+        if (ROW_LEVEL === 'state') return 'တိုင်းဒေသကြီး/ပြည်နယ်';
+        if (ROW_LEVEL === 'district') return 'ခရိုင်';
+        if (ROW_LEVEL === 'township') return 'မြို့နယ်';
+        return 'ကျေးရွာအုပ်စုအစု';
+    }
+
+    function getFilterTitle() {
+        var parts = [];
+        function addText(sel) {
+            if (!sel || !sel.value) return;
+            if (sel.selectedIndex < 0) return;
+            var txt = sel.options[sel.selectedIndex].text || '';
+            if (txt.indexOf('အားလုံး') !== -1) return;
+            if (txt === ALL) return;
+            parts.push(txt);
+        }
+        addText(selSpecificAnimal);
+        addText(selSpecies);
+        addText(selAge);
+        addText(selGender);
+        var prefix = ANIMAL_TYPE_NAME ? ANIMAL_TYPE_NAME + ' — ' : '';
+        var datePart = getDateRangeLabel();
+
+        var locPart = (parts.length === 0)
+            ? 'တိရစ္စာန်ကောင်ရေစာရင်း'
+            : (parts.join('၊ ') + ' အတွင်း တိရစ္စာန်ကောင်ရေစာရင်း');
+
+        return prefix + locPart + (datePart ? ' (' + datePart + ')' : '');
+    }
+
+    function buildFilename() {
+        var stamp = new Date();
+        function p(n) { return String(n).padStart(2, '0'); }
+        var ds = stamp.getFullYear() + p(stamp.getMonth() + 1) + p(stamp.getDate()) +
+            '_' + p(stamp.getHours()) + p(stamp.getMinutes());
+
+        var parts = [];
+        function addText(sel) {
+            if (!sel || !sel.value || sel.selectedIndex < 0) return;
+            var txt = sel.options[sel.selectedIndex].text || '';
+            if (txt.indexOf('အားလုံး') !== -1 || txt === ALL) return;
+            parts.push(txt);
+        }
+        addText(selSpecificAnimal);
+        addText(selSpecies);
+        addText(selAge);
+        addText(selGender);
+
+        var prefix = parts.length ? parts.join('_') : 'အားလုံး';
+        var animalSlug = (ANIMAL_TYPE_NAME || 'report2').replace(/\s+/g, '_');
+
+        // ⭐ date tag
+        var s = (inputStartDate && inputStartDate.value) ? inputStartDate.value : '';
+        var e = (inputEndDate && inputEndDate.value) ? inputEndDate.value : '';
+        var dateTag = '';
+        if (s && e) dateTag = '_' + s + '_to_' + e;
+        else if (s) dateTag = '_' + s;
+        else if (e) dateTag = '_' + e;
+
+        var filename = 'တိရစ္ဆာန်စာရင်း_' + animalSlug + '_' + prefix + dateTag + '_' + ds + '.xlsx';
+        return filename.replace(/[\\/:*?"<>|]/g, '-');
+    }
+
+    function sanitizeSheetName(name) {
+        var s = String(name == null || name === '' ? 'Report2' : name)
+            .replace(/[:\\/?*\[\]]/g, '-').replace(/^'+|'+$/g, '').trim();
+        if (!s) s = 'Report2';
+        return s.substring(0, 31);
+    }
+
+    function allBorders() {
+        var b = { style: 'thin', color: { rgb: '000000' } };
+        return { top: b, bottom: b, left: b, right: b };
+    }
+    function titleStyle() {
+        return { font: { name: 'Pyidaungsu', sz: 14, bold: true, color: { rgb: '000000' } }, alignment: { horizontal: 'center', vertical: 'center' } };
+    }
+    function filterTitleStyle() {
+        return { font: { name: 'Pyidaungsu', sz: 12, bold: true, color: { rgb: '000000' } }, alignment: { horizontal: 'center', vertical: 'center', wrapText: true } };
+    }
+    function headerStyle() {
+        return { font: { name: 'Pyidaungsu', sz: 11, bold: true, color: { rgb: '000000' } }, alignment: { horizontal: 'center', vertical: 'center', wrapText: true }, border: allBorders() };
+    }
+    function cellStyle() {
+        return { font: { name: 'Pyidaungsu', sz: 10, color: { rgb: '000000' } }, alignment: { horizontal: 'center', vertical: 'center' }, border: allBorders() };
+    }
+    function nameCellStyle() {
+        var s = cellStyle();
+        s.font.bold = true; s.font.sz = 11; s.alignment.horizontal = 'left';
+        return s;
+    }
+    function totalCellStyle() { var s = cellStyle(); s.font.bold = true; return s; }
+
+    function buildAoa() {
+        var aoa = [], merges = [];
+        var totalCols = 1 + COLUMN_GROUPS.reduce(function(sum, g) { return sum + (g.genders.length + 1); }, 0) + 1;
+        var lastCol = totalCols - 1;
+
+        for (var t = 0; t < TITLE_LINES.length; t++) {
+            aoa.push([TITLE_LINES[t]]);
+            merges.push({ s: { r: t, c: 0 }, e: { r: t, c: lastCol } });
+        }
+        aoa.push([getFilterTitle()]);
+        merges.push({ s: { r: aoa.length - 1, c: 0 }, e: { r: aoa.length - 1, c: lastCol } });
+
+        aoa.push([]);
+
+        var h1 = [getLocationLabel()];
+        COLUMN_GROUPS.forEach(function(g) {
+            var label = g.animal_name;
+            if (g.species_name) label += ' / ' + g.species_name;
+            if (g.age_name) label += ' / ' + g.age_name;
+            h1.push(label);
+            for (var k = 1; k < g.genders.length + 1; k++) h1.push('');
+        });
+        h1.push('စုစုပေါင်း');
+        aoa.push(h1);
+        var hr1 = aoa.length - 1;
+
+        var h2 = [''];
+        COLUMN_GROUPS.forEach(function(g) {
+            g.genders.forEach(function(gender) { h2.push(gender.name); });
+            h2.push('အုပ်စုစုစုပေါင်း');
+        });
+        h2.push('');
+        aoa.push(h2);
+        var hr2 = aoa.length - 1;
+
+        merges.push({ s: { r: hr1, c: 0 }, e: { r: hr2, c: 0 } });
+        var colCursor = 1;
+        COLUMN_GROUPS.forEach(function(g) {
+            var span = g.genders.length + 1;
+            merges.push({ s: { r: hr1, c: colCursor }, e: { r: hr1, c: colCursor + span - 1 } });
+            colCursor += span;
+        });
+        merges.push({ s: { r: hr1, c: lastCol }, e: { r: hr2, c: lastCol } });
+
+        var dataStart = aoa.length;
+        REPORT_ROWS.forEach(function(row) {
+            var line = [row.row_name || row.row_id || ''];
+            (row.cells || []).forEach(function(cell) {
+                (cell.gender_values || []).forEach(function(gv) { line.push(Number(gv.value) || 0); });
+                line.push(Number(cell.group_total) || 0);
+            });
+            line.push(Number(row.row_total) || 0);
+            aoa.push(line);
+        });
+        var dataEnd = aoa.length - 1;
+
+        var gtLine = ['စုစုပေါင်း'];
+        var colTotals = [], groupTotals = [];
+        for (var c = 0; c < COLUMN_GROUPS.length; c++) {
+            colTotals[c] = [];
+            for (var g = 0; g < COLUMN_GROUPS[c].genders.length; g++) colTotals[c][g] = 0;
+            groupTotals[c] = 0;
+        }
+        REPORT_ROWS.forEach(function(row) {
+            (row.cells || []).forEach(function(cell, ci) {
+                if (!colTotals[ci]) return;
+                (cell.gender_values || []).forEach(function(gv, gi) {
+                    if (colTotals[ci][gi] !== undefined) colTotals[ci][gi] += Number(gv.value || 0);
+                });
+                groupTotals[ci] += Number(cell.group_total || 0);
+            });
+        });
+        for (var c2 = 0; c2 < COLUMN_GROUPS.length; c2++) {
+            for (var g2 = 0; g2 < COLUMN_GROUPS[c2].genders.length; g2++) gtLine.push(colTotals[c2][g2]);
+            gtLine.push(groupTotals[c2]);
+        }
+        gtLine.push(GRAND_TOTAL);
+        aoa.push(gtLine);
+        var gtRow = aoa.length - 1;
+
+        return {
+            aoa: aoa, merges: merges, lastCol: lastCol,
+            titleRows: [0, 1, 2], filterRow: 3, blankRow: 4,
+            headerRows: [hr1, hr2], dataStart: dataStart, dataEnd: dataEnd, gtRow: gtRow
+        };
+    }
+
+    function applyStyles(ws, content) {
+        var range = XLSX.utils.decode_range(ws['!ref']);
+        for (var R = range.s.r; R <= range.e.r; R++) {
+            for (var C = range.s.c; C <= range.e.c; C++) {
+                var addr = XLSX.utils.encode_cell({ r: R, c: C });
+                if (!ws[addr]) continue;
+                ws[addr].s = cellStyle();
+            }
+        }
+        content.titleRows.forEach(function(tr) {
+            for (var Ct = range.s.c; Ct <= range.e.c; Ct++) {
+                var at = XLSX.utils.encode_cell({ r: tr, c: Ct });
+                if (ws[at]) ws[at].s = titleStyle();
+            }
+        });
+        for (var Cf = range.s.c; Cf <= range.e.c; Cf++) {
+            var af = XLSX.utils.encode_cell({ r: content.filterRow, c: Cf });
+            if (ws[af]) ws[af].s = filterTitleStyle();
+        }
+        content.headerRows.forEach(function(hr) {
+            for (var Ch = range.s.c; Ch <= range.e.c; Ch++) {
+                var ah = XLSX.utils.encode_cell({ r: hr, c: Ch });
+                if (ws[ah]) ws[ah].s = headerStyle();
+            }
+        });
+        for (var Rd = content.dataStart; Rd <= content.dataEnd; Rd++) {
+            var nameAddr = XLSX.utils.encode_cell({ r: Rd, c: 0 });
+            if (ws[nameAddr]) ws[nameAddr].s = nameCellStyle();
+            var totalAddr = XLSX.utils.encode_cell({ r: Rd, c: content.lastCol });
+            if (ws[totalAddr]) ws[totalAddr].s = totalCellStyle();
+            var colCursor = 1;
+            COLUMN_GROUPS.forEach(function(g) {
+                var gtCol = colCursor + g.genders.length;
+                var gtAddr = XLSX.utils.encode_cell({ r: Rd, c: gtCol });
+                if (ws[gtAddr]) ws[gtAddr].s = totalCellStyle();
+                colCursor += (g.genders.length + 1);
+            });
+        }
+        for (var Cg = range.s.c; Cg <= range.e.c; Cg++) {
+            var ag = XLSX.utils.encode_cell({ r: content.gtRow, c: Cg });
+            if (ws[ag]) ws[ag].s = totalCellStyle();
+        }
+        var gtName = XLSX.utils.encode_cell({ r: content.gtRow, c: 0 });
+        if (ws[gtName]) ws[gtName].s = nameCellStyle();
+        ws['!merges'] = content.merges;
+    }
+
+    function setRowHeights(ws, content) {
+        var rows = [];
+        rows[0] = { hpt: 22 }; rows[1] = { hpt: 22 }; rows[2] = { hpt: 22 };
+        rows[content.filterRow] = { hpt: 36 };
+        rows[content.blankRow] = { hpt: 6 };
+        rows[4] = { hpt: 36 };
+        content.headerRows.forEach(function(hr) { rows[hr] = { hpt: 30 }; });
+        rows[content.gtRow] = { hpt: 22 };
+        var out = new Array(content.aoa.length);
+        for (var i = 0; i < content.aoa.length; i++) out[i] = rows[i] || { hpt: 18 };
+        ws['!rows'] = out;
+    }
+
+    function autoWidth(ws, aoa) {
+        var widths = [];
+        aoa.forEach(function(row) {
+            (row || []).forEach(function(cell, i) {
+                var len = String(cell == null ? '' : cell).length;
+                if (!widths[i] || widths[i] < len) widths[i] = len;
+            });
+        });
+        ws['!cols'] = widths.map(function(w) {
+            return { wch: Math.min(Math.max((w || 10) + 2, 10), 35) };
+        });
+    }
+
+    function doExportExcel() {
+        try {
+            if (typeof XLSX === 'undefined') throw new Error('XLSX library ကို မတွေ့ပါ။');
+            if (!Array.isArray(COLUMN_GROUPS) || !Array.isArray(REPORT_ROWS)) throw new Error('Report data မမှန်ပါ။');
+
+            var wb = XLSX.utils.book_new();
+            var content = buildAoa();
+            if (!content.aoa || content.aoa.length === 0) throw new Error('Excel ထုတ်ယူရန် data မရှိပါ။');
+
+            var ws = XLSX.utils.aoa_to_sheet(content.aoa);
+            applyStyles(ws, content);
+            setRowHeights(ws, content);
+            autoWidth(ws, content.aoa);
+            XLSX.utils.book_append_sheet(wb, ws, sanitizeSheetName(ANIMAL_TYPE_NAME));
+            XLSX.writeFile(wb, buildFilename(), { bookType: 'xlsx' });
+            return true;
+        } catch (e) {
+            console.error('Excel export error:', e);
+            dbg('Excel export error: ' + (e.message || e), 'err');
+            return false;
+        }
+    }
+
+    var btnExportExcel = document.getElementById('btnExportExcel');
+    if (btnExportExcel) {
+        btnExportExcel.addEventListener('click', function() {
+            if (!confirmExcelModal) confirmExcelModal = new bootstrap.Modal(document.getElementById('confirmExcelModal'));
+            confirmExcelModal.show();
+        });
+    }
+    var btnExcelContinue = document.getElementById('btnExcelContinue');
+    if (btnExcelContinue) {
+        btnExcelContinue.addEventListener('click', function() {
+            if (confirmExcelModal) confirmExcelModal.hide();
+            setTimeout(function() {
+                if (!sheetTypeModal) sheetTypeModal = new bootstrap.Modal(document.getElementById('sheetTypeModal'));
+                sheetTypeModal.show();
+            }, 250);
+        });
+    }
+    document.querySelectorAll('.sheet-option').forEach(function(btn) {
+        btn.addEventListener('click', function() {
+            if (sheetTypeModal) sheetTypeModal.hide();
+            showLoading();
+            setTimeout(function() {
+                var ok = doExportExcel();
+                hideLoading();
+                if (!ok) alert('Excel ထုတ်ယူမှု မအောင်မြင်ပါ။');
+            }, 300);
+        });
+    });
+
+    dbg('=== Report2 Init Complete ===', 'ok');
+</script>
+{% endblock %}

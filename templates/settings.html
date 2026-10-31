@@ -1,0 +1,913 @@
+{% extends 'reportBase.html' %}
+{% set active_page = 'settings' %}
+
+{% block title %}Settings - LBVD Admin{% endblock %}
+
+{% block topbar_title %}<i class="bi bi-gear me-2"></i>Settings{% endblock %}
+
+{% block extra_css %}
+<style>
+    .page-head h5 { font-size: 1.05rem; }
+    .page-head p  { font-size: 0.78rem; }
+
+    /* ============ PROFILE CARD ============ */
+    .profile-card {
+        border: none;
+        border-radius: 14px;
+        box-shadow: 0 2px 12px rgba(0,0,0,0.05);
+        background: linear-gradient(135deg, #ecfdf5 0%, #d1fae5 100%);
+        padding: 20px;
+        position: relative;
+        overflow: hidden;
+    }
+    .profile-card::after {
+        content: '';
+        position: absolute;
+        right: -40px; top: -40px;
+        width: 160px; height: 160px;
+        background: rgba(4, 120, 87, 0.06);
+        border-radius: 50%;
+    }
+    .profile-avatar {
+        width: 72px; height: 72px;
+        border-radius: 50%;
+        background: linear-gradient(135deg, #047857, #059669);
+        color: #ffffff;
+        display: flex; align-items: center; justify-content: center;
+        font-size: 1.9rem; font-weight: 700;
+        box-shadow: 0 4px 12px rgba(4,120,87,0.25);
+        flex-shrink: 0;
+        position: relative;
+        z-index: 1;
+    }
+    .profile-info {
+        position: relative;
+        z-index: 1;
+    }
+    .profile-info .pname {
+        font-size: 1.1rem; font-weight: 700;
+        color: #065f46; margin: 0;
+    }
+    .profile-info .prole {
+        font-size: 0.78rem; color: #059669;
+        font-weight: 600; margin: 2px 0 0;
+    }
+    .profile-info .pmeta {
+        font-size: 0.75rem; color: #6b7280; margin-top: 6px;
+        display: flex; align-items: center; gap: 12px; flex-wrap: wrap;
+    }
+    .profile-info .pmeta i { color: #047857; margin-right: 4px; }
+
+    /* ============ TAB CARD ============ */
+    .tab-card {
+        border: none; border-radius: 14px;
+        box-shadow: 0 2px 12px rgba(0,0,0,0.05);
+        background: #ffffff;
+        overflow: hidden;
+    }
+
+    /* ============ TABS ============ */
+    .settings-tabs {
+        padding: 6px;
+        border-bottom: 1px solid #f1f5f9;
+        display: flex;
+        gap: 4px;
+        flex-wrap: nowrap;
+        overflow-x: auto;
+        background: #fff;
+    }
+    .settings-tabs::-webkit-scrollbar { height: 3px; }
+    .settings-tabs::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 999px; }
+    .settings-tabs .st-btn {
+        border: none; background: transparent;
+        color: #4b5563;
+        font-size: 0.82rem; font-weight: 600;
+        padding: 9px 16px;
+        border-radius: 9px;
+        display: inline-flex; align-items: center; gap: 7px;
+        transition: all 0.18s ease;
+        white-space: nowrap;
+    }
+    .settings-tabs .st-btn:hover { background: #f0fdf4; color: #047857; }
+    .settings-tabs .st-btn.active {
+        background: linear-gradient(90deg, #047857, #059669);
+        color: #fff;
+        box-shadow: 0 3px 8px rgba(4,120,87,0.25);
+    }
+    .settings-tabs .st-btn i { font-size: 0.95rem; }
+
+    /* ============ FORM ============ */
+    .settings-body { padding: 22px; }
+    @media (max-width: 575.98px) { .settings-body { padding: 16px; } }
+
+    .form-section-title {
+        font-size: 0.82rem;
+        font-weight: 700;
+        color: #065f46;
+        background: rgba(16, 185, 129, 0.08);
+        border-left: 3px solid #059669;
+        padding: 7px 12px;
+        border-radius: 0 6px 6px 0;
+        margin-bottom: 14px;
+        display: flex;
+        align-items: center;
+        gap: 6px;
+    }
+
+    .form-label-custom {
+        font-size: 0.75rem;
+        font-weight: 700;
+        color: #374151;
+        margin-bottom: 4px;
+        display: block;
+    }
+    .form-label-custom .required { color: #ef4444; margin-left: 2px; }
+
+    .form-control-custom {
+        font-size: 0.85rem;
+        border: 1px solid #d1fae5;
+        border-radius: 9px;
+        padding: 9px 12px;
+        color: #111827;
+        font-weight: 500;
+        background-color: #f9fafb;
+        transition: all 0.15s ease;
+    }
+    .form-control-custom:focus {
+        border-color: #10b981;
+        box-shadow: 0 0 0 0.2rem rgba(16, 185, 129, 0.15);
+        background-color: #ffffff;
+        outline: none;
+    }
+    .form-control-custom::placeholder {
+        color: #9ca3af;
+        font-weight: 400;
+    }
+    .form-control-custom.is-invalid {
+        border-color: #ef4444;
+        background-color: #fef2f2;
+    }
+    .form-control-custom.is-valid {
+        border-color: #10b981;
+        background-color: #f0fdf4;
+    }
+
+    /* Input with icon */
+    .input-icon-wrap { position: relative; }
+    .input-icon-wrap > i.input-ico {
+        position: absolute;
+        left: 12px; top: 50%;
+        transform: translateY(-50%);
+        color: #9ca3af;
+        font-size: 0.9rem;
+        pointer-events: none;
+    }
+    .input-icon-wrap .form-control-custom {
+        padding-left: 36px;
+    }
+    .input-icon-wrap .toggle-pwd {
+        position: absolute;
+        right: 8px; top: 50%;
+        transform: translateY(-50%);
+        border: none;
+        background: transparent;
+        color: #9ca3af;
+        padding: 5px 8px;
+        cursor: pointer;
+        border-radius: 6px;
+        transition: all 0.15s ease;
+    }
+    .input-icon-wrap .toggle-pwd:hover {
+        background: #ecfdf5;
+        color: #047857;
+    }
+
+    /* Error text */
+    .field-error {
+        font-size: 0.7rem;
+        color: #dc2626;
+        font-weight: 600;
+        margin-top: 4px;
+        display: none;
+        align-items: center;
+        gap: 4px;
+    }
+    .field-error.show { display: flex; }
+
+    /* ============ BUTTONS ============ */
+    .btn-save {
+        background: linear-gradient(135deg, #047857, #059669);
+        color: #ffffff;
+        border: none;
+        font-size: 0.82rem;
+        font-weight: 700;
+        padding: 9px 20px;
+        border-radius: 9px;
+        display: inline-flex;
+        align-items: center;
+        gap: 7px;
+        box-shadow: 0 3px 10px rgba(4,120,87,0.25);
+        transition: all 0.18s ease;
+    }
+    .btn-save:hover {
+        color: #fff;
+        transform: translateY(-1px);
+        box-shadow: 0 5px 14px rgba(4,120,87,0.3);
+    }
+    .btn-save:disabled { opacity: 0.6; cursor: wait; }
+
+    .btn-cancel {
+        background: #ffffff;
+        color: #4b5563;
+        border: 1px solid #d1d5db;
+        font-size: 0.82rem;
+        font-weight: 700;
+        padding: 9px 20px;
+        border-radius: 9px;
+        display: inline-flex;
+        align-items: center;
+        gap: 7px;
+        transition: all 0.15s ease;
+    }
+    .btn-cancel:hover {
+        background: #f9fafb;
+        border-color: #9ca3af;
+        color: #111827;
+    }
+
+    /* ============ PASSWORD STRENGTH ============ */
+    .pwd-strength {
+        margin-top: 8px;
+    }
+    .pwd-strength .bar-wrap {
+        display: flex; gap: 4px; margin-bottom: 4px;
+    }
+    .pwd-strength .bar-seg {
+        flex: 1; height: 5px;
+        background: #e5e7eb;
+        border-radius: 999px;
+        transition: background 0.2s ease;
+    }
+    .pwd-strength .bar-seg.weak   { background: #ef4444; }
+    .pwd-strength .bar-seg.medium { background: #f59e0b; }
+    .pwd-strength .bar-seg.strong { background: #10b981; }
+    .pwd-strength .txt {
+        font-size: 0.7rem; font-weight: 600; color: #6b7280;
+    }
+    .pwd-strength .txt.weak   { color: #dc2626; }
+    .pwd-strength .txt.medium { color: #b45309; }
+    .pwd-strength .txt.strong { color: #047857; }
+
+    /* ============ INFO BOX ============ */
+    .info-box {
+        background: #fffbeb;
+        border: 1px solid #fde68a;
+        border-radius: 9px;
+        padding: 10px 12px;
+        font-size: 0.75rem;
+        color: #92400e;
+        display: flex;
+        gap: 8px;
+        align-items: flex-start;
+        margin-bottom: 14px;
+    }
+    .info-box i { color: #f59e0b; font-size: 1rem; flex-shrink: 0; margin-top: 1px; }
+
+    /* ============ SUCCESS MODAL ============ */
+    #settingsModal .modal-dialog { max-width: 420px; }
+    #settingsModal .modal-content {
+        border: none; border-radius: 14px;
+        overflow: hidden;
+        box-shadow: 0 20px 50px rgba(0,0,0,0.2);
+    }
+    #settingsModal .modal-body {
+        padding: 26px 20px 20px;
+        text-align: center;
+    }
+    #settingsModal .cf-icon {
+        width: 64px; height: 64px;
+        border-radius: 50%;
+        display: flex; align-items: center; justify-content: center;
+        margin: 0 auto 14px;
+    }
+    #settingsModal .cf-icon.success { background: #d1fae5; }
+    #settingsModal .cf-icon.success i { font-size: 1.9rem; color: #047857; }
+    #settingsModal .cf-icon.error { background: #fee2e2; }
+    #settingsModal .cf-icon.error i { font-size: 1.9rem; color: #dc2626; }
+    #settingsModal .cf-title {
+        font-size: 1rem; font-weight: 700;
+        color: #065f46; margin-bottom: 6px;
+    }
+    #settingsModal .cf-msg {
+        font-size: 0.82rem; color: #6b7280;
+        margin-bottom: 18px; line-height: 1.5;
+    }
+    #settingsModal .btn-cf-ok {
+        width: 100%;
+        font-size: 0.85rem;
+        font-weight: 700;
+        padding: 10px 14px;
+        border-radius: 9px;
+        border: none;
+        background: linear-gradient(135deg, #047857, #059669);
+        color: #fff;
+        box-shadow: 0 2px 6px rgba(4,120,87,0.25);
+    }
+    #settingsModal .btn-cf-ok:hover { color: #fff; transform: translateY(-1px); }
+
+    /* ============ MOBILE ============ */
+    @media (max-width: 575.98px) {
+        .profile-card { padding: 16px; }
+        .profile-avatar { width: 60px; height: 60px; font-size: 1.5rem; }
+        .profile-info .pname { font-size: 0.95rem; }
+        .settings-tabs .st-btn { font-size: 0.75rem; padding: 8px 12px; }
+        .settings-tabs .st-btn i { font-size: 0.85rem; }
+    }
+</style>
+{% endblock %}
+
+{% block page_content %}
+
+<!-- ============ PAGE HEADER ============ -->
+<div class="page-head mb-3">
+    <h5 class="fw-bold text-success mb-1">Settings</h5>
+    <p class="text-muted mb-0">ကိုယ်ရေးအချက်အလက်နှင့် လျှို့ဝှက်နံပါတ် ပြောင်းလဲခြင်း</p>
+</div>
+
+<!-- ============ PROFILE CARD ============ -->
+<div class="profile-card mb-3">
+    <div class="d-flex align-items-center gap-3">
+        <div class="profile-avatar" id="profileAvatar">
+            {{ (user.userName or user.loginName or 'U')[0] | upper }}
+        </div>
+        <div class="profile-info flex-grow-1">
+            <p class="pname" id="profileName">{{ user.userName or user.loginName or 'User' }}</p>
+            <div class="pmeta">
+                <span>
+                    <i class="bi bi-telephone-fill"></i>
+                    <span id="profilePhone">{{ user.phone or '—' }}</span>
+                </span>
+                <span>
+                    <i class="bi bi-person-badge-fill"></i>
+                    {{ user.loginName or '—' }}
+                </span>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- ============ TAB CARD ============ -->
+<div class="tab-card">
+    <div class="settings-tabs">
+        <button class="st-btn active" data-tab="profile">
+            <i class="bi bi-person-circle"></i>ကိုယ်ရေးအချက်အလက်
+        </button>
+        <button class="st-btn" data-tab="password">
+            <i class="bi bi-shield-lock"></i>လျှို့ဝှက်နံပါတ် ပြောင်းလဲရန်
+        </button>
+    </div>
+
+    <!-- ================================================== -->
+    <!-- TAB: PROFILE INFO -->
+    <!-- ================================================== -->
+    <div class="settings-body" id="tabProfile">
+        <div class="form-section-title">
+            <i class="bi bi-person-vcard"></i>ကိုယ်ရေးအချက်အလက် ပြင်ဆင်ရန်
+        </div>
+
+        <form id="profileForm" autocomplete="off" novalidate>
+            <div class="row g-3">
+                <div class="col-md-6">
+                    <label class="form-label-custom">
+                        အမည်<span class="required">*</span>
+                    </label>
+                    <div class="input-icon-wrap">
+                        <i class="bi bi-person-fill input-ico"></i>
+                        <input type="text" class="form-control-custom w-100"
+                               id="inputName" placeholder="အမည် ရိုက်ထည့်ပါ..."
+                               value="{{ user.userName or '' }}" required maxlength="100">
+                    </div>
+                    <div class="field-error" id="errName">
+                        <i class="bi bi-exclamation-circle-fill"></i>
+                        <span>အမည် ရိုက်ထည့်ပေးပါ။</span>
+                    </div>
+                </div>
+
+                <div class="col-md-6">
+                    <label class="form-label-custom">
+                        ဖုန်းနံပါတ်<span class="required">*</span>
+                    </label>
+                    <div class="input-icon-wrap">
+                        <i class="bi bi-telephone-fill input-ico"></i>
+                        <input type="tel" class="form-control-custom w-100"
+                               id="inputPhone" placeholder="09xxxxxxxxx"
+                               value="{{ user.phone or '' }}" required>
+                    </div>
+                    <div class="field-error" id="errPhone">
+                        <i class="bi bi-exclamation-circle-fill"></i>
+                        <span>ဖုန်းနံပါတ်ပုံစံ မှားနေသည်။ (ဥပမာ - 09421234567)</span>
+                    </div>
+                </div>
+            </div>
+
+            <div class="d-flex gap-2 flex-wrap mt-4">
+                <button type="submit" class="btn-save">
+                    <i class="bi bi-check2-circle"></i>သိမ်းဆည်းမည်
+                </button>
+                <button type="button" class="btn-cancel" id="btnProfileReset">
+                    <i class="bi bi-arrow-clockwise"></i>ပြန်လည်ဖျက်သိမ်း
+                </button>
+            </div>
+        </form>
+    </div>
+
+    <!-- ================================================== -->
+    <!-- TAB: CHANGE PASSWORD -->
+    <!-- ================================================== -->
+    <div class="settings-body d-none" id="tabPassword">
+
+        <div class="info-box">
+            <i class="bi bi-info-circle-fill"></i>
+            <div>
+                <b>သတိပြုရန်:</b> လျှို့ဝှက်နံပါတ် ပြောင်းလဲရန် <b>လက်ရှိ လျှို့ဝှက်နံပါတ်</b> အား အရင် ရိုက်ထည့်ပေးပါ။
+                လျှို့ဝှက်နံပါတ် အနည်းဆုံး <b>၈ လုံး</b> ရှိရမည်။
+            </div>
+        </div>
+
+        <div class="form-section-title">
+            <i class="bi bi-shield-lock"></i>လျှို့ဝှက်နံပါတ် ပြောင်းလဲရန်
+        </div>
+
+        <form id="passwordForm" autocomplete="off" novalidate>
+
+            <!-- STEP 1: CURRENT PASSWORD -->
+            <div class="row g-3">
+                <div class="col-12">
+                    <label class="form-label-custom">
+                        လက်ရှိ လျှို့ဝှက်နံပါတ်<span class="required">*</span>
+                    </label>
+                    <div class="input-icon-wrap">
+                        <i class="bi bi-lock-fill input-ico"></i>
+                        <input type="password" class="form-control-custom w-100"
+                               id="inputCurrentPwd" placeholder="လက်ရှိ လျှို့ဝှက်နံပါတ် ရိုက်ထည့်ပါ..."
+                               required autocomplete="current-password">
+                        <button type="button" class="toggle-pwd" data-target="inputCurrentPwd">
+                            <i class="bi bi-eye"></i>
+                        </button>
+                    </div>
+                    <div class="field-error" id="errCurrentPwd">
+                        <i class="bi bi-exclamation-circle-fill"></i>
+                        <span>လက်ရှိ လျှို့ဝှက်နံပါတ် ရိုက်ထည့်ပေးပါ။</span>
+                    </div>
+                </div>
+            </div>
+
+            <hr class="my-4" style="border-color:#e5e7eb; opacity: 0.6;">
+
+            <!-- STEP 2: NEW PASSWORD -->
+            <div class="row g-3">
+                <div class="col-md-6">
+                    <label class="form-label-custom">
+                        လျှို့ဝှက်နံပါတ် အသစ်<span class="required">*</span>
+                    </label>
+                    <div class="input-icon-wrap">
+                        <i class="bi bi-key-fill input-ico"></i>
+                        <input type="password" class="form-control-custom w-100"
+                               id="inputNewPwd" placeholder="အနည်းဆုံး ၈ လုံး"
+                               required autocomplete="new-password">
+                        <button type="button" class="toggle-pwd" data-target="inputNewPwd">
+                            <i class="bi bi-eye"></i>
+                        </button>
+                    </div>
+                    <div class="pwd-strength" id="pwdStrength">
+                        <div class="bar-wrap">
+                            <div class="bar-seg" data-seg="1"></div>
+                            <div class="bar-seg" data-seg="2"></div>
+                            <div class="bar-seg" data-seg="3"></div>
+                            <div class="bar-seg" data-seg="4"></div>
+                        </div>
+                        <div class="txt" id="pwdStrengthText">လျှို့ဝှက်နံပါတ် အားနည်းနေသည်</div>
+                    </div>
+                    <div class="field-error" id="errNewPwd">
+                        <i class="bi bi-exclamation-circle-fill"></i>
+                        <span id="errNewPwdMsg">လျှို့ဝှက်နံပါတ် အနည်းဆုံး ၈ လုံး ရှိရမည်။</span>
+                    </div>
+                </div>
+
+                <div class="col-md-6">
+                    <label class="form-label-custom">
+                        လျှို့ဝှက်နံပါတ် အသစ် အတည်ပြုပါ<span class="required">*</span>
+                    </label>
+                    <div class="input-icon-wrap">
+                        <i class="bi bi-key-fill input-ico"></i>
+                        <input type="password" class="form-control-custom w-100"
+                               id="inputConfirmPwd" placeholder="ပြန်ရိုက်ထည့်ပါ..."
+                               required autocomplete="new-password">
+                        <button type="button" class="toggle-pwd" data-target="inputConfirmPwd">
+                            <i class="bi bi-eye"></i>
+                        </button>
+                    </div>
+                    <div class="field-error" id="errConfirmPwd">
+                        <i class="bi bi-exclamation-circle-fill"></i>
+                        <span>လျှို့ဝှက်နံပါတ် နှစ်ခု မတူညီပါ။</span>
+                    </div>
+                </div>
+            </div>
+
+            <div class="d-flex gap-2 flex-wrap mt-4">
+                <button type="submit" class="btn-save" id="btnSavePwd">
+                    <i class="bi bi-shield-check"></i>လျှို့ဝှက်နံပါတ် ပြောင်းလဲမည်
+                </button>
+                <button type="button" class="btn-cancel" id="btnPwdReset">
+                    <i class="bi bi-x-circle"></i>ဖျက်သိမ်း
+                </button>
+            </div>
+        </form>
+    </div>
+</div>
+
+<!-- ============ RESULT MODAL ============ -->
+<div class="modal fade" id="settingsModal" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content">
+            <div class="modal-body">
+                <div class="cf-icon success" id="smIcon">
+                    <i class="bi bi-check2-circle" id="smIconI"></i>
+                </div>
+                <div class="cf-title" id="smTitle">အောင်မြင်ပါသည်</div>
+                <div class="cf-msg" id="smMsg">အချက်အလက်များ သိမ်းဆည်းပြီးပါပြီ။</div>
+                <button type="button" class="btn-cf-ok" data-bs-dismiss="modal">OK</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+{% endblock %}
+
+{% block extra_js %}
+<script>
+    // ==================================================
+    // HELPERS
+    // ==================================================
+    function showResult(success, title, msg) {
+        const icon = document.getElementById('smIcon');
+        const iconI = document.getElementById('smIconI');
+        icon.className = 'cf-icon ' + (success ? 'success' : 'error');
+        iconI.className = success ? 'bi bi-check2-circle' : 'bi bi-x-circle';
+        document.getElementById('smTitle').textContent = title;
+        document.getElementById('smMsg').textContent = msg;
+        const m = new bootstrap.Modal(document.getElementById('settingsModal'));
+        m.show();
+    }
+
+    function setFieldError(inputEl, errorEl, show, msg) {
+        if (show) {
+            inputEl.classList.add('is-invalid');
+            inputEl.classList.remove('is-valid');
+            errorEl.classList.add('show');
+            if (msg) {
+                const span = errorEl.querySelector('span');
+                if (span) span.textContent = msg;
+            }
+        } else {
+            inputEl.classList.remove('is-invalid');
+            inputEl.classList.add('is-valid');
+            errorEl.classList.remove('show');
+        }
+    }
+
+    function clearField(inputEl, errorEl) {
+        inputEl.classList.remove('is-invalid', 'is-valid');
+        errorEl.classList.remove('show');
+    }
+
+    // Phone regex — 09xxxxxxxxx (၉-၁၁ လုံး)
+    const PHONE_RE = /^09\d{7,9}$/;
+
+    // ==================================================
+    // TAB SWITCHING
+    // ==================================================
+    document.querySelectorAll('.settings-tabs .st-btn').forEach(btn => {
+        btn.addEventListener('click', function() {
+            document.querySelectorAll('.settings-tabs .st-btn').forEach(b => b.classList.remove('active'));
+            this.classList.add('active');
+
+            const tab = this.dataset.tab;
+            document.getElementById('tabProfile').classList.toggle('d-none', tab !== 'profile');
+            document.getElementById('tabPassword').classList.toggle('d-none', tab !== 'password');
+        });
+    });
+
+    // ==================================================
+    // PASSWORD SHOW/HIDE TOGGLE
+    // ==================================================
+    document.querySelectorAll('.toggle-pwd').forEach(btn => {
+        btn.addEventListener('click', function() {
+            const target = document.getElementById(this.dataset.target);
+            const icon = this.querySelector('i');
+            if (!target) return;
+            if (target.type === 'password') {
+                target.type = 'text';
+                icon.className = 'bi bi-eye-slash';
+            } else {
+                target.type = 'password';
+                icon.className = 'bi bi-eye';
+            }
+        });
+    });
+
+    // ==================================================
+    // PROFILE FORM
+    // ==================================================
+    const inputName  = document.getElementById('inputName');
+    const inputPhone = document.getElementById('inputPhone');
+    const errName    = document.getElementById('errName');
+    const errPhone   = document.getElementById('errPhone');
+
+    // လက်ရှိ တန်ဖိုးများကို သိမ်းထားခြင်း (Reset အတွက်)
+    let SAVED = {
+        name:  inputName.value.trim(),
+        phone: inputPhone.value.trim(),
+    };
+
+    // error clear on input
+    [inputName, inputPhone].forEach(el => {
+        el.addEventListener('input', function() {
+            clearField(this, this === inputName ? errName : errPhone);
+        });
+    });
+
+    // Phone: digits only
+    inputPhone.addEventListener('input', function() {
+        this.value = this.value.replace(/[^0-9+\-]/g, '');
+    });
+
+    // --- Fetch latest profile from server ---
+    async function loadProfile() {
+        try {
+            const res = await fetch('/api/settings/profile', { credentials: 'same-origin' });
+            if (res.status === 401) { window.location.href = '/'; return; }
+            const json = await res.json();
+            if (json.status === 'success') {
+                const d = json.data;
+                inputName.value  = d.name || '';
+                inputPhone.value = d.phone || '';
+                SAVED.name  = d.name || '';
+                SAVED.phone = d.phone || '';
+
+                document.getElementById('profileName').textContent = d.name || 'User';
+                document.getElementById('profilePhone').textContent = d.phone || '—';
+                document.getElementById('profileAvatar').textContent =
+                    (d.name || 'U').charAt(0).toUpperCase();
+            }
+        } catch (e) {
+            console.error('loadProfile:', e);
+        }
+    }
+
+    // --- Submit profile form ---
+    document.getElementById('profileForm').addEventListener('submit', async function(e) {
+        e.preventDefault();
+        let ok = true;
+
+        const name  = inputName.value.trim();
+        const phone = inputPhone.value.trim();
+
+        if (!name) {
+            setFieldError(inputName, errName, true, 'အမည် ရိုက်ထည့်ပေးပါ။');
+            ok = false;
+        } else if (name.length < 2) {
+            setFieldError(inputName, errName, true, 'အမည် အနည်းဆုံး ၂ လုံး ရှိရမည်။');
+            ok = false;
+        } else {
+            setFieldError(inputName, errName, false);
+        }
+
+        if (!phone) {
+            setFieldError(inputPhone, errPhone, true, 'ဖုန်းနံပါတ် ရိုက်ထည့်ပေးပါ။');
+            ok = false;
+        } else if (!PHONE_RE.test(phone)) {
+            setFieldError(inputPhone, errPhone, true, 'ဖုန်းနံပါတ်ပုံစံ မှားနေသည်။ (ဥပမာ - 09421234567)');
+            ok = false;
+        } else {
+            setFieldError(inputPhone, errPhone, false);
+        }
+
+        if (!ok) return;
+
+        const btn = this.querySelector('button[type="submit"]');
+        const orig = btn.innerHTML;
+        btn.disabled = true;
+        btn.innerHTML = '<i class="bi bi-hourglass-split"></i>သိမ်းဆည်းနေသည်...';
+
+        try {
+            const res = await fetch('/api/settings/profile', {
+                method: 'POST',
+                credentials: 'same-origin',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ name, phone }),
+            });
+
+            if (res.status === 401) { window.location.href = '/'; return; }
+
+            let json = {};
+            try { json = await res.json(); } catch (_) { /* ignore */ }
+
+            if (!res.ok) {
+                showResult(false, 'မအောင်မြင်ပါ', json.detail || 'သိမ်းဆည်းမှု မအောင်မြင်ပါ။');
+                return;
+            }
+
+            // Update UI
+            SAVED.name  = name;
+            SAVED.phone = phone;
+            document.getElementById('profileName').textContent = name;
+            document.getElementById('profilePhone').textContent = phone;
+            document.getElementById('profileAvatar').textContent = name.charAt(0).toUpperCase();
+
+            showResult(true, 'အောင်မြင်ပါသည်',
+                json.message || 'ကိုယ်ရေးအချက်အလက်များ သိမ်းဆည်းပြီးပါပြီ။');
+        } catch (err) {
+            console.error('profile submit:', err);
+            showResult(false, 'Error', 'ကွန်ရက် ချိတ်ဆက်မှု မအောင်မြင်ပါ။');
+        } finally {
+            btn.disabled = false;
+            btn.innerHTML = orig;
+        }
+    });
+
+    // --- Reset profile form ---
+    document.getElementById('btnProfileReset').addEventListener('click', function() {
+        inputName.value  = SAVED.name;
+        inputPhone.value = SAVED.phone;
+        clearField(inputName, errName);
+        clearField(inputPhone, errPhone);
+    });
+
+    // ==================================================
+    // PASSWORD FORM
+    // ==================================================
+    const inputCurrentPwd = document.getElementById('inputCurrentPwd');
+    const inputNewPwd     = document.getElementById('inputNewPwd');
+    const inputConfirmPwd = document.getElementById('inputConfirmPwd');
+    const errCurrentPwd   = document.getElementById('errCurrentPwd');
+    const errNewPwd       = document.getElementById('errNewPwd');
+    const errConfirmPwd   = document.getElementById('errConfirmPwd');
+    const pwdStrengthTxt  = document.getElementById('pwdStrengthText');
+    const pwdSegs = document.querySelectorAll('#pwdStrength .bar-seg');
+
+    inputCurrentPwd.addEventListener('input', () => clearField(inputCurrentPwd, errCurrentPwd));
+    inputNewPwd.addEventListener('input', function() {
+        clearField(inputNewPwd, errNewPwd);
+        updateStrength(this.value);
+    });
+    inputConfirmPwd.addEventListener('input', () => clearField(inputConfirmPwd, errConfirmPwd));
+
+    // ⭐ Password Strength Meter
+    function updateStrength(pwd) {
+        let score = 0;
+        if (pwd.length >= 8) score++;
+        if (/[A-Z]/.test(pwd)) score++;
+        if (/[a-z]/.test(pwd)) score++;
+        if (/[0-9]/.test(pwd)) score++;
+        if (/[^A-Za-z0-9]/.test(pwd)) score++;
+
+        let level = 0;
+        if (pwd.length === 0)       level = 0;
+        else if (score <= 2)        level = 1;
+        else if (score === 3)       level = 2;
+        else if (score === 4)       level = 3;
+        else                        level = 4;
+
+        pwdSegs.forEach((seg, i) => {
+            seg.className = 'bar-seg';
+            if (i < level) {
+                if (level === 1) seg.classList.add('weak');
+                else if (level === 2 || level === 3) seg.classList.add('medium');
+                else seg.classList.add('strong');
+            }
+        });
+
+        let txt = '', cls = '';
+        if (pwd.length === 0) {
+            txt = 'လျှို့ဝှက်နံပါတ် ရိုက်ထည့်ပါ'; cls = '';
+        } else if (level === 1) {
+            txt = 'အားနည်းနေသည် (အကြီးစာလုံး၊ နံပါတ် ထည့်ပါ)'; cls = 'weak';
+        } else if (level === 2 || level === 3) {
+            txt = 'အလယ်အလတ်'; cls = 'medium';
+        } else {
+            txt = 'ခိုင်မာသည်'; cls = 'strong';
+        }
+        pwdStrengthTxt.textContent = txt;
+        pwdStrengthTxt.className = 'txt ' + cls;
+    }
+
+    // --- Submit password form ---
+    document.getElementById('passwordForm').addEventListener('submit', async function(e) {
+        e.preventDefault();
+        let ok = true;
+
+        const cur  = inputCurrentPwd.value;
+        const npwd = inputNewPwd.value;
+        const cpwd = inputConfirmPwd.value;
+
+        if (!cur) {
+            setFieldError(inputCurrentPwd, errCurrentPwd, true, 'လက်ရှိ လျှို့ဝှက်နံပါတ် ရိုက်ထည့်ပေးပါ။');
+            ok = false;
+        } else {
+            setFieldError(inputCurrentPwd, errCurrentPwd, false);
+        }
+
+        if (!npwd) {
+            setFieldError(inputNewPwd, errNewPwd, true, 'လျှို့ဝှက်နံပါတ် အသစ် ရိုက်ထည့်ပေးပါ။');
+            ok = false;
+        } else if (npwd.length < 8) {
+            setFieldError(inputNewPwd, errNewPwd, true, 'လျှို့ဝှက်နံပါတ် အနည်းဆုံး ၈ လုံး ရှိရမည်။');
+            ok = false;
+        } else if (npwd === cur) {
+            setFieldError(inputNewPwd, errNewPwd, true, 'လျှို့ဝှက်နံပါတ် အသစ်က လက်ရှိနှင့် မတူရပါ။');
+            ok = false;
+        } else {
+            setFieldError(inputNewPwd, errNewPwd, false);
+        }
+
+        if (!cpwd) {
+            setFieldError(inputConfirmPwd, errConfirmPwd, true, 'လျှို့ဝှက်နံပါတ် အသစ်ကို ပြန်ရိုက်ပါ။');
+            ok = false;
+        } else if (npwd !== cpwd) {
+            setFieldError(inputConfirmPwd, errConfirmPwd, true, 'လျှို့ဝှက်နံပါတ် နှစ်ခု မတူညီပါ။');
+            ok = false;
+        } else {
+            setFieldError(inputConfirmPwd, errConfirmPwd, false);
+        }
+
+        if (!ok) return;
+
+        const btn = document.getElementById('btnSavePwd');
+        const orig = btn.innerHTML;
+        btn.disabled = true;
+        btn.innerHTML = '<i class="bi bi-hourglass-split"></i>ပြောင်းလဲနေသည်...';
+
+        try {
+            const res = await fetch('/api/settings/password', {
+                method: 'POST',
+                credentials: 'same-origin',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ current: cur, new: npwd, confirm: cpwd }),
+            });
+
+            if (res.status === 401) { window.location.href = '/'; return; }
+
+            let json = {};
+            try { json = await res.json(); } catch (_) { /* ignore */ }
+
+            if (!res.ok) {
+                const msg = json.detail || 'ပြောင်းလဲမှု မအောင်မြင်ပါ။';
+                // Server message ကို သက်ဆိုင်ရာ field မှာ ပြ
+                if (/လက်ရှိ/.test(msg)) {
+                    setFieldError(inputCurrentPwd, errCurrentPwd, true, msg);
+                } else if (/အသစ်/.test(msg)) {
+                    setFieldError(inputNewPwd, errNewPwd, true, msg);
+                } else if (/နှစ်ခု/.test(msg)) {
+                    setFieldError(inputConfirmPwd, errConfirmPwd, true, msg);
+                } else {
+                    showResult(false, 'မအောင်မြင်ပါ', msg);
+                }
+                return;
+            }
+
+            // Success — Form ကို clear
+            document.getElementById('passwordForm').reset();
+            [inputCurrentPwd, inputNewPwd, inputConfirmPwd].forEach(inp => {
+                inp.classList.remove('is-invalid', 'is-valid');
+            });
+            [errCurrentPwd, errNewPwd, errConfirmPwd].forEach(er => er.classList.remove('show'));
+            updateStrength('');
+
+            showResult(true, 'အောင်မြင်ပါသည်',
+                json.message || 'လျှို့ဝှက်နံပါတ် ပြောင်းလဲပြီးပါပြီ။');
+        } catch (err) {
+            console.error('password submit:', err);
+            showResult(false, 'Error', 'ကွန်ရက် ချိတ်ဆက်မှု မအောင်မြင်ပါ။');
+        } finally {
+            btn.disabled = false;
+            btn.innerHTML = orig;
+        }
+    });
+
+    // --- Reset password form ---
+    document.getElementById('btnPwdReset').addEventListener('click', function() {
+        document.getElementById('passwordForm').reset();
+        [inputCurrentPwd, inputNewPwd, inputConfirmPwd].forEach(inp => {
+            inp.classList.remove('is-invalid', 'is-valid');
+        });
+        [errCurrentPwd, errNewPwd, errConfirmPwd].forEach(er => er.classList.remove('show'));
+        updateStrength('');
+    });
+
+    // ==================================================
+    // INIT — Profile ကို server မှ ပြန် load
+    // ==================================================
+    document.addEventListener('DOMContentLoaded', loadProfile);
+</script>
+{% endblock %}

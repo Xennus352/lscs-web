@@ -1,0 +1,110 @@
+{% extends 'reportBase.html' %}
+{% block title %}အိမ်ထောင်စုစာရင်းအလိုက် - LBVD{% endblock %}
+{% block topbar_title %}<i class="bi bi-house-door me-2"></i>အိမ်ထောင်စုစာရင်းအလိုက်{% endblock %}
+
+{% block extra_css %}
+<style>
+    #householdTabContent table {
+        font-size: 0.875rem;
+    }
+    #householdTabContent th,
+    #householdTabContent td,
+    #householdTabContent td div {
+        font-size: inherit;
+    }
+</style>
+{% endblock %}
+
+{% macro household_identity(row) %}
+<div class="fw-bold text-primary">{{ row.formID }}</div>
+<div class="text-muted">အမှတ်: {{ row.householdNo or '-' }}</div>
+{% endmacro %}
+{% macro location(row) %}
+<div>{{ row.township_name or '-' }}</div>
+<div class="text-muted">{{ row.qv_name or '-' }}</div>
+{% endmacro %}
+
+{% block page_content %}
+{% if error %}
+<div class="alert alert-danger" role="alert">
+    <p>{{ error }}</p>
+    <a href="/admin/households" class="btn btn-outline-danger btn-sm">ပြန်လည်ကြိုးစားမည်</a>
+</div>
+{% else %}
+<ul class="nav nav-tabs mb-3" id="householdTabs" role="tablist" aria-label="အိမ်ထောင်စု ကောက်ယူမှုအခြေအနေ">
+    <li class="nav-item" role="presentation">
+        <button class="nav-link active" id="collectedTab" data-bs-toggle="tab" data-bs-target="#collectedPanel"
+                type="button" role="tab" aria-controls="collectedPanel" aria-selected="true">
+            ကောက်ယူထားသော အိမ်ထောင်စုစာရင်း <span class="badge bg-success ms-2">{{ collected|length }}</span>
+        </button>
+    </li>
+    <li class="nav-item" role="presentation">
+        <button class="nav-link" id="notCollectedTab" data-bs-toggle="tab" data-bs-target="#notCollectedPanel"
+                type="button" role="tab" aria-controls="notCollectedPanel" aria-selected="false" tabindex="-1">
+            မကောက်ယူထားသော အိမ်ထောင်စုစာရင်း <span class="badge bg-secondary ms-2">{{ not_collected|length }}</span>
+        </button>
+    </li>
+</ul>
+<div class="tab-content" id="householdTabContent">
+<section class="tab-pane fade show active card border-0 shadow-sm" id="collectedPanel"
+         role="tabpanel" aria-labelledby="collectedTab" tabindex="0">
+    <div class="table-responsive">
+        <table class="table table-bordered table-hover align-middle mb-0" id="collectedHouseholds">
+            <thead class="table-light">
+                <tr>
+                    <th scope="col">စဉ်</th>
+                    <th scope="col">FormID / အိမ်ထောင်စု</th>
+                    <th scope="col">အိမ်ထောင်ဦးစီး / ဖြေဆိုသူ</th>
+                    <th scope="col">တည်နေရာ (မြို့နယ်/ကျေးရွာအုပ်စု)</th>
+                    <th scope="col">တိရစ္ဆာန်အရေအတွက်</th>
+                    <th scope="col">မေးမြန်းသည့်နေ့</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for row in collected %}
+                <tr>
+                    <td>{{ loop.index }}</td>
+                    <td>{{ household_identity(row) }}</td>
+                    <td><div>{{ row.headName or '-' }}</div><div class="text-muted">{{ row.name or '-' }}</div></td>
+                    <td>{{ location(row) }}</td>
+                    <td class="text-end">{{ row.animal_total|int }}</td>
+                    <td class="text-nowrap">{{ row.interviewDate or '-' }}</td>
+                </tr>
+                {% else %}
+                <tr><td colspan="6" class="text-center text-muted py-4">ကောက်ယူထားသော အိမ်ထောင်စုစာရင်း မရှိသေးပါ။</td></tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</section>
+
+<section class="tab-pane fade card border-0 shadow-sm" id="notCollectedPanel"
+         role="tabpanel" aria-labelledby="notCollectedTab" tabindex="0">
+    <div class="table-responsive">
+        <table class="table table-bordered table-hover align-middle mb-0" id="notCollectedHouseholds">
+            <thead class="table-light">
+                <tr>
+                    <th scope="col">စဉ်</th>
+                    <th scope="col">FormID / အိမ်ထောင်စု</th>
+                    <th scope="col">တည်နေရာ (မြို့နယ်/ကျေးရွာအုပ်စု)</th>
+                    <th scope="col">မေးမြန်းသည့်နေ့</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for row in not_collected %}
+                <tr>
+                    <td>{{ loop.index }}</td>
+                    <td>{{ household_identity(row) }}</td>
+                    <td>{{ location(row) }}</td>
+                    <td class="text-nowrap">{{ row.interviewDate or '-' }}</td>
+                </tr>
+                {% else %}
+                <tr><td colspan="4" class="text-center text-muted py-4">မကောက်ယူထားသော အိမ်ထောင်စုစာရင်း မရှိသေးပါ။</td></tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</section>
+</div>
+{% endif %}
+{% endblock %}

@@ -1,0 +1,595 @@
+{% extends 'systemAdminBase.html' %}
+{% set active_page = 'sys_profile' %}
+
+{% block title %}ကိုယ်ရေးအချက်အလက် - System Admin{% endblock %}
+{% block topbar_title %}<i class="bi bi-person-gear me-2"></i>ကိုယ်ရေးအချက်အလက် ပြင်ဆင်ခြင်း{% endblock %}
+
+{% block extra_css %}
+<style>
+    :root {
+        --primary-emerald: #059669;
+        --primary-dark: #047857;
+        --emerald-light: #ecfdf5;
+        --emerald-border: #a7f3d0;
+        --gray-bg: #f8fafc;
+        --border-color: #e2e8f0;
+        --text-main: #1e293b;
+        --text-muted: #64748b;
+    }
+
+    .page-head {
+        background: #ffffff;
+        padding: 20px 24px;
+        border-radius: 14px;
+        box-shadow: 0 1px 3px rgba(0, 0, 0, 0.04);
+        border: 1px solid var(--border-color);
+        margin-bottom: 24px;
+    }
+
+    .profile-card {
+        border: 1px solid var(--border-color);
+        border-radius: 16px;
+        background: #ffffff;
+        box-shadow: 0 4px 20px rgba(0, 0, 0, 0.03);
+        overflow: hidden;
+        display: flex;
+        flex-direction: column;
+        transition: all 0.2s ease;
+    }
+    .profile-card:hover {
+        box-shadow: 0 8px 30px rgba(0, 0, 0, 0.06);
+    }
+
+    .profile-card .card-header {
+        background: linear-gradient(135deg, #f0fdf4, #dcfce7);
+        border-bottom: 1px solid var(--emerald-border);
+        padding: 18px 24px;
+        flex-shrink: 0;
+    }
+    .profile-card .card-header h5 {
+        font-size: 0.95rem;
+        font-weight: 700;
+        color: #065f46;
+        margin: 0;
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        letter-spacing: -0.01em;
+    }
+    
+    .profile-card .card-header.password-header {
+        background: linear-gradient(135deg, #fef2f2, #fee2e2);
+        border-bottom-color: #fecaca;
+    }
+    .profile-card .card-header.password-header h5 {
+        color: #991b1b;
+    }
+
+    .profile-card .card-body { 
+        padding: 28px; 
+        flex-grow: 1;
+        display: flex;
+        flex-direction: column;
+        background: #ffffff;
+    }
+    .profile-card .card-body form {
+        flex-grow: 1;
+        display: flex;
+        flex-direction: column;
+    }
+
+    .field-label {
+        font-size: 0.82rem;
+        font-weight: 700;
+        color: var(--text-main);
+        margin-bottom: 6px;
+        display: block;
+    }
+    .field-label .req { 
+        color: #ef4444; 
+        margin-left: 3px; 
+    }
+
+    .input-field {
+        width: 100%;
+        padding: 11px 16px;
+        border: 1.5px solid var(--border-color);
+        border-radius: 10px;
+        font-size: 0.88rem;
+        background: var(--gray-bg);
+        color: var(--text-main);
+        transition: all 0.2s ease;
+    }
+    .input-field:focus {
+        outline: none;
+        border-color: var(--primary-emerald);
+        background: #fff;
+        box-shadow: 0 0 0 4px rgba(5, 150, 105, 0.12);
+    }
+    .input-field:disabled {
+        background: #f1f5f9;
+        color: #94a3b8;
+        cursor: not-allowed;
+    }
+
+    .input-hint {
+        font-size: 0.75rem;
+        color: var(--text-muted);
+        margin-top: 6px;
+    }
+
+    /* Verify Box */
+    .verify-box {
+        background: #fffbeb;
+        border: 1.5px dashed #fcd34d;
+        border-radius: 12px;
+        padding: 18px;
+        margin-top: 4px;
+    }
+    .verify-box .verify-title {
+        font-size: 0.82rem;
+        font-weight: 700;
+        color: #92400e;
+        display: flex;
+        align-items: center;
+        gap: 8px;
+    }
+    .verify-box .verify-title i { 
+        font-size: 1.1rem; 
+    }
+    .verify-box .verify-hint {
+        font-size: 0.75rem;
+        color: #b45309;
+        margin-top: 4px;
+        line-height: 1.4;
+    }
+
+    .btn-save {
+        background: linear-gradient(135deg, var(--primary-dark), var(--primary-emerald));
+        color: #fff;
+        border: none;
+        padding: 11px 24px;
+        border-radius: 10px;
+        font-weight: 700;
+        font-size: 0.88rem;
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        gap: 8px;
+        box-shadow: 0 4px 12px rgba(4, 120, 87, 0.2);
+        transition: all 0.2s ease;
+    }
+    .btn-save:hover {
+        transform: translateY(-1px);
+        box-shadow: 0 6px 16px rgba(4, 120, 87, 0.3);
+        color: #fff;
+    }
+    .btn-save:active {
+        transform: translateY(0);
+    }
+    .btn-save:disabled {
+        opacity: 0.65;
+        cursor: not-allowed;
+        transform: none;
+    }
+
+    .btn-cancel {
+        background: #f1f5f9;
+        color: #475569;
+        border: 1.5px solid var(--border-color);
+        padding: 11px 20px;
+        border-radius: 10px;
+        font-weight: 700;
+        font-size: 0.88rem;
+        display: inline-flex;
+        align-items: center;
+        gap: 8px;
+        transition: all 0.2s ease;
+    }
+    .btn-cancel:hover {
+        background: #e2e8f0;
+        color: #0f172a;
+    }
+
+    .password-toggle {
+        position: absolute;
+        right: 14px;
+        top: 50%;
+        transform: translateY(-50%);
+        background: transparent;
+        border: none;
+        color: #94a3b8;
+        cursor: pointer;
+        padding: 4px;
+        transition: color 0.15s;
+    }
+    .password-toggle:hover {
+        color: var(--primary-dark);
+    }
+    .password-wrap {
+        position: relative;
+    }
+
+    .strength-bar {
+        height: 5px;
+        background: #e2e8f0;
+        border-radius: 999px;
+        margin-top: 8px;
+        overflow: hidden;
+    }
+    .strength-fill {
+        height: 100%;
+        width: 0%;
+        border-radius: 999px;
+        transition: width 0.3s ease, background 0.3s ease;
+    }
+
+    /* Modal Styling */
+    .modal-content {
+        border: none;
+        border-radius: 16px;
+        box-shadow: 0 10px 40px rgba(0, 0, 0, 0.1);
+    }
+    .modal-body {
+        padding: 32px 24px;
+    }
+</style>
+{% endblock %}
+
+{% block page_content %}
+<div class="page-head">
+    <h5 class="fw-bold text-success mb-1" style="font-size: 1.1rem;"><i class="bi bi-person-gear me-2"></i>ကိုယ်ရေးအချက်အလက် ပြင်ဆင်ခြင်း</h5>
+    <p class="text-muted small mb-0">သင့်အကောင့်၏ အမည်၊ အီးမေးလ်၊ ဖုန်းနံပါတ် နှင့် လျှို့ဝှက်နံပါတ်အား ပြင်ဆင်နိုင်ပါသည်။</p>
+</div>
+
+<div class="row g-4 align-items-stretch">
+    
+    <!-- Left: Update Info Form -->
+    <div class="col-lg-7">
+        <div class="profile-card h-100">
+            <div class="card-header">
+                <h5><i class="bi bi-person-lines-fill"></i> အချက်အလက် ပြင်ဆင်ခြင်း</h5>
+            </div>
+            <div class="card-body">
+                <form id="infoForm" class="d-flex flex-column h-100">
+                    <div class="d-flex flex-column gap-3 flex-grow-1">
+                        
+                        <!-- 1st Text Box: အသုံးပြုသူအမည် -->
+                        <div>
+                            <label class="field-label">အသုံးပြုသူအမည် <span class="req">*</span></label>
+                            <input type="text" id="profileUsername" class="input-field" required>
+                        </div>
+
+                        <!-- 2nd Text Box: အီးမေးလ် / Login Name အသစ် -->
+                        <div>
+                            <label class="field-label">အီးမေးလ် / Login Name အသစ်</label>
+                            <input type="text" id="profileEmail" class="input-field" placeholder="အီးမေးလ် (သို့) Username အသစ် ရိုက်ထည့်ပါ">
+                            <div class="input-hint">မပြောင်းလိုပါက အလွတ်ထားပါ။</div>
+                        </div>
+
+                        <!-- 3rd Text Box: ဖုန်းနံပါတ် -->
+                        <div>
+                            <label class="field-label">ဖုန်းနံပါတ်</label>
+                            <input type="tel" id="profilePhone" class="input-field" placeholder="09xxxxxxxxx">
+                        </div>
+
+                        <!-- Verify Box (အသစ်ပြောင်းမှသာ ပေါ်မည်) -->
+                        <div id="verifyBoxWrap" style="display:none;">
+                            <div class="verify-box">
+                                <div class="verify-title">
+                                    <i class="bi bi-shield-lock-fill"></i>
+                                    အတည်ပြုချက် လိုအပ်ပါသည်
+                                </div>
+                                <div class="verify-hint mb-3">
+                                    အသုံးပြုသူအမည် သို့မဟုတ် အီးမေးလ် အသစ် ပြောင်းရန် လက်ရှိ <b>Password</b> ကို ရိုက်ထည့်ပါ။
+                                </div>
+                                <input type="password" id="oldCredential" class="input-field"
+                                       placeholder="" autocomplete="off">
+                            </div>
+                        </div>
+
+                    </div>
+
+                    <!-- Action Buttons -->
+                    <div class="d-flex justify-content-end gap-2 mt-4 pt-3 border-top">
+                        <button type="button" class="btn-cancel" onclick="loadProfile()">
+                            <i class="bi bi-arrow-clockwise"></i> ပြန်လည်ရယူရန်
+                        </button>
+                        <button type="submit" class="btn-save" id="btnSaveInfo">
+                            <i class="bi bi-check-circle"></i> သိမ်းဆည်းမည်
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <!-- Right: Change Password Form -->
+    <div class="col-lg-5">
+        <div class="profile-card h-100">
+            <div class="card-header password-header">
+                <h5><i class="bi bi-key-fill"></i> လျှို့ဝှက်နံပါတ် ပြောင်းခြင်း</h5>
+            </div>
+            <div class="card-body">
+                <form id="passwordForm" class="d-flex flex-column h-100">
+                    <div class="flex-grow-1">
+                        <div class="mb-3">
+                            <label class="field-label">လျှို့ဝှက်နံပါတ် အဟောင်း <span class="req">*</span></label>
+                            <div class="password-wrap">
+                                <input type="password" id="oldPassword" class="input-field" required autocomplete="current-password">
+                                <button type="button" class="password-toggle" onclick="togglePw('oldPassword', this)">
+                                    <i class="bi bi-eye-fill"></i>
+                                </button>
+                            </div>
+                        </div>
+
+                        <div class="mb-3">
+                            <label class="field-label">လျှို့ဝှက်နံပါတ် အသစ် <span class="req">*</span></label>
+                            <div class="password-wrap">
+                                <input type="password" id="newPassword" class="input-field" required autocomplete="new-password">
+                                <button type="button" class="password-toggle" onclick="togglePw('newPassword', this)">
+                                    <i class="bi bi-eye-fill"></i>
+                                </button>
+                            </div>
+                            <div class="strength-bar"><div class="strength-fill" id="pwStrength"></div></div>
+                            <div class="input-hint" id="pwStrengthText">အနည်းဆုံး ၈ လုံး ရှိရပါမည်။</div>
+                        </div>
+
+                        <div class="mb-3">
+                            <label class="field-label">လျှို့ဝှက်နံပါတ် အသစ် (အတည်ပြု) <span class="req">*</span></label>
+                            <div class="password-wrap">
+                                <input type="password" id="confirmPassword" class="input-field" required autocomplete="new-password">
+                                <button type="button" class="password-toggle" onclick="togglePw('confirmPassword', this)">
+                                    <i class="bi bi-eye-fill"></i>
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Action Button -->
+                    <div class="mt-4 pt-3 border-top">
+                        <button type="submit" class="btn-save w-100" id="btnSavePw">
+                            <i class="bi bi-shield-lock-fill"></i> လျှို့ဝှက်နံပါတ် ပြောင်းမည်
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- ================= RESULT MODAL ================= -->
+<div class="modal fade" id="resultModal" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered modal-sm">
+        <div class="modal-content text-center">
+            <div class="modal-body">
+                <div id="resIconWrap" class="mx-auto mb-3 d-flex align-items-center justify-content-center rounded-circle shadow-sm" style="width: 64px; height: 64px;">
+                    <i id="resIcon" class="bi bi-check-circle-fill" style="font-size: 2rem;"></i>
+                </div>
+                <h6 id="resTitle" class="fw-bold mb-2 text-dark">အောင်မြင်ပါသည်</h6>
+                <p id="resMsg" class="text-muted small mb-4"></p>
+                <button type="button" class="btn btn-save w-100 justify-content-center" data-bs-dismiss="modal">
+                    OK
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+    let resultModalInstance = null;
+    let originalUsername = "";
+    let originalEmail = "";
+
+    // ================= SHOW MODAL =================
+    function showResult(success, title, msg) {
+        const iconWrap = document.getElementById('resIconWrap');
+        const icon = document.getElementById('resIcon');
+        if (success) {
+            iconWrap.style.background = '#d1fae5';
+            icon.className = 'bi bi-check-circle-fill text-success';
+        } else {
+            iconWrap.style.background = '#fee2e2';
+            icon.className = 'bi bi-x-circle-fill text-danger';
+        }
+        document.getElementById('resTitle').textContent = title;
+        document.getElementById('resMsg').textContent = msg;
+
+        if (!resultModalInstance) {
+            resultModalInstance = new bootstrap.Modal(document.getElementById('resultModal'));
+        }
+        resultModalInstance.show();
+    }
+
+    // ================= LOAD PROFILE =================
+    async function loadProfile() {
+        try {
+            const res = await fetch('/api/system/profile', { credentials: 'same-origin' });
+            if (!res.ok) {
+                const err = await res.json();
+                showResult(false, 'မအောင်မြင်ပါ', err.detail || 'Profile ရယူ၍ မရပါ။');
+                return;
+            }
+            const data = await res.json();
+            const p = data.profile;
+
+            // original တန်ဖိုးတွေကို သိမ်းထားမယ် (စစ်ဆေးဖို့)
+            originalUsername = p.userName || '';
+            originalEmail    = p.loginName || '';
+
+            // အသုံးပြုသူအမည်နဲ့ ဖုန်းကို ဖြည့်မယ်
+            document.getElementById('profileUsername').value = p.userName || '';
+            document.getElementById('profilePhone').value    = p.phone || '';
+
+            // ⭐ Email/Login Name ကို လုံးဝ မပြဘူး။ Placeholder ပဲ ထားမယ်။
+            document.getElementById('profileEmail').value = '';
+            document.getElementById('profileEmail').placeholder = 'အီးမေးလ် (သို့) Username အသစ် ရိုက်ထည့်ပါ';
+
+            // Verify box ကို ဖျောက်ထားမယ်
+            document.getElementById('verifyBoxWrap').style.display = 'none';
+            document.getElementById('oldCredential').value = '';
+        } catch (e) {
+            console.error(e);
+            showResult(false, 'Server Error', 'ဆာဗာနှင့် ချိတ်ဆက်၍ မရပါ။');
+        }
+    }
+
+    // ================= VERIFY BOX SHOW/HIDE =================
+    function checkCredentialChange() {
+        const curU = document.getElementById('profileUsername').value.trim();
+        const curE = document.getElementById('profileEmail').value.trim();
+        
+        // ⭐ နာမည်ပြောင်းရင် ဒါမှမဟုတ် အီးမေးလ်အသစ် ရိုက်ထည့်ရင် Verify box ပေါ်လာမယ်
+        const changed = (curU !== originalUsername) || (curE !== '');
+        const box = document.getElementById('verifyBoxWrap');
+        const oldInput = document.getElementById('oldCredential');
+
+        if (changed) {
+            box.style.display = 'block';
+            oldInput.required = true;
+        } else {
+            box.style.display = 'none';
+            oldInput.required = false;
+            oldInput.value = '';
+        }
+    }
+
+    document.getElementById('profileUsername').addEventListener('input', checkCredentialChange);
+    document.getElementById('profileEmail').addEventListener('input', checkCredentialChange);
+
+    // ================= UPDATE INFO =================
+    document.getElementById('infoForm').addEventListener('submit', async function(e) {
+        e.preventDefault();
+
+        const btn = document.getElementById('btnSaveInfo');
+        btn.disabled = true;
+        btn.innerHTML = '<span class="spinner-border spinner-border-sm me-1"></span> သိမ်းဆည်းနေသည်...';
+
+        const newEmail = document.getElementById('profileEmail').value.trim();
+        // အကယ်၍ အီးမေးလ်အသစ် မထည့်ထားရင် အဟောင်းအတိုင်း ပြန်သုံးမယ် (Database မှာ ပြောင်းစရာမလိုအောင်)
+        const finalEmail = newEmail === '' ? originalEmail : newEmail;
+
+        const fd = new FormData();
+        fd.append('username', document.getElementById('profileUsername').value.trim());
+        fd.append('email', finalEmail);
+        fd.append('phone', document.getElementById('profilePhone').value.trim());
+        fd.append('old_credential', document.getElementById('oldCredential').value);
+
+        try {
+            const res = await fetch('/api/system/profile/update-info', {
+                method: 'POST',
+                body: fd,
+                credentials: 'same-origin'
+            });
+            const data = await res.json();
+
+            if (res.ok) {
+                showResult(true, 'အောင်မြင်ပါသည်', data.message || 'ပြင်ဆင်ပြီးပါပြီ။');
+                await loadProfile();
+            } else {
+                showResult(false, 'မအောင်မြင်ပါ', data.detail || 'အမှားအယွင်း ရှိနေပါသည်။');
+            }
+        } catch (err) {
+            console.error(err);
+            showResult(false, 'Server Error', 'ဆာဗာနှင့် ချိတ်ဆက်၍ မရပါ။');
+        } finally {
+            btn.disabled = false;
+            btn.innerHTML = '<i class="bi bi-check-circle"></i> သိမ်းဆည်းမည်';
+        }
+    });
+
+    // ================= PASSWORD SHOW/HIDE =================
+    function togglePw(id, btn) {
+        const el = document.getElementById(id);
+        if (el.type === 'password') {
+            el.type = 'text';
+            btn.innerHTML = '<i class="bi bi-eye-slash-fill"></i>';
+        } else {
+            el.type = 'password';
+            btn.innerHTML = '<i class="bi bi-eye-fill"></i>';
+        }
+    }
+
+    // ================= PASSWORD STRENGTH =================
+    document.getElementById('newPassword').addEventListener('input', function() {
+        const val = this.value;
+        const fill = document.getElementById('pwStrength');
+        const text = document.getElementById('pwStrengthText');
+
+        let score = 0;
+        if (val.length >= 8) score++;
+        if (/[A-Z]/.test(val)) score++;
+        if (/[a-z]/.test(val)) score++;
+        if (/[0-9]/.test(val)) score++;
+        if (/[^A-Za-z0-9]/.test(val)) score++;
+
+        let pct = 0, color = '#e2e8f0', msg = 'အနည်းဆုံး ၈ လုံး ရှိရပါမည်။';
+        if (val.length === 0) { pct = 0; msg = 'အနည်းဆုံး ၈ လုံး ရှိရပါမည်။'; }
+        else if (score <= 2) { pct = 33; color = '#ef4444'; msg = 'အားနည်းသည် (အက္ခရာ၊ ဂဏန်း ရောပါ)'; }
+        else if (score === 3) { pct = 66; color = '#f59e0b'; msg = 'အလယ်အလတ်'; }
+        else { pct = 100; color = '#10b981'; msg = 'ခိုင်မာသည် 💪'; }
+
+        fill.style.width = pct + '%';
+        fill.style.background = color;
+        text.textContent = msg;
+        text.style.color = color;
+    });
+
+    // ================= CHANGE PASSWORD =================
+    document.getElementById('passwordForm').addEventListener('submit', async function(e) {
+        e.preventDefault();
+
+        const oldPw = document.getElementById('oldPassword').value;
+        const newPw = document.getElementById('newPassword').value;
+        const confirmPw = document.getElementById('confirmPassword').value;
+
+        if (newPw.length < 8) {
+            showResult(false, 'သတိပေးချက်', 'Password အသစ်သည် အနည်းဆုံး ၈ လုံး ရှိရပါမည်။');
+            return;
+        }
+        if (newPw !== confirmPw) {
+            showResult(false, 'သတိပေးချက်', 'Password အသစ် နှစ်ခု မတူညီပါ။');
+            return;
+        }
+
+        const btn = document.getElementById('btnSavePw');
+        btn.disabled = true;
+        btn.innerHTML = '<span class="spinner-border spinner-border-sm me-1"></span> ပြောင်းနေသည်...';
+
+        const fd = new FormData();
+        fd.append('old_password', oldPw);
+        fd.append('new_password', newPw);
+        fd.append('confirm_password', confirmPw);
+
+        try {
+            const res = await fetch('/api/system/profile/change-password', {
+                method: 'POST',
+                body: fd,
+                credentials: 'same-origin'
+            });
+            const data = await res.json();
+
+            if (res.ok) {
+                showResult(true, 'အောင်မြင်ပါသည်', data.message || 'လျှို့ဝှက်နံပါတ် ပြောင်းပြီးပါပြီ။');
+                document.getElementById('passwordForm').reset();
+                document.getElementById('pwStrength').style.width = '0%';
+                document.getElementById('pwStrengthText').textContent = 'အနည်းဆုံး ၈ လုံး ရှိရပါမည်။';
+                document.getElementById('pwStrengthText').style.color = '#64748b';
+            } else {
+                showResult(false, 'မအောင်မြင်ပါ', data.detail || 'အမှားအယွင်း ရှိနေပါသည်။');
+            }
+        } catch (err) {
+            console.error(err);
+            showResult(false, 'Server Error', 'ဆာဗာနှင့် ချိတ်ဆက်၍ မရပါ။');
+        } finally {
+            btn.disabled = false;
+            btn.innerHTML = '<i class="bi bi-shield-lock-fill"></i> လျှို့ဝှက်နံပါတ် ပြောင်းမည်';
+        }
+    });
+
+    // ================= INIT =================
+    document.addEventListener('DOMContentLoaded', loadProfile);
+</script>
+{% endblock %}

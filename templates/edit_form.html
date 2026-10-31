@@ -1,0 +1,922 @@
+{% extends "formBase.html" %}
+
+{% block title %}ရှိပြီးသား ဒေတာ ပြင်ဆင်ခြင်း - LBVD{% endblock %}
+
+{% block topbar_title %}
+    <i class="bi bi-pencil me-2"></i>ဒေတာပြင်ဆင်ရန်
+{% endblock %}
+
+{% block progress_label %}Form ပြင်ဆင်ခြင်း{% endblock %}
+{% block progress_percent %}—{% endblock %}
+{% block progress_width %}0{% endblock %}
+
+{% block extra_css %}
+<style>
+    /* Base Template ရဲ့ မလိုအပ်တဲ့ အပိုင်းများကို ဖျောက်ခြင်း */
+    .top-accent { display: none !important; }
+    .header-section { display: none !important; }
+    .progress-container { display: none !important; }
+    #errorAlert { display: none !important; }
+    .form-nav { display: none !important; }
+    
+    /* Form Body ကို FormPart1 နဲ့ တူအောင် ချိန်ညှိခြင်း */
+    .form-body { padding: 2rem 2.5rem !important; }
+
+    /* ⭐ စိမ်းလန်းသော Theme အတွက် အပိုင်းခွဲ ခေါင်းစဉ်များ */
+    .section-title-box {
+        background: rgba(16, 185, 129, 0.08);
+        border-left: 4px solid #059669;
+        padding: 0.5rem 0.75rem;
+        border-radius: 0 0.5rem 0.5rem 0;
+        margin-bottom: 1.5rem;
+    }
+    .section-title-box h4, .section-title-box h5 {
+        font-weight: 700;
+        font-size: 1.05rem;
+        color: #065f46;
+        margin: 0;
+    }
+    
+    /* ⭐ ဖြေဆိုသူနှင့် အိမ်ထောင်ဦးစီး အတွက် စိမ်းလန်းသော Box များ */
+    .person-info-box {
+        background: rgba(16,185,129,0.08); 
+        border: 1px solid #a7f3d0;
+    }
+    .person-info-box h5 {
+        color:#065f46; 
+        font-size:1rem; 
+        border-bottom: 1px solid #a7f3d0;
+    }
+
+    /* Table နှင့် Input များ */
+    #collectedTable th { white-space: nowrap; }
+    #collectedTable input { min-width: 100px; }
+    .readonly-field { background: #e9ecef; }
+    
+    /* Search Box အတွက် Style အသစ်များ (Green Theme) */
+    #formsListTable th { font-weight: 600; color: #4b5563; }
+    #formsListTable tbody tr:hover { background-color: #f3f4f6; }
+    
+    .search-box-container {
+        background: #f8fafc;
+        border: 1px solid #e2e8f0;
+        border-radius: 0.5rem;
+        padding: 1rem;
+        margin-bottom: 1.5rem;
+    }
+    .search-box-container .form-label {
+        font-size: 0.8rem;
+        font-weight: 700;
+        color: #374151;
+        margin-bottom: 0.4rem;
+    }
+    .search-box-container .form-control, .search-box-container .form-select {
+        font-size: 0.875rem;
+        border-color: #cbd5e1;
+    }
+    .search-box-container .form-control:focus, .search-box-container .form-select:focus {
+        border-color: #10b981;
+        box-shadow: 0 0 0 0.2rem rgba(16, 185, 129, 0.15);
+    }
+</style>
+{% endblock %}
+
+{% block form_content %}
+<!-- Page header -->
+<div class="section-title-box mt-0" style="background: rgba(16, 185, 129, 0.08); border-left-color: #059669;">
+    <h4>Form (၁) မှ (၄) အထိ — ရှိပြီးသား ဒေတာ ပြင်ဆင်ခြင်း</h4>
+    <p class="mb-0" style="color: #6b7280; font-size: 0.8rem;">သင့်အကောင့်မှ ကောက်ယူထားသော ဒေတာစာရင်းများကို ကြည့်ရှုပြီး ပြင်ဆင်လိုသော Form ကို ရွေးချယ်နိုင်ပါသည်။</p>
+</div>
+
+<div id="editMessage" class="alert d-none" role="alert" aria-live="polite"></div>
+
+<!-- ⭐ Form စာရင်း Table အသစ် -->
+<div id="formsListView" class="card mb-4" style="border: 1px solid #e5e7eb; box-shadow: 0 1px 3px rgba(0,0,0,0.1);">
+    <div class="card-body">
+        <div class="d-flex justify-content-between align-items-center mb-3">
+            <h5 class="mb-0 fw-bold" style="color:#065f46;">ကောက်ယူထားသော ဒေတာများ</h5>
+            <button type="button" class="btn btn-sm btn-outline-success" id="refreshFormsBtn">
+                <i class="bi bi-arrow-clockwise"></i> ပြန်လည်ရယူမည်
+            </button>
+        </div>
+
+        <!-- ⭐ Search Filters (သပ်ရပ်စွာ ပြန်ချိန်ညှိထားသည်) -->
+        <div class="search-box-container">
+            <div class="row g-2 mb-2">
+                <div class="col-md-4">
+                    <label class="form-label">ကျေးရွာအုပ်စု</label>
+                    <select id="filterQV" class="form-select">
+                        <option value="">-- အားလုံး --</option>
+                    </select>
+                </div>
+                <div class="col-md-4">
+                    <label class="form-label">စာရင်းကောက်သူ</label>
+                    <select id="filterInterviewer" class="form-select">
+                        <option value="">-- အားလုံး --</option>
+                    </select>
+                </div>
+                <div class="col-md-4">
+                    <label class="form-label">Form ID</label>
+                    <input type="text" id="filterFormID" class="form-control" list="formIDList" placeholder="ဥပမာ - FORM-2024-00001">
+                    <datalist id="formIDList"></datalist>
+                </div>
+            </div>
+            
+            <div class="row g-2 mb-3">
+                <div class="col-md-4">
+                    <label class="form-label">အိမ်ထောင်ဦးစီးအမည်</label>
+                    <input type="text" id="filterHeadName" class="form-control" list="headNameList" placeholder="အမည် ရိုက်ထည့်ပါ...">
+                    <datalist id="headNameList"></datalist>
+                </div>
+                <div class="col-md-4">
+                    <label class="form-label">အိမ်ထောင်စုအမှတ်</label>
+                    <input type="text" id="filterHouseholdNo" class="form-control" list="householdNoList" placeholder="အမှတ် ရိုက်ထည့်ပါ...">
+                    <datalist id="householdNoList"></datalist>
+                </div>
+                <div class="col-md-2">
+                    <label class="form-label">မေးမြန်းသည့်နေ့ (မှ)</label>
+                    <input type="date" id="filterDateFrom" class="form-control">
+                </div>
+                <div class="col-md-2">
+                    <label class="form-label">မေးမြန်းသည့်နေ့ (ထိ)</label>
+                    <input type="date" id="filterDateTo" class="form-control">
+                </div>
+                <div class="col-md-4">
+                    <label class="form-label" for="filterCollectionStatus">ကောက်ယူမှုအခြေအနေ</label>
+                    <select id="filterCollectionStatus" class="form-select">
+                        <option value="">-- အားလုံး --</option>
+                        <option value="1">အချက်အလက် ကောက်ယူပြီး</option>
+                        <option value="0">အချက်အလက် မကောက်ယူပါ</option>
+                    </select>
+                </div>
+            </div>
+
+            <div class="d-flex justify-content-end gap-2">
+                <button type="button" class="btn btn-outline-secondary px-4" id="btnClearSearch">
+                    <i class="bi bi-x-circle"></i> ရှင်းမည်
+                </button>
+                <button type="button" class="btn btn-success px-4" id="btnSearch">
+                    <i class="bi bi-search"></i> ရှာဖွေမည်
+                </button>
+            </div>
+        </div>
+        
+        <div class="table-responsive">
+            <table class="table table-bordered table-hover align-middle bg-white" id="formsListTable">
+                <thead class="table-light">
+                    <tr>
+                        <th>Form ID</th>
+                        <th>အိမ်ထောင်ဦးစီး</th>
+                        <th>အိမ်ထောင်စုအမှတ်</th>
+                        <th>ကျေးရွာအုပ်စု</th>
+                        <th>မေးမြန်းသည့်နေ့</th>
+                        <th>ကောက်ယူမှုအခြေအနေ</th>
+                        <th class="text-center">လုပ်ဆောင်ချက်</th>
+                    </tr>
+                </thead>
+                <tbody id="formsListBody">
+                    <tr>
+                        <td colspan="7" class="text-center text-muted py-4">
+                            <span class="spinner-border spinner-border-sm me-2" role="status" aria-hidden="true"></span>
+                            ဒေတာများ ရယူနေပါသည်...
+                        </td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+
+<!-- ⭐ ပြင်ဆင်မည့် Form (FormPart1 ဒီဇိုင်းအတိုင်း) -->
+<div id="formFields" class="d-none">
+    <div class="d-flex justify-content-between align-items-center mb-3 p-3 bg-white rounded" style="border: 1px solid #a7f3d0;">
+        <h5 class="fw-bold text-success mb-0">Form ID: <span id="editingFormID" class="text-dark"></span></h5>
+        <button type="button" class="btn btn-sm btn-secondary" id="cancelEditBtn">
+            <i class="bi bi-x-circle"></i> ပြင်ဆင်ခြင်းမှ ထွက်မည်
+        </button>
+    </div>
+
+    <!-- Section 1 -->
+    <div class="section-title-box">
+        <h4>အပိုင်း (၁) — နေရာဒေသနှင့် အိမ်ထောင်စုအချက်အလက်</h4>
+    </div>
+
+    <div class="row g-3 mb-4">
+        <div class="col-md-6 col-lg-3">
+            <label class="form-label" for="stateID">တိုင်းဒေသကြီး/ပြည်နယ်</label>
+            <input class="form-control person-field readonly-field" id="stateID" data-field="stateID" type="text" readonly>
+        </div>
+        <div class="col-md-6 col-lg-3">
+            <label class="form-label" for="districtID">ခရိုင်</label>
+            <input class="form-control person-field readonly-field" id="districtID" data-field="districtID" type="text" readonly>
+        </div>
+        <div class="col-md-6 col-lg-3">
+            <label class="form-label" for="townshipID">မြို့နယ်</label>
+            <input class="form-control person-field readonly-field" id="townshipID" data-field="townshipID" type="text" readonly>
+        </div>
+        <div class="col-md-6 col-lg-3">
+            <label class="form-label" for="QVID">ကျေးရွာအုပ်စု/ရပ်ကွက်</label>
+            <input class="form-control person-field readonly-field" id="QVID" data-field="QVID" type="text" readonly>
+        </div>
+
+        {% set person_location_fields = [
+            ('WardName', 'ရပ်ကွက်/ကျေးရွာအမည်', 'text'),
+            ('householdNo', 'အိမ်ထောင်စုအမှတ်', 'text'),
+        ] %}
+        {% for key, label, typ in person_location_fields %}
+        <div class="col-md-6 col-lg-4">
+            <label class="form-label" for="{{ key }}">{{ label }}</label>
+            <input class="form-control person-field" id="{{ key }}" data-field="{{ key }}" type="{{ typ }}">
+        </div>
+        {% endfor %}
+
+        <div class="col-md-6 col-lg-4">
+            <label class="form-label" for="interviewDate">တွေ့ဆုံမေးမြန်းသည့်နေ့</label>
+            <input class="form-control person-field readonly-field" id="interviewDate" data-field="interviewDate" type="date" readonly>
+        </div>
+    </div>
+
+    <!-- Section 2 (FormPart1 ကဲ့သို့ Box ၂ ခုခွဲထားသည်) -->
+    <div class="section-title-box">
+        <h4>အပိုင်း (၂) — အိမ်ထောင်ဦးစီးနှင့် ဖြေဆိုသူအချက်အလက်</h4>
+    </div>
+
+    <div class="row g-4 mb-4">
+        <!-- ဖြေဆိုသူအချက်အလက် -->
+        <div class="col-lg-6">
+            <div class="p-4 rounded-3 h-100 person-info-box">
+                <h5 class="fw-bold d-flex align-items-center gap-2 pb-2 mb-3">
+                    <svg width="20" height="20" fill="none" stroke="#059669" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"></path></svg>                    ဖြေဆိုသူအချက်အလက်
+                </h5>
+                
+                <div class="mb-3">
+                    <label class="form-label" for="name">အမည်</label>
+                    <input class="form-control person-field" id="name" data-field="name" type="text" style="background:#fff;">
+                </div>
+                <div class="mb-3">
+                    <label class="form-label" for="gender">ကျား/မ</label>
+                    <input class="form-control person-field" id="gender" data-field="gender" type="text" style="background:#fff;">
+                </div>
+                <div class="row g-3 mb-3">
+                    <div class="col-6">
+                        <label class="form-label" for="age">အသက် (နှစ်)</label>
+                        <input class="form-control person-field" id="age" data-field="age" type="number" min="0" style="background:#fff;">
+                    </div>
+                    <div class="col-6">
+                        <label class="form-label" for="eduStatus">ပညာအရည်အချင်း</label>
+                        <input class="form-control person-field" id="eduStatus" data-field="eduStatus" type="text" style="background:#fff;">
+                    </div>
+                </div>
+                <div>
+                    <label class="form-label" for="phoneNo">ဖုန်းနံပါတ်</label>
+                    <input class="form-control person-field" id="phoneNo" data-field="phoneNo" type="tel" style="background:#fff;">
+                </div>
+            </div>
+        </div>
+
+        <!-- အိမ်ထောင်ဦးစီးအချက်အလက် -->
+        <div class="col-lg-6">
+            <div class="p-4 rounded-3 h-100 person-info-box">
+                <h5 class="fw-bold d-flex align-items-center gap-2 pb-2 mb-3">
+                    <svg width="20" height="20" fill="none" stroke="#059669" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6"></path></svg>                    အိမ်ထောင်ဦးစီးအချက်အလက်
+                </h5>
+                
+                <div class="mb-3">
+                    <label class="form-label" for="headName">အမည်</label>
+                    <input class="form-control person-field" id="headName" data-field="headName" type="text" style="background:#fff;">
+                </div>
+                <div class="mb-3">
+                    <label class="form-label" for="headGender">ကျား/မ</label>
+                    <input class="form-control person-field" id="headGender" data-field="headGender" type="text" style="background:#fff;">
+                </div>
+                <div class="row g-3 mb-3">
+                    <div class="col-6">
+                        <label class="form-label" for="headAge">အသက် (နှစ်)</label>
+                        <input class="form-control person-field" id="headAge" data-field="headAge" type="number" min="0" style="background:#fff;">
+                    </div>
+                    <div class="col-6">
+                        <label class="form-label" for="headEduStatus">ပညာအရည်အချင်း</label>
+                        <input class="form-control person-field" id="headEduStatus" data-field="headEduStatus" type="text" style="background:#fff;">
+                    </div>
+                </div>
+                <div>
+                    <label class="form-label" for="headPhoneNo">ဖုန်းနံပါတ်</label>
+                    <input class="form-control person-field" id="headPhoneNo" data-field="headPhoneNo" type="tel" style="background:#fff;">
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Section (မှတ်တမ်းတင်သူအပိုင်း) -->
+    <div class="row g-3 mb-4">
+        <div class="col-md-6">
+            <label class="form-label" for="Interviewer">စာရင်းကောက်သူအမည်</label>
+            <input class="form-control person-field" id="Interviewer" data-field="Interviewer" type="text">
+        </div>
+        <div class="col-md-6">
+            <label class="form-label" for="interviewerPhoneNo">စာရင်းကောက်သူဖုန်း</label>
+            <input class="form-control person-field" id="interviewerPhoneNo" data-field="interviewerPhoneNo" type="tel">
+        </div>
+    </div>
+
+    <!-- Section 3 & 4 -->
+    <div class="section-title-box">
+        <h4>အပိုင်း (၃) နှင့် (၄) — တိရစ္ဆာန်ဆိုင်ရာ ဒေတာ</h4>
+        <p class="mb-0" style="color: #6b7280; font-size: 0.8rem;">ရှိပြီးသား row များကို ပြင်ဆင်၊ ဖယ်ရှားနိုင်ပြီး row အသစ်လည်း ထည့်နိုင်ပါသည်။</p>
+    </div>
+
+    <div class="table-responsive mb-3">
+        <table class="table table-bordered table-hover align-middle bg-white" id="collectedTable">
+            <thead class="table-light" style="background:#ecfdf5; color:#065f46;">
+                <tr>
+                    <th>Animal Type ID</th>
+                    <th>Animal ID</th>
+                    <th>Species ID</th>
+                    <th>Age ID</th>
+                    <th>Gender ID</th>
+                    <th>အရေအတွက်</th>
+                    <th>လုပ်ဆောင်ချက်</th>
+                </tr>
+            </thead>
+            <tbody id="collectedRows"></tbody>
+        </table>
+    </div>
+
+    <div class="d-flex flex-wrap gap-2 mb-4 pt-3 border-top" style="border-color: #a7f3d0 !important;">
+        <button type="button" id="addRowBtn" class="btn btn-outline-primary">
+            + တိရစ္ဆာန် row ထည့်မည်
+        </button>
+        <button type="submit" id="saveBtn" class="btn btn-success">
+            ပြင်ဆင်ချက်များ သိမ်းမည်
+        </button>
+        <button type="button" id="deleteBtn" class="btn btn-danger ms-auto">
+            🗑️ ဤ Form ကို ဖျက်မည်
+        </button>
+    </div>
+</div>
+{% endblock %}
+
+{% block part_js %}
+<script>
+'use strict';
+
+// ============================================================
+// 🛡️ safeShowModal
+// ============================================================
+function safeShowModal(type, title, message, onOk) {
+    if (typeof window.showModal === 'function') {
+        try { window.showModal(type, title, message, onOk); return; } 
+        catch (e) { console.warn('showModal failed:', e); }
+    }
+    const prefix = type === 'error' ? '❌ ' : '✅ ';
+    window.alert(prefix + title + '\n\n' + message);
+    if (typeof onOk === 'function') onOk();
+}
+
+document.addEventListener('DOMContentLoaded', function() {
+    const form = document.getElementById('livestockForm');
+    const formsListView = document.getElementById('formsListView');
+    const formsListBody = document.getElementById('formsListBody');
+    const refreshFormsBtn = document.getElementById('refreshFormsBtn');
+    
+    // ⭐ Filter Elements
+    const filterCollectionStatus = document.getElementById('filterCollectionStatus');
+    const filterQV = document.getElementById('filterQV');
+    const filterInterviewer = document.getElementById('filterInterviewer');
+    const filterHeadName = document.getElementById('filterHeadName');
+    const filterHouseholdNo = document.getElementById('filterHouseholdNo');
+    const btnSearch = document.getElementById('btnSearch');
+    const btnClearSearch = document.getElementById('btnClearSearch');
+    const headNameList = document.getElementById('headNameList');
+    const householdNoList = document.getElementById('householdNoList');
+    
+    const formFields = document.getElementById('formFields');
+    const editingFormID = document.getElementById('editingFormID');
+    const cancelEditBtn = document.getElementById('cancelEditBtn');
+    const rowsBox = document.getElementById('collectedRows');
+    const message = document.getElementById('editMessage');
+    const addRowBtn = document.getElementById('addRowBtn');
+    const saveBtn = document.getElementById('saveBtn');
+    const deleteBtn = document.getElementById('deleteBtn');
+
+    // ⭐ Filter Elements (Date & FormID)
+    const filterFormID = document.getElementById('filterFormID');
+    const filterDateFrom = document.getElementById('filterDateFrom');
+    const filterDateTo = document.getElementById('filterDateTo');
+
+    let loadedFormID = '';
+    let currentLookup = { animalTypes: [], animals: [], species: [], ages: [], genders: [] };
+    let loading = false;
+    let saving = false;
+    let listRequest = null;
+
+    function showMessage(text, type = 'info') {
+        message.className = 'alert alert-' + type;
+        message.textContent = text;
+        message.classList.remove('d-none');
+    }
+
+    function clearMessage() {
+        message.textContent = '';
+        message.className = 'alert d-none';
+    }
+
+    async function apiRequest(url, options = {}) {
+        const response = await fetch(url, {
+            credentials: 'same-origin',
+            ...options,
+            headers: { Accept: 'application/json', ...(options.headers || {}) }
+        });
+        const contentType = response.headers.get('content-type') || '';
+        let data;
+        if (contentType.includes('application/json')) {
+            data = await response.json();
+        } else {
+            const body = await response.text();
+            if (response.redirected || /<html|<!doctype/i.test(body)) {
+                throw new Error('Login session ကုန်ဆုံးနေခြင်း ဖြစ်နိုင်ပါသည်။ Login ပြန်ဝင်ပါ။');
+            }
+            throw new Error('Server မှ JSON မဟုတ်သော response ပြန်လာပါသည်။ HTTP ' + response.status);
+        }
+        if (!response.ok) {
+            const detail = data.detail || data.message || ('HTTP ' + response.status);
+            throw new Error(typeof detail === 'string' ? detail : JSON.stringify(detail));
+        }
+        return data;
+    }
+
+    // ============================================================
+    // ⭐ Filters တွေကို Load လုပ်ခြင်း
+    // ============================================================
+    async function loadFilterOptions() {
+        try {
+            const data = await apiRequest('/enumerator/api/my-forms-filters');
+            
+            filterQV.innerHTML = '<option value="">-- အားလုံး --</option>';
+            (data.qvs || []).forEach(q => {
+                filterQV.innerHTML += `<option value="${q.QVID}">${q.QVName || q.QVID}</option>`;
+            });
+
+            filterInterviewer.innerHTML = '<option value="">-- အားလုံး --</option>';
+            (data.interviewers || []).forEach(name => {
+                filterInterviewer.innerHTML += `<option value="${name}">${name}</option>`;
+            });
+
+            headNameList.innerHTML = '';
+            (data.headNames || []).forEach(name => {
+                headNameList.innerHTML += `<option value="${name}">`;
+            });
+
+            householdNoList.innerHTML = '';
+            (data.householdNos || []).forEach(no => {
+                householdNoList.innerHTML += `<option value="${no}">`;
+            });
+
+            const formIDList = document.getElementById('formIDList');
+            formIDList.innerHTML = '';
+            (data.formIDs || []).forEach(id => {
+                formIDList.innerHTML += `<option value="${id}">`;
+            });
+
+        } catch (error) {
+            console.error('Load filter options error:', error);
+        }
+    }
+
+    // ============================================================
+    // 📋 Form စာရင်း ဆွဲထုတ်ခြင်း
+    // ============================================================
+    async function loadFormsList() {
+        if (listRequest) listRequest.abort();
+        const controller = new AbortController();
+        listRequest = controller;
+        let timedOut = false;
+        const timeout = setTimeout(() => { timedOut = true; controller.abort(); }, 20000);
+        formsListBody.setAttribute('aria-busy', 'true');
+        btnSearch.disabled = true;
+        refreshFormsBtn.disabled = true;
+        formsListBody.innerHTML = `
+            <tr>
+                <td colspan="7" class="text-center text-muted py-4">
+                    <span class="spinner-border spinner-border-sm me-2" role="status" aria-hidden="true"></span>
+                    ဒေတာများ ရယူနေပါသည်...
+                </td>
+            </tr>`;
+        try {
+            const params = new URLSearchParams({
+                qv: filterQV.value,
+                interviewer: filterInterviewer.value,
+                head_name: filterHeadName.value,
+                household_no: filterHouseholdNo.value,
+                form_id: filterFormID.value,
+                date_from: filterDateFrom.value,
+                date_to: filterDateTo.value,
+                collection_status: filterCollectionStatus.value
+            });
+
+            const data = await apiRequest('/enumerator/api/my-forms?' + params.toString(), {signal: controller.signal});
+            if (listRequest !== controller) return;
+            if (data.status !== 'success' || !Array.isArray(data.forms)) {
+                throw new Error('Server မှ စာရင်းဒေတာပုံစံ မမှန်ပါ။');
+            }
+            const forms = data.forms;
+            
+            if (forms.length === 0) {
+                formsListBody.innerHTML = `<tr><td colspan="7" class="text-center text-muted py-4">ရှာဖွေမှုနှင့် ကိုက်ညီသော ဒေတာ မရှိပါ။</td></tr>`;
+                return;
+            }
+
+            formsListBody.innerHTML = forms.map(f => `
+                <tr>
+                    <td class="fw-bold text-primary">${f.formID}</td>
+                    <td>${f.headName || '-'}</td>
+                    <td>${f.householdNo || '-'}</td>
+                    <td>${f.QVName || '-'} / ${f.WardName || '-'}</td>
+                    <td>${f.interviewDate || '-'}</td>
+                    <td>${Number(f.status) === 1 ? 'အချက်အလက် ကောက်ယူပြီး' : 'အချက်အလက် မကောက်ယူပါ'}</td>
+                    <td class="text-center">
+                        <button type="button" class="btn btn-sm btn-outline-success edit-btn" data-formid="${f.formID}">
+                            <i class="bi bi-pencil-square"></i> ပြင်ဆင်မည်
+                        </button>
+                    </td>
+                </tr>
+            `).join('');
+
+            document.querySelectorAll('.edit-btn').forEach(btn => {
+                btn.addEventListener('click', function() {
+                    const formID = this.getAttribute('data-formid');
+                    loadFormDataForEdit(formID);
+                });
+            });
+
+        } catch (error) {
+            if (listRequest !== controller) return;
+            formsListBody.innerHTML = `<tr><td colspan="7" class="text-center text-danger py-4" role="alert">
+                <p class="mb-2" id="formsListError"></p>
+                <button type="button" class="btn btn-outline-success btn-sm" id="retryFormsList">ပြန်လည်ကြိုးစားမည်</button>
+            </td></tr>`;
+            document.getElementById('formsListError').textContent = timedOut
+                ? 'ဒေတာရယူချိန် ကြာမြင့်နေပါသည်။ ပြန်လည်ကြိုးစားပါ။'
+                : (error.message || 'ဒေတာ ရယူမရပါ။ အင်တာနက်ချိတ်ဆက်မှု စစ်ဆေးပြီး ပြန်လည်ကြိုးစားပါ။');
+            document.getElementById('retryFormsList').addEventListener('click', loadFormsList);
+        } finally {
+            clearTimeout(timeout);
+            if (listRequest === controller) {
+                listRequest = null;
+                formsListBody.setAttribute('aria-busy', 'false');
+                btnSearch.disabled = false;
+                refreshFormsBtn.disabled = false;
+            }
+        }
+    }
+
+    // ============================================================
+    // 🔍 Form တစ်ခုချင်းစီကို Load လုပ်ခြင်း
+    // ============================================================
+    async function loadFormDataForEdit(id) {
+        if (loading || saving) return;
+
+        loading = true;
+        clearMessage();
+        formFields.classList.add('d-none');
+        formsListView.classList.add('d-none');
+        showMessage('Form ID ' + id + ' ကို ရှာဖွေနေပါသည်။', 'info');
+
+        try {
+            const url = '/enumerator/api/forms/' + encodeURIComponent(id);
+            const data = await apiRequest(url);
+
+            if (!data.personcv || typeof data.personcv !== 'object') {
+                throw new Error('API response တွင် personcv ဒေတာ မပါရှိပါ။');
+            }
+
+            const person = data.personcv;
+            // const person = data.personcv;
+
+            console.log("PersonCV:", person);
+            console.log("State ID:", person.stateID);
+            console.log("State Name:", person.stateName);
+            const animals = Array.isArray(data.collecteddata) ? data.collecteddata : [];
+            currentLookup = data.lookup || { animalTypes: [], animals: [], species: [], ages: [], genders: [] };
+
+            const locationNames = {
+                stateID: 'stateName',
+                districtID: 'districtName',
+                townshipID: 'townshipName',
+                QVID: 'QVName'
+            };
+
+            document.querySelectorAll('.person-field').forEach(function(input) {
+                const key = input.dataset.field;
+                if (!key) return;
+
+                const nameKey = locationNames[key];
+
+                let value = nameKey
+                    ? (person[nameKey] ?? '')
+                    : (person[key] ?? '');
+
+                if (input.type === 'date' && value) {
+                    value = String(value).slice(0, 10);
+                }
+
+                input.value = String(value);
+                if (key === 'stateID') {
+                    console.log('API State Name:', person.stateName);
+                    console.log('Assigned State Value:', input.value);
+                    console.log('State Element:', input.outerHTML);
+                }
+            });
+
+            console.log('State input value:',
+                document.getElementById('stateID').value
+            );
+
+            rowsBox.replaceChildren();
+            if (animals.length > 0) {
+                animals.forEach(function(row) { addCollectedRow(row, currentLookup); });
+            } else {
+                addCollectedRow({}, currentLookup);
+            }
+
+            loadedFormID = id;
+            editingFormID.textContent = id;
+            formFields.classList.remove('d-none');
+            clearMessage();
+
+        } catch (error) {
+            console.error('Load form error:', error);
+            showMessage('ဒေတာရှာမရပါ။ ' + error.message, 'danger');
+            formsListView.classList.remove('d-none');
+        } finally {
+            loading = false;
+        }
+    }
+
+    // ============================================================
+    // 📋 addCollectedRow
+    // ============================================================
+    function addCollectedRow(row = {}, lookup = {}) {
+        const tr = document.createElement('tr');
+        const animalTypes = lookup.animalTypes || [];
+        const animals = lookup.animals || [];
+        const species = lookup.species || [];
+        const ages = lookup.ages || [];
+        const genders = lookup.genders || [];
+
+        const selects = {};
+
+        function makeSelect(key, options, selectedValue) {
+            const select = document.createElement('select');
+            select.className = 'form-select form-select-sm collected-field';
+            select.dataset.field = key;
+            const placeholder = document.createElement('option');
+            placeholder.value = '';
+            placeholder.textContent = '-- ရွေးချယ်ပါ --';
+            select.appendChild(placeholder);
+            options.forEach(function(item) {
+                const option = document.createElement('option');
+                option.value = String(item.id == null ? '' : item.id);
+                option.textContent = String(item.name == null ? '' : item.name);
+                select.appendChild(option);
+            });
+            select.value = selectedValue == null ? '' : String(selectedValue);
+            return select;
+        }
+
+        function addSelectCell(key, options, selectedValue) {
+            const td = document.createElement('td');
+            const select = makeSelect(key, options, selectedValue);
+            selects[key] = select;
+            td.appendChild(select);
+            tr.appendChild(td);
+            return select;
+        }
+
+        function replaceOptions(select, items, selected) {
+            const currentValue = select.value;
+            select.replaceChildren();
+            const placeholder = document.createElement('option');
+            placeholder.value = ''; placeholder.textContent = '-- ရွေးချယ်ပါ --';
+            select.appendChild(placeholder);
+            let found = false;
+            items.forEach(function(item) {
+                const option = document.createElement('option');
+                option.value = String(item.id == null ? '' : item.id);
+                option.textContent = String(item.name == null ? '' : item.name);
+                select.appendChild(option);
+                if (String(item.id) === String(selected)) found = true;
+            });
+            if (selected != null && selected !== '' && found) select.value = String(selected);
+            else if (currentValue && items.some(function(item) { return String(item.id) === currentValue; })) select.value = currentValue;
+            else select.value = '';
+        }
+
+        function filterByParents(items, selectedType, selectedAnimal) {
+            return items.filter(function(item) {
+                const typeKeys = ['animalTypeID', 'atID', 'animalTypeId'];
+                const animalKeys = ['animalID', 'laID', 'yaID', 'lsID', 'bsID'];
+                for (const key of typeKeys) {
+                    if (item[key] != null && String(item[key]) !== '' && selectedType && String(item[key]) !== String(selectedType)) return false;
+                }
+                if (selectedAnimal) {
+                    for (const key of animalKeys) {
+                        if (item[key] != null && String(item[key]) !== '' && String(item[key]) !== String(selectedAnimal)) return false;
+                    }
+                }
+                return true;
+            });
+        }
+
+        function refreshDependentDropdowns(preserveValues) {
+            const typeID = selects.animalTypeID.value;
+            if (!typeID) {
+                replaceOptions(selects.animalID, [], '');
+                replaceOptions(selects.speciesID, [], '');
+                replaceOptions(selects.ageID, [], '');
+                return;
+            }
+            const selectedAnimalTable = animals.filter(function(item) {
+                if (item.animalTypeID == null || item.animalTypeID === '') return true;
+                return String(item.animalTypeID) === String(typeID);
+            });
+            const effectiveAnimalID = preserveValues ? (row.animalID || selects.animalID.value) : selects.animalID.value;
+            const speciesID = preserveValues ? (row.speciesID || selects.speciesID.value) : selects.speciesID.value;
+            const ageID = preserveValues ? (row.ageID || selects.ageID.value) : selects.ageID.value;
+            const filteredSpecies = filterByParents(species, typeID, effectiveAnimalID);
+            const filteredAges = filterByParents(ages, typeID, effectiveAnimalID);
+            replaceOptions(selects.animalID, selectedAnimalTable, effectiveAnimalID);
+            replaceOptions(selects.speciesID, filteredSpecies, speciesID);
+            replaceOptions(selects.ageID, filteredAges, ageID);
+        }
+
+        addSelectCell('animalTypeID', animalTypes, row.animalTypeID);
+        addSelectCell('animalID', [], row.animalID);
+        addSelectCell('speciesID', [], row.speciesID);
+        addSelectCell('ageID', [], row.ageID);
+        addSelectCell('genderID', genders, row.genderID);
+
+        selects.animalTypeID.addEventListener('change', function() {
+            selects.animalID.value = ''; selects.speciesID.value = ''; selects.ageID.value = '';
+            row.animalID = ''; row.speciesID = ''; row.ageID = '';
+            refreshDependentDropdowns(false);
+        });
+
+        selects.animalID.addEventListener('change', function() {
+            selects.speciesID.value = ''; selects.ageID.value = '';
+            row.animalID = selects.animalID.value; row.speciesID = ''; row.ageID = '';
+            refreshDependentDropdowns(false);
+        });
+
+        selects.speciesID.addEventListener('change', function() {
+            selects.ageID.value = '';
+            row.speciesID = selects.speciesID.value; row.ageID = '';
+            refreshDependentDropdowns(false);
+        });
+
+        selects.ageID.addEventListener('change', function() { row.ageID = selects.ageID.value; });
+
+        const countTd = document.createElement('td');
+        const countInput = document.createElement('input');
+        countInput.className = 'form-control form-control-sm collected-field';
+        countInput.dataset.field = 'dataCount'; countInput.type = 'number'; countInput.min = '0'; countInput.step = '1';
+        countInput.value = row.dataCount == null ? '' : String(row.dataCount);
+        countTd.appendChild(countInput); tr.appendChild(countTd);
+
+        const actionTd = document.createElement('td');
+        const removeBtn = document.createElement('button');
+        removeBtn.type = 'button'; removeBtn.className = 'btn btn-sm btn-outline-danger'; removeBtn.textContent = 'ဖယ်ရှား';
+        removeBtn.addEventListener('click', function() { tr.remove(); });
+        actionTd.appendChild(removeBtn); tr.appendChild(actionTd);
+
+        rowsBox.appendChild(tr);
+        refreshDependentDropdowns(true);
+    }
+
+    // ============================================================
+    // ⭐ Event Listeners
+    // ============================================================
+    filterCollectionStatus.addEventListener('change', loadFormsList);
+    btnSearch.addEventListener('click', loadFormsList);
+    refreshFormsBtn.addEventListener('click', function() {
+        loadFilterOptions();
+        loadFormsList();
+    });
+    
+    btnClearSearch.addEventListener('click', function() {
+        filterCollectionStatus.value = '';
+        filterQV.value = '';
+        filterInterviewer.value = '';
+        filterHeadName.value = '';
+        filterHouseholdNo.value = '';
+        filterFormID.value = '';
+        filterDateFrom.value = '';
+        filterDateTo.value = '';
+        loadFormsList();
+    });
+
+    [filterHeadName, filterHouseholdNo, filterFormID].forEach(el => {
+        el.addEventListener('keypress', function(e) {
+            if (e.key === 'Enter') {
+                e.preventDefault();
+                loadFormsList();
+            }
+        });
+    });
+
+    cancelEditBtn.addEventListener('click', function() {
+        formFields.classList.add('d-none');
+        formsListView.classList.remove('d-none');
+        loadedFormID = '';
+        clearMessage();
+        loadFormsList();
+    });
+
+    addRowBtn.addEventListener('click', function() {
+        if (!loadedFormID) return;
+        addCollectedRow({}, currentLookup);
+    });
+
+    form.addEventListener('submit', async function(event) {
+        event.preventDefault();
+        if (saving || loading || !loadedFormID) return;
+
+        const personcv = {};
+        document.querySelectorAll('.person-field').forEach(function(input) {
+            const key = input.dataset.field;
+            if (!key || input.readOnly || key === 'interviewDate') return;
+            personcv[key] = input.value;
+        });
+
+        const collecteddata = Array.from(rowsBox.querySelectorAll('tr'))
+            .map(function(tr) {
+                const row = {};
+                tr.querySelectorAll('.collected-field').forEach(function(input) { row[input.dataset.field] = input.value.trim(); });
+                return row;
+            })
+            .filter(function(row) { return Object.values(row).some(function(v) { return v !== ''; }); });
+
+        for (const row of collecteddata) {
+            const count = row.dataCount;
+            if (count !== '' && (!/^\d+$/.test(count) || !Number.isSafeInteger(Number(count)))) {
+                showMessage('တိရစ္ဆာန်အရေအတွက်ကို သုည သို့မဟုတ် အပေါင်းကိန်းပြည့် ထည့်ပါ။', 'warning');
+                return;
+            }
+        }
+
+        saving = true; saveBtn.disabled = true; addRowBtn.disabled = true; deleteBtn.disabled = true;
+
+        try {
+            const url = '/enumerator/api/forms/' + encodeURIComponent(loadedFormID);
+            const result = await apiRequest(url, {
+                method: 'PUT',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ personcv: personcv, collecteddata: collecteddata })
+            });
+            
+            safeShowModal('success', 'သိမ်းဆည်းပြီးပါပြီ', result.message || 'ပြင်ဆင်ချက်များကို သိမ်းဆည်းပြီးပါပြီ။', function() {
+                formFields.classList.add('d-none');
+                formsListView.classList.remove('d-none');
+                loadFormsList();
+            });
+
+        } catch (error) {
+            console.error('Update form error:', error);
+            safeShowModal('error', 'သိမ်းဆည်းမရပါ', error.message);
+        } finally {
+            saving = false; saveBtn.disabled = false; addRowBtn.disabled = false; deleteBtn.disabled = false;
+        }
+    });
+
+    deleteBtn.addEventListener('click', async function() {
+        if (saving || loading || !loadedFormID) return;
+        
+        const ok = window.confirm('Form ID "' + loadedFormID + '" ကို ဖျက်တော့မည်။\nသေချာပါသလား?');
+        if (!ok) return;
+
+        saving = true; deleteBtn.disabled = true; saveBtn.disabled = true; addRowBtn.disabled = true;
+
+        try {
+            const url = '/enumerator/api/forms/' + encodeURIComponent(loadedFormID);
+            const result = await apiRequest(url, { method: 'DELETE' });
+            
+            safeShowModal('success', 'ဖျက်ပြီးပါပြီ', result.message || 'ဒေတာကို ဖျက်ပြီးပါပြီ။', function() {
+                formFields.classList.add('d-none');
+                formsListView.classList.remove('d-none');
+                loadFormsList();
+            });
+
+        } catch (error) {
+            console.error('Delete form error:', error);
+            safeShowModal('error', 'ဖျက်မရပါ', error.message);
+        } finally {
+            saving = false; deleteBtn.disabled = false; saveBtn.disabled = false; addRowBtn.disabled = false;
+        }
+    });
+
+    // စာမျက်နှာ စတင်ပွင့်တာနဲ့ တန်ဖိုးတွေ ဆွဲထုတ်မယ်
+    loadFilterOptions();
+    loadFormsList();
+});
+</script>
+{% endblock %}

@@ -1,0 +1,2066 @@
+{% extends 'reportBase.html' %} {% set active_page = 'records' %} {% block title %}အချက်အလက်များ ကြည့်ရှုခြင်း - LBVD Admin{% endblock %} {% block topbar_title %}<i class="bi bi-table me-2"></i>အချက်အလက်များ ကြည့်ရှုခြင်း{% endblock %} {% block extra_css %}
+<style>
+    /* ================= PAGE HEADER ================= */
+    .page-head h5 { font-size: 1.05rem; }
+    .page-head p { font-size: 0.78rem; }
+
+    /* ================= INFO NOTE ================= */
+    .info-note {
+        background: #fffbeb; border: 1px solid #fde68a; border-radius: 10px;
+        padding: 10px 14px; font-size: 0.78rem; color: #92400e;
+        display: flex; align-items: flex-start; gap: 8px; margin-bottom: 12px;
+    }
+    .info-note i { color: #f59e0b; flex-shrink: 0; margin-top: 2px; }
+
+    /* ================= FILTER CARD ================= */
+    .filter-card {
+        border: none; border-radius: 12px;
+        box-shadow: 0 2px 10px rgba(0, 0, 0, 0.05); background: #ffffff;
+    }
+    .filter-card .filter-label {
+        font-size: 0.72rem; font-weight: 700; color: #065f46;
+        margin-bottom: 3px; display: block;
+    }
+    .filter-card .form-select, .filter-card .form-control {
+        font-size: 0.8rem; border: 1px solid #d1fae5; border-radius: 8px;
+        padding: 6px 10px; color: #374151; font-weight: 500; background-color: #f9fafb;
+    }
+    .filter-card .form-control::placeholder { color: #9ca3af; font-weight: 400; }
+    .filter-card .form-select:focus, .filter-card .form-control:focus {
+        border-color: #10b981; box-shadow: 0 0 0 0.15rem rgba(16, 185, 129, 0.2);
+        background-color: #ffffff;
+    }
+    .filter-card .form-select:disabled, .filter-card .form-control:disabled {
+        background-color: #f3f4f6; color: #9ca3af; cursor: not-allowed; opacity: 1;
+    }
+
+    /* ⭐ Date Range Row */
+    .date-range-row {
+        border-top: 1px dashed #d1fae5;
+        margin-top: 10px;
+        padding-top: 10px;
+    }
+    .date-range-row .filter-label i { color: #10b981; margin-right: 4px; }
+    .date-hint {
+        font-size: 0.68rem; color: #6b7280;
+        margin-top: 3px; display: block;
+    }
+
+    /* ================= FILTER BUTTONS ================= */
+    .btn-filter {
+        font-size: 0.78rem; font-weight: 700; padding: 6px 14px;
+        border-radius: 8px; display: inline-flex; align-items: center;
+        justify-content: center; gap: 6px; transition: all 0.15s ease; white-space: nowrap;
+    }
+    .btn-search {
+        background: #d1fae5; color: #047857; border: 1px solid #a7f3d0;
+        box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
+    }
+    .btn-search:hover {
+        background: #a7f3d0; color: #065f46; transform: translateY(-1px);
+    }
+    .btn-clear { background: #ffffff; color: #4b5563; border: 1px solid #d1d5db; }
+    .btn-clear:hover { background: #f9fafb; border-color: #9ca3af; color: #111827; }
+    .btn-excel {
+        background: #d1fae5; color: #047857; border: 1px solid #a7f3d0;
+        box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05); padding: 8px 18px !important; font-size: 0.8rem !important;
+    }
+    .btn-excel:hover {
+        background: #a7f3d0; color: #065f46; transform: translateY(-1px);
+    }
+    .btn-excel:disabled { opacity: 0.6; cursor: wait; }
+
+    /* ================= SEARCH BAR ================= */
+    .search-wrapper { position: relative; }
+    .search-wrapper .bi-search {
+        position: absolute; left: 12px; top: 50%; transform: translateY(-50%);
+        color: #9ca3af; font-size: 0.85rem; pointer-events: none;
+    }
+    .search-wrapper .form-control { padding-left: 34px; padding-right: 34px; }
+    .search-wrapper .search-clear {
+        position: absolute; right: 8px; top: 50%; transform: translateY(-50%);
+        border: none; background: transparent; color: #9ca3af;
+        padding: 4px 6px; cursor: pointer; border-radius: 4px;
+    }
+    .search-wrapper .search-clear:hover { background: #f3f4f6; color: #374151; }
+
+    /* ================= STAT CARDS ================= */
+    .stat-card {
+        border: none; border-radius: 12px; box-shadow: 0 2px 10px rgba(0, 0, 0, 0.05);
+        transition: transform 0.18s ease, box-shadow 0.18s ease;
+        height: 100%; background: #ffffff;
+    }
+    .stat-card:hover { transform: translateY(-3px); box-shadow: 0 6px 16px rgba(0, 0, 0, 0.08); }
+    .stat-card .stat-icon {
+        width: 44px; height: 44px; border-radius: 10px;
+        display: flex; align-items: center; justify-content: center;
+        font-size: 1.35rem; line-height: 1; flex-shrink: 0;
+    }
+    .stat-card .stat-label {
+        font-size: 0.7rem; font-weight: 600; color: #6b7280;
+        margin-bottom: 2px; line-height: 1.3;
+    }
+    .stat-card .stat-value { font-size: 1.15rem; font-weight: 700; line-height: 1.15; }
+    .stat-card .stat-sub { font-size: 0.65rem; color: #9ca3af; font-weight: 500; }
+
+    /* ================= TABLE CARD ================= */
+    .data-card {
+        border: none; border-radius: 12px; box-shadow: 0 2px 10px rgba(0, 0, 0, 0.05);
+        overflow: hidden; background: #ffffff;
+    }
+    .data-card .data-card-header {
+        background: #ffffff; border-bottom: 1px solid #f1f5f9; padding: 12px 16px;
+        display: flex; justify-content: space-between; align-items: center;
+        flex-wrap: wrap; gap: 8px;
+    }
+    .data-card .data-card-header h6 {
+        font-size: 0.85rem; font-weight: 700; color: #065f46; margin: 0;
+        display: flex; align-items: center; gap: 6px;
+    }
+    .data-card .count-badge {
+        font-size: 0.65rem; font-weight: 700; padding: 3px 10px;
+        border-radius: 999px; background: #ecfdf5; color: #047857;
+    }
+
+    /* ================= DATA TABLE ================= */
+    .data-table { margin: 0; font-size: 0.78rem; width: 100%; min-width: 800px; }
+    .data-table thead tr { background: #ecfdf5; color: #065f46; }
+    .data-table thead th {
+        font-weight: 700; font-size: 0.7rem; text-transform: uppercase;
+        letter-spacing: 0.4px; border-bottom: 2px solid #a7f3d0;
+        padding: 10px 10px; vertical-align: middle; white-space: nowrap;
+    }
+    .data-table tbody td {
+        padding: 10px 10px; vertical-align: middle;
+        border-bottom: 1px solid #f1f5f9; color: #374151;
+    }
+    .data-table tbody tr:hover { background: #f9fafb; }
+    .data-table tbody tr:last-child td { border-bottom: none; }
+    .data-table .row-num { font-weight: 700; color: #047857; font-size: 0.75rem; }
+    .data-table .household-no {
+        font-family: 'Consolas', 'Monaco', monospace; font-size: 0.72rem; font-weight: 700;
+        color: #065f46; background: #ecfdf5; padding: 3px 8px;
+        border-radius: 5px; display: inline-block;
+    }
+    .data-table .formid-cell {
+        font-family: 'Consolas', 'Monaco', monospace; font-size: 0.68rem; font-weight: 600;
+        color: #6b7280; background: #f3f4f6; padding: 3px 6px; border-radius: 5px;
+        display: inline-block; max-width: 100px; overflow: hidden;
+        text-overflow: ellipsis; white-space: nowrap;
+    }
+    .data-table .name { font-weight: 600; color: #111827; }
+    .data-table .num-cell { text-align: center; font-weight: 700; }
+    .data-table .num-large { color: #10b981; }
+    .data-table .num-small { color: #3b82f6; }
+    .data-table .num-poultry { color: #f59e0b; }
+
+    /* ================= VIEW BUTTON ================= */
+    .btn-view {
+        padding: 5px 12px; border-radius: 7px; background: #ecfdf5; color: #047857;
+        border: 1px solid #a7f3d0; display: inline-flex; align-items: center;
+        justify-content: center; gap: 5px; font-size: 0.72rem; font-weight: 700;
+        white-space: nowrap; transition: all 0.15s ease; cursor: pointer;
+    }
+    .btn-view:hover {
+        background: #047857; color: #ffffff; border-color: #047857;
+        transform: translateY(-1px); box-shadow: 0 3px 8px rgba(4, 120, 87, 0.25);
+    }
+    .btn-view i { font-size: 0.8rem; }
+
+    /* ================= EMPTY STATE ================= */
+    .empty-state { text-align: center; padding: 40px 20px; color: #9ca3af; }
+    .empty-state i { font-size: 2.5rem; color: #d1fae5; display: block; margin-bottom: 10px; }
+    .empty-state p { font-size: 0.8rem; margin: 0; }
+
+    /* ================= PAGER ================= */
+    .pager {
+        display: flex; justify-content: space-between; align-items: center;
+        flex-wrap: wrap; gap: 8px; padding: 12px 16px;
+        border-top: 1px solid #f1f5f9; background: #ffffff;
+        font-size: 0.75rem; color: #6b7280;
+    }
+    .pager .page-info { font-weight: 600; }
+    .pager .page-btns { display: flex; gap: 4px; }
+    .pager .btn-page {
+        min-width: 30px; height: 30px; border: 1px solid #e5e7eb;
+        background: #ffffff; color: #374151; font-size: 0.72rem; font-weight: 600;
+        padding: 0 8px; border-radius: 6px; transition: all 0.15s ease;
+    }
+    .pager .btn-page:hover:not(:disabled) {
+        border-color: #10b981; color: #047857; background: #f0fdf4;
+    }
+    .pager .btn-page.active { background: #047857; color: #ffffff; border-color: #047857; }
+    .pager .btn-page:disabled { opacity: 0.45; cursor: not-allowed; }
+
+    /* ================= LOADING ================= */
+    .table-loading { display: none; text-align: center; padding: 30px; color: #047857; }
+    .table-loading.show { display: block; }
+    .table-loading .spinner-border-sm { width: 1.5rem; height: 1.5rem; border-width: 0.2em; }
+
+    /* ================= DETAIL MODAL ================= */
+    #detailModal .modal-dialog { max-width: 1200px; }
+
+    @media print {
+        body > *:not(#detailModal) { display: none !important; }
+        .modal-backdrop { display: none !important; }
+        #detailModal { position: relative !important; display: block !important; opacity: 1 !important; background: #fff !important; }
+        #detailModal .modal-dialog { max-width: 100% !important; margin: 0 !important; }
+        #detailModal .modal-content { border: none !important; box-shadow: none !important; }
+        #detailModal .modal-header, #detailModal .modal-footer { display: none !important; }
+        #detailModal .modal-body { max-height: none !important; overflow: visible !important; padding: 0 !important; }
+        .modal-section { page-break-inside: avoid; }
+        .modal-table th, .modal-table td { border: 1px solid #000 !important; color: #000 !important; }
+        .info-grid, .person-card { border: 1px solid #000 !important; background: #fff !important; }
+        .modal-section-title { border-left: 3px solid #000 !important; background: #f3f4f6 !important; color: #000 !important; }
+        * { -webkit-print-color-adjust: exact !important; print-color-adjust: exact !important; }
+    }
+
+    .info-grid {
+        display: grid; grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+        gap: 10px 16px; padding: 10px 12px; background: #f9fafb;
+        border-radius: 8px; border: 1px solid #f1f5f9;
+    }
+    .info-grid .info-item { display: flex; flex-direction: column; gap: 2px; }
+    .info-grid .info-lbl {
+        font-size: 0.65rem; color: #6b7280; font-weight: 600;
+        text-transform: uppercase; letter-spacing: 0.3px;
+    }
+    .info-grid .info-val {
+        font-size: 0.8rem; color: #111827; font-weight: 600; word-break: break-word;
+    }
+    .person-card {
+        background: #ffffff; border: 1px solid #d1fae5; border-radius: 10px;
+        padding: 12px; height: 100%;
+    }
+    .person-card .person-title {
+        font-size: 0.75rem; font-weight: 700; color: #065f46;
+        margin-bottom: 8px; padding-bottom: 6px; border-bottom: 1px dashed #d1fae5;
+        display: flex; align-items: center; gap: 6px;
+    }
+    .person-card .person-fields { display: grid; grid-template-columns: 1fr 1fr; gap: 6px 12px; }
+    .person-card .pf { display: flex; flex-direction: column; gap: 1px; }
+    .person-card .pf .lbl { font-size: 0.62rem; color: #6b7280; font-weight: 600; }
+    .person-card .pf .val { font-size: 0.75rem; color: #111827; font-weight: 600; }
+    .modal-table {
+        width: 100%; font-size: 0.72rem; border-collapse: collapse;
+        border-radius: 8px; overflow: hidden; border: 1px solid #a7f3d0;
+    }
+    .modal-table thead th {
+        background: #ecfdf5; color: #065f46; font-weight: 700; font-size: 0.65rem;
+        text-transform: uppercase; letter-spacing: 0.3px; padding: 7px 8px;
+        text-align: center; border-bottom: 1px solid #a7f3d0; white-space: nowrap;
+    }
+    .modal-table tbody td {
+        padding: 7px 8px; text-align: center; border-bottom: 1px solid #f1f5f9; color: #374151;
+    }
+    .modal-table tbody td:first-child { text-align: left; font-weight: 600; color: #065f46; }
+    .modal-table tbody td:last-child { font-weight: 700; color: #047857; }
+    .modal-table tbody tr:last-child td { border-bottom: none; }
+    .modal-table tbody tr:hover { background: #f9fafb; }
+
+    /* ================= CONFIRM EXPORT MODAL ================= */
+    #confirmExportModal .modal-dialog { max-width: 420px; }
+    #confirmExportModal .modal-content {
+        border: none; border-radius: 14px; overflow: hidden;
+        box-shadow: 0 20px 50px rgba(0, 0, 0, 0.2);
+    }
+    #confirmExportModal .modal-body { padding: 26px 20px 20px; text-align: center; }
+    #confirmExportModal .cf-icon {
+        width: 64px; height: 64px; border-radius: 50%;
+        display: flex; align-items: center; justify-content: center;
+        margin: 0 auto 14px; background: #d1fae5;
+    }
+    #confirmExportModal .cf-icon i { font-size: 1.9rem; color: #047857; }
+    #confirmExportModal .cf-title {
+        font-size: 1rem; font-weight: 700; color: #065f46; margin-bottom: 6px;
+    }
+    #confirmExportModal .cf-msg {
+        font-size: 0.82rem; color: #6b7280; margin-bottom: 18px; line-height: 1.5;
+    }
+    #confirmExportModal .cf-info {
+        background: #f0fdf4; border: 1px dashed #a7f3d0; border-radius: 8px;
+        padding: 8px 12px; font-size: 0.75rem; color: #065f46; margin-bottom: 16px;
+        display: flex; align-items: center; gap: 8px; justify-content: center; flex-wrap: wrap;
+    }
+    #confirmExportModal .cf-info .cf-sep { opacity: 0.4; }
+    #confirmExportModal .cf-btns { display: flex; gap: 8px; }
+    #confirmExportModal .btn-cf {
+        flex: 1; font-size: 0.82rem; font-weight: 700; padding: 9px 14px;
+        border-radius: 8px; border: none; display: inline-flex;
+        align-items: center; justify-content: center; gap: 6px; transition: all 0.15s ease;
+    }
+    #confirmExportModal .btn-cf-cancel {
+        background: #f3f4f6; color: #4b5563; border: 1px solid #e5e7eb;
+    }
+    #confirmExportModal .btn-cf-cancel:hover { background: #e5e7eb; color: #111827; }
+    #confirmExportModal .btn-cf-ok {
+        background: linear-gradient(135deg, #047857, #059669); color: #fff;
+        box-shadow: 0 2px 6px rgba(4, 120, 87, 0.25);
+    }
+    #confirmExportModal .btn-cf-ok:hover { color: #fff; transform: translateY(-1px); }
+    #confirmExportModal .btn-cf-ok:disabled { opacity: 0.6; cursor: wait; }
+
+    /* ================= MOBILE ================= */
+    @media (max-width: 575.98px) {
+        .filter-card .form-select, .filter-card .form-control { font-size: 0.75rem; }
+        .data-table { font-size: 0.7rem; min-width: 900px; }
+        .data-table thead th, .data-table tbody td { padding: 7px 6px; }
+        .data-table thead th { font-size: 0.62rem; }
+        .btn-filter { font-size: 0.72rem; padding: 5px 10px; }
+        #detailModal .modal-body { padding: 12px; }
+        .info-grid { grid-template-columns: 1fr 1fr; gap: 8px; }
+        .person-card .person-fields { grid-template-columns: 1fr; }
+        .modal-section-title { font-size: 0.72rem; }
+        .stat-card .stat-value { font-size: 1rem; }
+        .stat-card .stat-icon { width: 38px; height: 38px; font-size: 1.15rem; }
+        .btn-view { font-size: 0.68rem; padding: 4px 8px; }
+        .btn-view span { display: none; }
+        .btn-view i { font-size: 0.85rem; }
+    }
+
+    .filter-label .form-check-input {
+        transform: scale(1.3); margin-right: 8px !important; cursor: pointer;
+        accent-color: #0d6efd; border: 2px solid #6c757d;
+    }
+    .filter-label .form-check-input:checked { background-color: #0d6efd; border-color: #0d6efd; }
+
+    /* ================= FIX EXPORT MODAL VISIBILITY ================= */
+    #confirmExportModal { z-index: 1065 !important; }
+    .modal-backdrop { z-index: 1055 !important; }
+    #confirmExportModal .modal-dialog {
+        position: relative; z-index: 1066 !important;
+        width: calc(100% - 2rem); max-width: 420px; margin: 1.75rem auto;
+    }
+    #confirmExportModal .modal-content {
+        position: relative; background-color: #ffffff !important;
+        color: #111827; opacity: 1 !important; visibility: visible !important;
+    }
+    #confirmExportModal .modal-body { background-color: #ffffff; color: #111827; }
+</style>
+{% endblock %} {% block page_content %}
+
+<!-- ============ DATA CONTAINER (Jinja → JS) ============ -->
+<div id="recordsData" 
+     data-records='{{ records|tojson }}' 
+     data-role="{{ role }}" 
+     data-user-state-id="{{ user_state_id }}" 
+     data-user-state-name="{{ user_state_name|default('') }}" 
+     data-user-district-id="{{ user_district_id }}" 
+     data-user-district-name="{{ user_district_name|default('') }}"
+     data-user-township-id="{{ user_township_id }}"
+     data-user-township-name="{{ user_township_name|default('') }}" 
+     data-filter-state="{{ filters.state or '' }}" 
+     data-filter-district="{{ filters.district or '' }}" 
+     data-filter-township="{{ filters.township or '' }}" 
+     data-filter-qv="{{ filters.qv or '' }}" 
+     data-filter-search="{{ filters.search or '' }}"
+     data-filter-start-date="{{ filters.start_date or '' }}"
+     data-filter-end-date="{{ filters.end_date or '' }}"
+     hidden></div>
+
+<!-- ============ PAGE HEADER ============ -->
+<div class="page-head mb-3">
+    <h5 class="fw-bold text-success mb-1">အချက်အလက်များ ကြည့်ရှုခြင်း</h5>
+    <p class="text-muted mb-0">သက်ဆိုင်ရာ တိုင်း/ခရိုင်/မြို့နယ်အတွင်း အိမ်ထောင်စုတစ်စုချင်းစီအလိုက် အသေးစိတ်အချက်အလက်များအားကြည့်ရှုနိင်ပါသည်။</p>
+</div>
+
+<!-- ============ FILTER SECTION ============ -->
+<div class="filter-card p-3 mb-3">
+    <div class="d-flex align-items-center gap-2 mb-2">
+        <span class="fw-bold" style="font-size:0.85rem; color:#065f46;">တည်နေရာအလိုက် ကြည့်ရှုရန်</span>
+    </div>
+
+    <!-- Row 1 — Location -->
+    <div class="row g-2 mb-3">
+        <div class="col-6 col-md-3">
+            <label class="filter-label">တိုင်းဒေသကြီး/ပြည်နယ်</label>
+            <select id="filterState" class="form-select form-select-sm">
+                <option value="">အားလုံး</option>
+            </select>
+        </div>
+        <div class="col-6 col-md-3">
+            <label class="filter-label">ခရိုင်</label>
+            <select id="filterDistrict" class="form-select form-select-sm" disabled>
+                <option value="">အားလုံး</option>
+            </select>
+        </div>
+        <div class="col-6 col-md-3">
+            <label class="filter-label">မြို့နယ်</label>
+            <select id="filterTownship" class="form-select form-select-sm" disabled>
+                <option value="">အားလုံး</option>
+            </select>
+        </div>
+        <div class="col-6 col-md-3">
+            <label class="filter-label">ကျေးရွာအုပ်စု</label>
+            <select id="filterVillage" class="form-select form-select-sm" disabled>
+                <option value="">အားလုံး</option>
+            </select>
+        </div>
+    </div>
+
+    <!-- ⭐ Date Range Row -->
+    <div class="date-range-row mb-3">
+        <div class="d-flex align-items-center gap-2 mb-2">
+            <span class="fw-bold" style="font-size:0.85rem; color:#065f46;">
+                <i class="bi bi-calendar-range"></i> ရက်စွဲအလိုက် ကြည့်ရှုရန်
+            </span>
+        </div>
+        <div class="row g-2">
+            <div class="col-6 col-md-3">
+                <label class="filter-label" for="filterStartDate">
+                    <i class="bi bi-calendar-event"></i> စတင်သည့်ရက်
+                </label>
+                <input type="date" id="filterStartDate" class="form-control form-control-sm"
+                       value="{{ filters.start_date or '' }}">
+            </div>
+            <div class="col-6 col-md-3">
+                <label class="filter-label" for="filterEndDate">
+                    <i class="bi bi-calendar-check"></i> ပြီးဆုံးသည့်ရက်
+                </label>
+                <input type="date" id="filterEndDate" class="form-control form-control-sm"
+                       value="{{ filters.end_date or '' }}">
+            </div>
+            <div class="col-12 col-md-6 d-flex align-items-center">
+                <span class="date-hint">
+                    <i class="bi bi-info-circle"></i>
+                    ရက်တစ်ရက်ပဲ ထည့်လိုပါက — စတင်ရက် သို့မဟုတ် ပြီးဆုံးရက် တစ်ခုတည်းကို ဖြည့်ပါ။
+                </span>
+            </div>
+        </div>
+    </div>
+
+    <!-- Row 2 — Dropdown filters (QV ရွေးမှ enable) -->
+    <div class="row g-2 mb-3">
+        <div class="col-12 col-md-4">
+            <label class="filter-label" for="filterFormID">
+                <input class="form-check-input me-1" type="checkbox" id="checkFormID" disabled>
+                FormID
+            </label>
+            <input id="filterFormID" class="form-control form-control-sm" list="formIDOptions" placeholder="ကျေးရွာအုပ်စု အရင်ရွေးပါ" autocomplete="off" disabled>
+            <datalist id="formIDOptions"></datalist>
+        </div>
+        <div class="col-12 col-md-4">
+            <label class="filter-label" for="filterHouseholdNo">
+                <input class="form-check-input me-1" type="checkbox" id="checkHouseholdNo" disabled>
+                အိမ်ထောင်စုအမှတ်
+            </label>
+            <input id="filterHouseholdNo" class="form-control form-control-sm" list="householdNoOptions" placeholder="ကျေးရွာအုပ်စု အရင်ရွေးပါ" autocomplete="off" disabled>
+            <datalist id="householdNoOptions"></datalist>
+        </div>
+        <div class="col-12 col-md-4">
+            <label class="filter-label" for="filterHeadName">
+                <input class="form-check-input me-1" type="checkbox" id="checkHeadName" disabled>
+                အိမ်ထောင်ဦးစီး အမည်
+            </label>
+            <input id="filterHeadName" class="form-control form-control-sm" list="headNameOptions" placeholder="ကျေးရွာအုပ်စု အရင်ရွေးပါ" autocomplete="off" disabled>
+            <datalist id="headNameOptions"></datalist>
+        </div>
+    </div>
+
+    <!-- Row 3 — Buttons -->
+    <div class="row g-2 align-items-end">
+        <div class="col-12 col-md-4">
+            <button type="button" id="btnClear" class="btn-filter btn-clear w-100">
+                <i class="bi bi-arrow-clockwise"></i> ပြန်လည်ရွေးချယ်မည်
+            </button>
+        </div>
+        <div class="col-12 col-md-4 offset-md-4">
+            <button type="button" id="btnSearch" class="btn-filter btn-search w-100">
+                <i class="bi bi-search"></i> ကြည့်ရှုမည်
+            </button>
+        </div>
+    </div>
+</div>
+
+<!-- ============ STAT CARDS ============ -->
+<div class="row g-2 g-md-3 mb-3">
+    <div class="col-6 col-lg-3">
+        <div class="stat-card card p-3">
+            <div class="d-flex align-items-center gap-2 gap-md-3">
+                <div class="stat-icon" style="background:#d1fae5;">🐄</div>
+                <div class="flex-grow-1 min-w-0">
+                    <div class="stat-label">တိရစ္ဆာန်ကြီး</div>
+                    <div class="stat-value text-success" id="statLarge">0</div>
+                    <div class="stat-sub">နွား၊ ကျွဲ၊ မြင်း စသည်</div>
+                </div>
+            </div>
+        </div>
+    </div>
+    <div class="col-6 col-lg-3">
+        <div class="stat-card card p-3">
+            <div class="d-flex align-items-center gap-2 gap-md-3">
+                <div class="stat-icon" style="background:#dbeafe;">🐐</div>
+                <div class="flex-grow-1 min-w-0">
+                    <div class="stat-label">တိရစ္ဆာန်ငယ်</div>
+                    <div class="stat-value text-primary" id="statSmall">0</div>
+                    <div class="stat-sub">ဆိတ်၊ သိုး၊ ဝက် စသည်</div>
+                </div>
+            </div>
+        </div>
+    </div>
+    <div class="col-6 col-lg-3">
+        <div class="stat-card card p-3">
+            <div class="d-flex align-items-center gap-2 gap-md-3">
+                <div class="stat-icon" style="background:#fef3c7;">🐔</div>
+                <div class="flex-grow-1 min-w-0">
+                    <div class="stat-label">ကြက်၊ ဘဲ၊ ငုံး</div>
+                    <div class="stat-value text-warning" id="statPoultry">0</div>
+                    <div class="stat-sub">အထီး/အမ စုစုပေါင်း</div>
+                </div>
+            </div>
+        </div>
+    </div>
+    <div class="col-6 col-lg-3">
+        <div class="stat-card card p-3">
+            <div class="d-flex align-items-center gap-2 gap-md-3">
+                <div class="stat-icon" style="background:#fce7f3;">💗</div>
+                <div class="flex-grow-1 min-w-0">
+                    <div class="stat-label">မျိုးတိရစ္ဆာန်</div>
+                    <div class="stat-value text-danger" id="statBreeding">0</div>
+                    <div class="stat-sub">ဒေသနွား၊ ဒေသကျွဲ စသည်</div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- ============ DATA TABLE ============ -->
+<div class="data-card">
+    <div class="data-card-header">
+        <h6>
+            <i class="bi bi-list-ul text-success"></i> ဖြည့်သွင်းထားသည့် စာရင်း
+        </h6>
+        <div class="d-flex align-items-center gap-2">
+            <span class="count-badge" id="recordCount">0 records</span>
+            <button type="button" id="btnExportExcel" class="btn-filter btn-excel">
+                <i class="bi bi-file-earmark-excel-fill"></i> Excel ထုတ်ယူရန်
+            </button>
+        </div>
+    </div>
+
+    <div class="table-loading" id="tableLoading">
+        <div class="spinner-border spinner-border-sm text-success" role="status"></div>
+        <div class="mt-2">ဒေတာ ရယူနေသည်...</div>
+    </div>
+
+    <div class="table-responsive" id="tableWrap">
+        <table class="table data-table">
+            <thead>
+                <tr>
+                    <th style="width:40px;">စဉ်</th>
+                    <th>FormID / အိမ်ထောင်စု</th>
+                    <th>အိမ်ထောင်ဦးစီး / ဖြေဆိုသူ</th>
+                    <th>တည်နေရာ (မြို့နယ်/ကျေးရွာအုပ်စု)</th>
+                    <th class="text-center">တိရစ္ဆာန်အရေအတွက်</th>
+                    <th>မေးမြန်းသည့်နေ့</th>
+                    <th class="text-center" style="width:90px;">လုပ်ဆောင်ချက်</th>
+                </tr>
+            </thead>
+            <tbody id="tableBody"></tbody>
+        </table>
+    </div>
+
+    <div class="pager">
+        <span class="page-info">
+            စာမျက်နှာ <span id="pageCurrent">1</span> / <span id="pageTotal">1</span>
+        </span>
+        <div class="page-btns" id="pageBtns"></div>
+    </div>
+</div>
+
+<!-- ============ DETAIL MODAL ============ -->
+<div class="modal fade" id="detailModal" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered modal-dialog-scrollable">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h6 class="modal-title">
+                    <i class="bi bi-file-earmark-text-fill"></i> အသေးစိတ် အချက်အလက်
+                </h6>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body" id="modalBody"></div>
+            <div class="modal-footer bg-light border-top">
+                <button type="button" class="btn btn-sm btn-outline-secondary" data-bs-dismiss="modal">
+                    <i class="bi bi-x-lg"></i> ပိတ်မည်
+                </button>
+                <button type="button" class="btn btn-sm btn-success px-4" onclick="printDetailModal()">
+                    <i class="bi bi-printer"></i> Print / PDF ထုတ်ယူရန်
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- ============ CONFIRM EXPORT MODAL ============ -->
+<div class="modal fade" id="confirmExportModal" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content">
+            <div class="modal-body">
+                <div class="cf-icon">
+                    <i class="bi bi-file-earmark-excel-fill"></i>
+                </div>
+                <div class="cf-title">Excel ဖိုင် ထုတ်ယူမှာ သေချာပါသလား?</div>
+                <div class="cf-msg">
+                    လက်ရှိ Filter/Search လုပ်ထားသည့် မှတ်တမ်းများကို Excel ဖိုင်အဖြစ် ထုတ်ယူပါမည်။
+                </div>
+                <div class="cf-info" id="cfInfo">
+                    <i class="bi bi-list-ol"></i>
+                    <span>မှတ်တမ်း <b id="cfCount">0</b> ခု</span>
+                    <span class="cf-sep">•</span>
+                    <span id="cfFilter">အားလုံး</span>
+                </div>
+                <div class="cf-btns">
+                    <button type="button" class="btn-cf btn-cf-cancel" data-bs-dismiss="modal">
+                        <i class="bi bi-x-lg"></i> မလုပ်တော့ပါ
+                    </button>
+                    <button type="button" class="btn-cf btn-cf-ok" id="btnConfirmExport">
+                        <i class="bi bi-file-earmark-arrow-down-fill"></i> ထုတ်ယူမည်
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+{% endblock %} {% block extra_js %}
+<script src="https://cdn.jsdelivr.net/npm/xlsx-js-style@1.2.0/dist/xlsx.bundle.js"></script>
+<script>
+    // ==================================================
+    // 1. DATA — Jinja မှ real records
+    // ==================================================
+    const dataEl = document.getElementById('recordsData');
+
+    let RECORDS = [];
+    try {
+        RECORDS = JSON.parse(dataEl.dataset.records || '[]');
+    } catch (e) {
+        console.error('records parse error:', e);
+        RECORDS = [];
+    }
+
+    const ROLE = dataEl.dataset.role || 'admin';
+    const USER_STATE_ID = dataEl.dataset.userStateId || '';
+    const USER_STATE_NAME = dataEl.dataset.userStateName || '';
+    const USER_DISTRICT_ID = dataEl.dataset.userDistrictId || '';
+    const USER_DISTRICT_NAME = dataEl.dataset.userDistrictName || '';
+    const USER_TOWNSHIP_ID = dataEl.dataset.userTownshipId || '';
+    const USER_TOWNSHIP_NAME = dataEl.dataset.userTownshipName || '';
+
+    const INIT_STATE = dataEl.dataset.filterState || '';
+    const INIT_DISTRICT = dataEl.dataset.filterDistrict || '';
+    const INIT_TOWNSHIP = dataEl.dataset.filterTownship || '';
+    const INIT_QV = dataEl.dataset.filterQv || '';
+    const INIT_SEARCH = dataEl.dataset.filterSearch || '';
+    // ⭐ NEW
+    const INIT_START_DATE = dataEl.dataset.filterStartDate || '';
+    const INIT_END_DATE   = dataEl.dataset.filterEndDate   || '';
+
+    // ==================================================
+    // 2. STATE
+    // ==================================================
+    const PAGE_SIZE = 10;
+    const state = {
+        filtered: [],
+        page: 1
+    };
+
+    // ==================================================
+    // 3. HELPERS
+    // ==================================================
+    function escapeHtml(str) {
+        if (str === null || str === undefined) return '';
+        return String(str)
+            .replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;')
+            .replace(/"/g, '&quot;').replace(/'/g, '&#39;');
+    }
+
+    function sumAnimals(list) {
+        return (list || []).reduce((s, a) => s + (Number(a.total) || 0), 0);
+    }
+
+    function sumBreeding(breeding) {
+        if (!breeding || typeof breeding !== 'object') {
+            return 0;
+        }
+        return Object.values(breeding).reduce((sum, animal) => {
+            return sum +
+                (Number(animal.male) || 0) +
+                (Number(animal.female) || 0);
+        }, 0);
+    }
+
+    // ⭐ Date range label helper
+    function getDateRangeLabel() {
+        const s = (inputStartDate && inputStartDate.value) ? inputStartDate.value : '';
+        const e = (inputEndDate && inputEndDate.value)     ? inputEndDate.value   : '';
+        if (!s && !e) return '';
+        if (s && !e) return 'ရက်စွဲ: ' + s + ' (တစ်ရက်တည်း)';
+        if (!s && e) return 'ရက်စွဲ: ' + e + ' (တစ်ရက်တည်း)';
+        if (s === e) return 'ရက်စွဲ: ' + s + ' (တစ်ရက်တည်း)';
+        return 'ရက်စွဲ: ' + s + ' မှ ' + e + ' အထိ';
+    }
+
+    // ==================================================
+    // 4. EXCEL EXPORT ENGINE
+    // ==================================================
+    var TITLE_LINES = [
+        'စိုက်ပျိုးရေး၊ မွေးမြူရေးနှင့် ဆည်မြောင်းဝန်ကြီးဌာန',
+        'မွေးမြူရေးနှင့် ကုသရေးဦးစီးဌာန',
+        ''
+    ];
+    var TITLE_ROW_COUNT = TITLE_LINES.length;
+    var FILTER_ROW = TITLE_ROW_COUNT;
+    var BLANK_ROW = TITLE_ROW_COUNT + 1;
+    var SECTION_START = TITLE_ROW_COUNT + 2;
+
+    const BREED_LABELS = {
+        bsID01: 'ဒေသနွား', bsID02: 'ဒေသကျွဲ', bsID03: 'နို့စားကျွဲ',
+        bsID04: 'ဝက်', bsID05: 'ဆိတ်', bsID06: 'သိုး',
+        local_cattle: 'ဒေသနွား', local_buffalo: 'ဒေသကျွဲ', dairy_buffalo: 'နို့စားကျွဲ',
+        pig: 'ဝက်', goat: 'ဆိတ်', sheep: 'သိုး'
+    };
+
+    function getFilterTitle() {
+        var parts = [];
+
+        function addText(sel) {
+            if (!sel || !sel.value) return;
+            if (sel.selectedIndex < 0) return;
+            var txt = sel.options[sel.selectedIndex].text || '';
+            if (txt.indexOf('အားလုံး') !== -1) return;
+            if (txt.indexOf('ရွေးပါ') !== -1) return;
+            parts.push(txt);
+        }
+        addText(selState);
+        addText(selDistrict);
+        addText(selTownship);
+        addText(selVillage);
+        detailSearchFilters.forEach(({ input, checkbox }) => {
+            if (checkbox.checked && input.value.trim()) parts.push(input.value.trim());
+        });
+
+        var locPart = (parts.length === 0)
+            ? 'တိုင်းဒေသကြီး/ပြည်နယ်အားလုံးအတွင်း'
+            : (parts.join('၊ ') + ' အတွင်း');
+
+        var datePart = getDateRangeLabel();
+        return locPart + ' တိရစ္ဆာန်ကောင်ရေစာရင်း' + (datePart ? ' (' + datePart + ')' : '');
+    }
+
+    function buildFilename() {
+        var stamp = new Date();
+        var p = function(n) { return String(n).padStart(2, '0'); };
+        var ds = stamp.getFullYear() + '-' + p(stamp.getMonth() + 1) + '-' + p(stamp.getDate()) +
+            '_' + p(stamp.getHours()) + p(stamp.getMinutes());
+        var parts = [];
+
+        function addText(sel) {
+            if (!sel || !sel.value) return;
+            if (sel.selectedIndex < 0) return;
+            var txt = sel.options[sel.selectedIndex].text || '';
+            if (txt.indexOf('အားလုံး') !== -1) return;
+            if (txt.indexOf('ရွေးပါ') !== -1) return;
+            parts.push(txt);
+        }
+        addText(selState);
+        addText(selDistrict);
+        addText(selTownship);
+        addText(selVillage);
+        var prefix = parts.length > 0 ? parts.join('_') : 'အားလုံး';
+
+        // ⭐ Date range tag
+        var s = (inputStartDate && inputStartDate.value) ? inputStartDate.value : '';
+        var e = (inputEndDate && inputEndDate.value)     ? inputEndDate.value   : '';
+        var dateTag = '';
+        if (s && e) dateTag = '_' + s + '_to_' + e;
+        else if (s) dateTag = '_' + s;
+        else if (e) dateTag = '_' + e;
+
+        return 'တိရစ္ဆာန်မှတ်တမ်း_' + prefix + dateTag + '_' + ds + '.xlsx';
+    }
+
+    function allBorders() {
+        var b = { style: 'thin', color: { rgb: '000000' } };
+        return { top: b, bottom: b, left: b, right: b };
+    }
+    function titleStyle() {
+        return {
+            font: { name: 'Pyidaungsu', sz: 14, bold: true, color: { rgb: '000000' } },
+            alignment: { horizontal: 'center', vertical: 'center' }
+        };
+    }
+    function filterTitleStyle() {
+        return {
+            font: { name: 'Pyidaungsu', sz: 12, bold: true, color: { rgb: '000000' } },
+            alignment: { horizontal: 'center', vertical: 'center', wrapText: true }
+        };
+    }
+    function subTitleStyle() {
+        return {
+            font: { name: 'Pyidaungsu', sz: 12, bold: true, color: { rgb: '000000' } },
+            alignment: { horizontal: 'left', vertical: 'center', wrapText: true },
+            border: allBorders()
+        };
+    }
+    function headerStyle() {
+        return {
+            font: { name: 'Pyidaungsu', sz: 11, bold: true, color: { rgb: '000000' } },
+            alignment: { horizontal: 'center', vertical: 'center', wrapText: true },
+            border: allBorders()
+        };
+    }
+    function cellStyle() {
+        return {
+            font: { name: 'Pyidaungsu', sz: 10, color: { rgb: '000000' } },
+            alignment: { horizontal: 'center', vertical: 'center', wrapText: true },
+            border: allBorders()
+        };
+    }
+    function nameCellStyle() {
+        var s = cellStyle();
+        s.font.bold = true;
+        s.font.sz = 11;
+        s.alignment.horizontal = 'left';
+        return s;
+    }
+    function totalCellStyle() {
+        var s = cellStyle();
+        s.font.bold = true;
+        return s;
+    }
+
+    function applyStyles(ws, merges, sections) {
+        var range = XLSX.utils.decode_range(ws['!ref']);
+        for (var R = range.s.r; R <= range.e.r; R++) {
+            for (var C = range.s.c; C <= range.e.c; C++) {
+                var addr = XLSX.utils.encode_cell({ r: R, c: C });
+                if (!ws[addr]) continue;
+                ws[addr].s = cellStyle();
+            }
+        }
+        for (var tr = 0; tr < TITLE_ROW_COUNT; tr++) {
+            for (var Ct = range.s.c; Ct <= range.e.c; Ct++) {
+                var at = XLSX.utils.encode_cell({ r: tr, c: Ct });
+                if (ws[at]) ws[at].s = titleStyle();
+            }
+        }
+        for (var Cf = range.s.c; Cf <= range.e.c; Cf++) {
+            var af = XLSX.utils.encode_cell({ r: FILTER_ROW, c: Cf });
+            if (ws[af]) ws[af].s = filterTitleStyle();
+        }
+        sections.forEach(function(sec) {
+            for (var C3 = range.s.c; C3 <= range.e.c; C3++) {
+                var a3 = XLSX.utils.encode_cell({ r: sec.titleRow, c: C3 });
+                if (ws[a3]) ws[a3].s = subTitleStyle();
+            }
+            sec.headerRows.forEach(function(hr) {
+                for (var C4 = range.s.c; C4 <= range.e.c; C4++) {
+                    var a4 = XLSX.utils.encode_cell({ r: hr, c: C4 });
+                    if (ws[a4]) ws[a4].s = headerStyle();
+                }
+            });
+            for (var R2 = sec.dataStart; R2 <= sec.dataEnd; R2++) {
+                var nameAddr = XLSX.utils.encode_cell({ r: R2, c: 0 });
+                if (ws[nameAddr]) ws[nameAddr].s = nameCellStyle();
+                var totalAddr = XLSX.utils.encode_cell({ r: R2, c: sec.lastCol });
+                if (ws[totalAddr]) ws[totalAddr].s = totalCellStyle();
+            }
+        });
+        ws['!merges'] = merges;
+    }
+
+    function setRowHeights(ws, aoa, sections) {
+        var rows = [];
+        rows[0] = { hpt: 22 };
+        rows[1] = { hpt: 22 };
+        rows[2] = { hpt: 22 };
+        rows[FILTER_ROW] = { hpt: 22 };
+        rows[BLANK_ROW] = { hpt: 6 };
+        sections.forEach(function(sec) {
+            rows[sec.titleRow] = { hpt: 22 };
+            sec.headerRows.forEach(function(hr) { rows[hr] = { hpt: 28 }; });
+        });
+        var out = new Array(aoa.length);
+        for (var i = 0; i < aoa.length; i++) {
+            out[i] = rows[i] || { hpt: 35 };
+        }
+        ws['!rows'] = out;
+    }
+
+    function autoWidth(ws, aoa) {
+        var widths = [];
+        aoa.forEach(function(row) {
+            (row || []).forEach(function(cell, i) {
+                var len = String(cell == null ? '' : cell).length;
+                if (!widths[i] || widths[i] < len) widths[i] = len;
+            });
+        });
+        ws['!cols'] = widths.map(function(w) {
+            return { wch: Math.min(Math.max((w || 10) + 2, 12), 35) };
+        });
+    }
+
+    function buildSheetContent(records, filterTitle) {
+        var lastCol = 16;
+        var sectionTitle = 'ဖြည့်သွင်းထားသည့် မှတ်တမ်းများ စာရင်း';
+
+        var headerRows = [
+            ['စဉ်', 'အိမ်ထောင်စုအမှတ်', 'မေးမြန်းသည့်နေ့', 'တိုင်း/ခရိုင်/မြို့နယ်/ကျေးရွာအုပ်စု/ကျေးရွာ',
+             'အိမ်ထောင်ဦးစီး', 'အသက်/ပညာအရည်အချင်း/ဖုန်း', 'ဖြေဆိုသူ', 'အသက်/ပညာအရည်အချင်း/ဖုန်း',
+             'တိရစ္ဆာန်အမျိုးအစား', 'မျိုးစိတ်', 'အသက်အပိုင်းအခြား', 'အထီး', 'သင်းကွပ်', 'အမ', 'စုစုပေါင်း',
+             'မေးမြန်းသူအမည်', 'ဖုန်းနံပါတ်']
+        ];
+
+        var dataRows = [];
+        var merges = [];
+        var currentExcelRow = SECTION_START + 2;
+
+        records.forEach(function(r, i) {
+            let startRow = currentExcelRow;
+            let rowCount = 0;
+
+            let baseInfo = {
+                no: i + 1,
+                hhNo: r.householdNo || '',
+                date: r.interview_date || '',
+                location: (r.state || '') + '၊' + (r.district || '') + '၊' + (r.township || '') + '၊' + (r.village_tract || '') + '၊' + (r.ward_village || ''),
+                headName: (r.household_head && r.household_head.name) || '',
+                headInfo: `${r.household_head?.age || ''}နှစ်/${r.household_head?.education || ''}/${r.household_head?.phone || ''}`,
+                respName: (r.respondent && r.respondent.name) || '',
+                respInfo: `${r.respondent?.age || ''}နှစ်/${r.respondent?.education || ''}/${r.respondent?.phone || ''}`,
+                interviewer: (r.interviewer && r.interviewer.name) || '',
+                intvPhone: (r.interviewer && r.interviewer.phone) || ''
+            };
+
+            function getGenderCounts(animal, type) {
+                let m = 0, c = 0, f = 0;
+                if (type === 'atID01') {
+                    m = (animal.u1_male || 0) + (animal.y1_3_male || 0) + (animal.o3_male || 0);
+                    c = (animal.u1_castrated || 0) + (animal.y1_3_castrated || 0) + (animal.o3_castrated || 0);
+                    f = (animal.u1_female || 0) + (animal.y1_3_female || 0) + (animal.o3_female || 0);
+                } else if (type === 'atID02') {
+                    m = (animal.u2m_male || 0) + (animal.m2_6m_male || 0) + (animal.o6m_male || 0);
+                    c = (animal.u2m_castrated || 0) + (animal.m2_6m_castrated || 0) + (animal.o6m_castrated || 0);
+                    f = (animal.u2m_female || 0) + (animal.m2_6m_female || 0) + (animal.o6m_female || 0);
+                } else if (type === 'atID03') {
+                    m = (animal.young_male || 0) + (animal.medium_male || 0) + (animal.adult_male || 0);
+                    f = (animal.young_female || 0) + (animal.medium_female || 0) + (animal.adult_female || 0);
+                }
+                return { m, c, f };
+            }
+
+            (r.large_animals || []).forEach(function(a) {
+                let counts = getGenderCounts(a, 'atID01');
+                dataRows.push([
+                    (rowCount === 0) ? baseInfo.no : '',
+                    (rowCount === 0) ? baseInfo.hhNo : '',
+                    (rowCount === 0) ? baseInfo.date : '',
+                    (rowCount === 0) ? baseInfo.location : '',
+                    (rowCount === 0) ? baseInfo.headName : '',
+                    (rowCount === 0) ? baseInfo.headInfo : '',
+                    (rowCount === 0) ? baseInfo.respName : '',
+                    (rowCount === 0) ? baseInfo.respInfo : '',
+                    'တိရစ္ဆာန်ကြီး', a.species + (a.breed ? ` (${a.breed})` : ''),
+                    a.age_name || '-',
+                    counts.m, counts.c, counts.f, a.total || 0,
+                    (rowCount === 0) ? baseInfo.interviewer : '',
+                    (rowCount === 0) ? baseInfo.intvPhone : ''
+                ]);
+                rowCount++; currentExcelRow++;
+            });
+
+            (r.small_animals || []).forEach(function(a) {
+                let counts = getGenderCounts(a, 'atID02');
+                dataRows.push([
+                    (rowCount === 0) ? baseInfo.no : '',
+                    (rowCount === 0) ? baseInfo.hhNo : '',
+                    (rowCount === 0) ? baseInfo.date : '',
+                    (rowCount === 0) ? baseInfo.location : '',
+                    (rowCount === 0) ? baseInfo.headName : '',
+                    (rowCount === 0) ? baseInfo.headInfo : '',
+                    (rowCount === 0) ? baseInfo.respName : '',
+                    (rowCount === 0) ? baseInfo.respInfo : '',
+                    'တိရစ္ဆာန်ငယ်', a.species + (a.breed ? ` (${a.breed})` : ''),
+                    a.age_name || '-',
+                    counts.m, counts.c, counts.f, a.total || 0,
+                    (rowCount === 0) ? baseInfo.interviewer : '',
+                    (rowCount === 0) ? baseInfo.intvPhone : ''
+                ]);
+                rowCount++; currentExcelRow++;
+            });
+
+            (r.poultry || []).forEach(function(p) {
+                let counts = getGenderCounts(p, 'atID03');
+                dataRows.push([
+                    (rowCount === 0) ? baseInfo.no : '',
+                    (rowCount === 0) ? baseInfo.hhNo : '',
+                    (rowCount === 0) ? baseInfo.date : '',
+                    (rowCount === 0) ? baseInfo.location : '',
+                    (rowCount === 0) ? baseInfo.headName : '',
+                    (rowCount === 0) ? baseInfo.headInfo : '',
+                    (rowCount === 0) ? baseInfo.respName : '',
+                    (rowCount === 0) ? baseInfo.respInfo : '',
+                    'ကြက်/ဘဲ/ငုံး', p.species + (p.breed ? ` (${p.breed})` : ''),
+                    p.age_name || '-',
+                    counts.m, 0, counts.f, p.total || 0,
+                    (rowCount === 0) ? baseInfo.interviewer : '',
+                    (rowCount === 0) ? baseInfo.intvPhone : ''
+                ]);
+                rowCount++; currentExcelRow++;
+            });
+
+            Object.entries(r.breeding || {}).forEach(function([k, v]) {
+                dataRows.push([
+                    (rowCount === 0) ? baseInfo.no : '',
+                    (rowCount === 0) ? baseInfo.hhNo : '',
+                    (rowCount === 0) ? baseInfo.date : '',
+                    (rowCount === 0) ? baseInfo.location : '',
+                    (rowCount === 0) ? baseInfo.headName : '',
+                    (rowCount === 0) ? baseInfo.headInfo : '',
+                    (rowCount === 0) ? baseInfo.respName : '',
+                    (rowCount === 0) ? baseInfo.respInfo : '',
+                    'မျိုးတိရစ္ဆာန်', BREED_LABELS[k] || v.species || k,
+                    '-',
+                    v.male || 0, 0, v.female || 0, (v.male || 0) + (v.female || 0),
+                    (rowCount === 0) ? baseInfo.interviewer : '',
+                    (rowCount === 0) ? baseInfo.intvPhone : ''
+                ]);
+                rowCount++; currentExcelRow++;
+            });
+
+            if (rowCount > 1) {
+                let endRow = startRow + rowCount - 1;
+                let mergeCols = [0, 1, 2, 3, 4, 5, 6, 7, 15, 16];
+                mergeCols.forEach(c => {
+                    merges.push({ s: { r: startRow, c: c }, e: { r: endRow, c: c } });
+                });
+            }
+        });
+
+        var aoa = [];
+        var titleMerges = [];
+
+        var dynamicTitle = 'တိရစ္ဆာန်ကောင်ရေစာရင်း ကောက်ယူခြင်း';
+        if (filterTitle && !filterTitle.includes('အားလုံး')) {
+            dynamicTitle = filterTitle.replace('အတွင်း တိရစ္ဆာန်ကောင်ရေစာရင်း', '').trim();
+            dynamicTitle = `${dynamicTitle} အတွင်းရှိ အိမ်ထောင်စုအလိုက် တိရစ္ဆာန်ကောင်ရေ အသေးစိတ်စာရင်း`;
+        }
+
+        for (var ti = 0; ti < TITLE_LINES.length; ti++) {
+            if (ti === 2) {
+                aoa.push([dynamicTitle]);
+            } else {
+                aoa.push([TITLE_LINES[ti]]);
+            }
+            titleMerges.push({ s: { r: ti, c: 0 }, e: { r: ti, c: lastCol } });
+        }
+
+        aoa.push([filterTitle || '']);
+        titleMerges.push({ s: { r: FILTER_ROW, c: 0 }, e: { r: FILTER_ROW, c: lastCol } });
+
+        aoa.push([]);
+
+        aoa.push([sectionTitle]);
+        titleMerges.push({ s: { r: SECTION_START, c: 0 }, e: { r: SECTION_START, c: lastCol } });
+        var titleRow = SECTION_START;
+
+        var hrIndexes = [];
+        headerRows.forEach(function(hr) {
+            var rowArr = [];
+            for (var i = 0; i <= lastCol; i++) rowArr.push(hr[i] || '');
+            aoa.push(rowArr);
+            hrIndexes.push(aoa.length - 1);
+        });
+
+        var dataStart = aoa.length;
+        dataRows.forEach(function(dr) { aoa.push(dr); });
+        var dataEnd = aoa.length - 1;
+
+        aoa.push([]);
+        var footerRow = aoa.length - 1;
+        let today = new Date();
+        let dateStr = `${today.getFullYear()}-${String(today.getMonth()+1).padStart(2,'0')}-${String(today.getDate()).padStart(2,'0')} ${String(today.getHours()).padStart(2,'0')}:${String(today.getMinutes()).padStart(2,'0')}`;
+
+        var footerArr = new Array(lastCol + 1).fill('');
+        footerArr[0] = `ထုတ်ယူသည့်ရက်စွဲ - ${dateStr}`;
+        footerArr[lastCol] = 'စာမျက်နှာ - 1';
+        aoa.push(footerArr);
+
+        titleMerges.push({ s: { r: footerRow + 1, c: 0 }, e: { r: footerRow + 1, c: 7 } });
+        titleMerges.push({ s: { r: footerRow + 1, c: 16 }, e: { r: footerRow + 1, c: 16 } });
+
+        return {
+            aoa: aoa,
+            merges: titleMerges.concat(merges),
+            lastCol: lastCol,
+            sections: [{
+                titleRow: titleRow, headerRows: hrIndexes,
+                dataStart: dataStart, dataEnd: dataEnd, lastCol: lastCol
+            }]
+        };
+    }
+
+    function exportRecordsExcel() {
+        try {
+            var list = state.filtered;
+            if (list.length === 0) {
+                alert('Export လုပ်ရန် မှတ်တမ်း မရှိပါ။');
+                return false;
+            }
+
+            var filterTitle = getFilterTitle();
+            var wb = XLSX.utils.book_new();
+
+            var content = buildSheetContent(list, filterTitle);
+            var ws = XLSX.utils.aoa_to_sheet(content.aoa);
+            applyStyles(ws, content.merges, content.sections);
+            setRowHeights(ws, content.aoa, content.sections);
+            autoWidth(ws, content.aoa);
+            XLSX.utils.book_append_sheet(wb, ws, 'မှတ်တမ်းများ');
+
+            var fname = buildFilename();
+            XLSX.writeFile(wb, fname, {
+                bookType: 'xlsx',
+                type: 'binary'
+            });
+            return true;
+        } catch (e) {
+            console.error('Excel export error:', e);
+            return false;
+        }
+    }
+
+    // ==================================================
+    // 5. STAT CARDS
+    // ==================================================
+    function updateStatCards() {
+        const list = state.filtered || [];
+        const totalLarge = list.reduce((sum, r) => sum + (Number(r.large_total) || 0), 0);
+        const totalSmall = list.reduce((sum, r) => sum + (Number(r.small_total) || 0), 0);
+        const totalPoultry = list.reduce((sum, r) => sum + (Number(r.poultry_total) || 0), 0);
+        const totalBreeding = list.reduce((sum, r) => sum + (Number(r.breeding_total) || 0), 0);
+
+        const fmt = n => n.toLocaleString();
+        document.getElementById('statLarge').textContent = fmt(totalLarge);
+        document.getElementById('statSmall').textContent = fmt(totalSmall);
+        document.getElementById('statPoultry').textContent = fmt(totalPoultry);
+        document.getElementById('statBreeding').textContent = fmt(totalBreeding);
+    }
+
+    // ==================================================
+    // 6. RENDER TABLE
+    // ==================================================
+    function renderTable() {
+        const list = state.filtered;
+        const totalPages = Math.max(1, Math.ceil(list.length / PAGE_SIZE));
+        if (state.page > totalPages) state.page = totalPages;
+
+        const start = (state.page - 1) * PAGE_SIZE;
+        const slice = list.slice(start, start + PAGE_SIZE);
+
+        const tbody = document.getElementById('tableBody');
+        if (slice.length === 0) {
+            tbody.innerHTML = `
+            <tr>
+                <td colspan="7">
+                    <div class="empty-state">
+                        <i class="bi bi-inbox"></i>
+                        <p>မှတ်တမ်း မရှိပါ</p>
+                    </div>
+                </td>
+            </tr>`;
+        } else {
+                        tbody.innerHTML = slice.map((r, i) => {
+                const largeTotal = sumAnimals(r.large_animals);
+                const smallTotal = sumAnimals(r.small_animals);
+                const poultryTotal = sumAnimals(r.poultry);
+                const headName = (r.household_head && r.household_head.name) || '';
+                const respName = (r.respondent && r.respondent.name) || '';
+
+                const fullId = r.id || '';
+                const formIDShort = fullId.length > 5 ? fullId.substring(0, 5) : fullId;
+
+                // ⭐ စုစုပေါင်း တိရစ္ဆာန်အရေအတွက်
+                const animalGrandTotal = largeTotal + smallTotal + poultryTotal;
+
+                return `
+                <tr>
+                    <td><span class="row-num">${start + i + 1}</span></td>
+                    <td>
+                        <div class="fw-bold text-primary" style="font-size:0.72rem;" title="${escapeHtml(fullId)}">${escapeHtml(formIDShort)}${fullId.length > 5 ? '...' : ''}</div>
+                        <div class="text-muted" style="font-size:0.7rem;">အမှတ်: ${escapeHtml(r.householdNo || '')}</div>
+                    </td>
+                    <td>
+                        <div class="name" style="font-size:0.8rem;">${escapeHtml(headName)}</div>
+                        <div class="text-muted" style="font-size:0.72rem;">${escapeHtml(respName)}</div>
+                    </td>
+                    <td>
+                        <div style="font-size:0.75rem;">${escapeHtml(r.township)}</div>
+                        <div class="text-muted" style="font-size:0.72rem;">${escapeHtml(r.ward_village || r.village_tract)}</div>
+                    </td>
+                    <td class="text-center">
+                        <span class="fw-bold text-success" style="font-size:0.85rem;">${animalGrandTotal.toLocaleString()}</span>
+                    </td>
+                    <td style="font-size:0.75rem;">${escapeHtml(r.interview_date)}</td>
+                    <td class="text-center">
+                        <button class="btn-view" title="အသေးစိတ်ကြည့်ရန်" data-id="${escapeHtml(r.id)}">
+                            <i class="bi bi-eye"></i>
+                            <span>အသေးစိတ်</span>
+                        </button>
+                    </td>
+                </tr>
+            `;
+            }).join('');
+        }
+
+        document.getElementById('recordCount').textContent = list.length + ' records';
+        document.getElementById('pageCurrent').textContent = state.page;
+        document.getElementById('pageTotal').textContent = totalPages;
+
+        renderPager(totalPages);
+
+        document.querySelectorAll('.btn-view').forEach(btn => {
+            btn.addEventListener('click', function() {
+                const id = this.dataset.id;
+                const rec = list.find(r => r.id === id);
+                if (rec) openDetailModal(rec);
+            });
+        });
+
+        updateStatCards();
+    }
+
+    // ==================================================
+    // 7. PAGER
+    // ==================================================
+    function renderPager(totalPages) {
+        const wrap = document.getElementById('pageBtns');
+        let html = '';
+
+        html += `<button class="btn-page" ${state.page === 1 ? 'disabled' : ''} data-page="${state.page - 1}">
+                <i class="bi bi-chevron-left"></i>
+             </button>`;
+
+        for (let p = 1; p <= totalPages; p++) {
+            if (totalPages > 7 && Math.abs(p - state.page) > 2 && p !== 1 && p !== totalPages) {
+                if (p === 2 || p === totalPages - 1) html += `<span style="padding:0 4px;color:#9ca3af;">…</span>`;
+                continue;
+            }
+            html += `<button class="btn-page ${p === state.page ? 'active' : ''}" data-page="${p}">${p}</button>`;
+        }
+
+        html += `<button class="btn-page" ${state.page === totalPages ? 'disabled' : ''} data-page="${state.page + 1}">
+                <i class="bi bi-chevron-right"></i>
+             </button>`;
+
+        wrap.innerHTML = html;
+
+        wrap.querySelectorAll('.btn-page[data-page]').forEach(btn => {
+            btn.addEventListener('click', function() {
+                const p = parseInt(this.dataset.page);
+                if (p >= 1 && p <= totalPages) {
+                    state.page = p;
+                    renderTable();
+                    window.scrollTo({ top: 0, behavior: 'smooth' });
+                }
+            });
+        });
+    }
+
+    // ==================================================
+    // 8. DETAIL MODAL
+    // ==================================================
+    let detailModal = null;
+
+    function openDetailModal(r) {
+        const body = document.getElementById('modalBody');
+
+        let largeHtml = `<div class="info-note"><i class="bi bi-info-circle"></i>တိရစ္ဆာန်ကြီး မှတ်တမ်း မရှိပါ</div>`;
+        if (r.large_animals && r.large_animals.length > 0) {
+            const rows = r.large_animals.map(a => `
+            <tr>
+                <td>${escapeHtml(a.species)}</td>
+                <td>${escapeHtml(a.breed || '')}</td>
+                <td>${a.u1_male || 0}</td>
+                <td>${a.u1_castrated || 0}</td>
+                <td>${a.u1_female || 0}</td>
+                <td>${a.m1_3_male || 0}</td>
+                <td>${a.m1_3_castrated || 0}</td>
+                <td>${a.m1_3_female || 0}</td>
+                <td>${a.o3_male || 0}</td>
+                <td>${a.o3_castrated || 0}</td>
+                <td>${a.o3_female || 0}</td>
+                <td>${a.total || 0}</td>
+            </tr>
+        `).join('');
+            largeHtml = `
+            <table class="modal-table">
+                <thead>
+                    <tr>
+                        <th rowspan="2">တိရစ္ဆာန်</th>
+                        <th rowspan="2">မျိုး</th>
+                        <th colspan="3">၁ နှစ်အောက်</th>
+                        <th colspan="3">၁-၃ နှစ်</th>
+                        <th colspan="3">၃ နှစ်အထက်</th>
+                        <th rowspan="2">စုစုပေါင်း</th>
+                    </tr>
+                    <tr>
+                        <th>အထီး</th><th>သင်း</th><th>အမ</th>
+                        <th>အထီး</th><th>သင်း</th><th>အမ</th>
+                        <th>အထီး</th><th>သင်း</th><th>အမ</th>
+                    </tr>
+                </thead>
+                <tbody>${rows}</tbody>
+            </table>
+        `;
+        }
+
+        let smallHtml = `<div class="info-note"><i class="bi bi-info-circle"></i>တိရစ္ဆာန်ငယ် မှတ်တမ်း မရှိပါ</div>`;
+        if (r.small_animals && r.small_animals.length > 0) {
+            const rows = r.small_animals.map(a => `
+            <tr>
+                <td>${escapeHtml(a.species)}</td>
+                <td>${escapeHtml(a.breed || '')}</td>
+                <td>${a.u2m_male || 0}</td>
+                <td>${a.u2m_castrated || 0}</td>
+                <td>${a.u2m_female || 0}</td>
+                <td>${a.m2_6m_male || 0}</td>
+                <td>${a.m2_6m_castrated || 0}</td>
+                <td>${a.m2_6m_female || 0}</td>
+                <td>${a.o6m_male || 0}</td>
+                <td>${a.o6m_castrated || 0}</td>
+                <td>${a.o6m_female || 0}</td>
+                <td>${a.total || 0}</td>
+            </tr>
+        `).join('');
+            smallHtml = `
+            <table class="modal-table">
+                <thead>
+                    <tr>
+                        <th rowspan="2">တိရစ္ဆာန်</th>
+                        <th rowspan="2">မျိုး</th>
+                        <th colspan="3">၂ လအောက်</th>
+                        <th colspan="3">၂-၆ လ</th>
+                        <th colspan="3">၆ လအထက်</th>
+                        <th rowspan="2">စုစုပေါင်း</th>
+                    </tr>
+                    <tr>
+                        <th>အထီး</th><th>သင်း</th><th>အမ</th>
+                        <th>အထီး</th><th>သင်း</th><th>အမ</th>
+                        <th>အထီး</th><th>သင်း</th><th>အမ</th>
+                    </tr>
+                </thead>
+                <tbody>${rows}</tbody>
+            </table>
+        `;
+        }
+
+        let poultryHtml = `<div class="info-note"><i class="bi bi-info-circle"></i>ကြက်၊ ဘဲ၊ ငုံး မှတ်တမ်း မရှိပါ</div>`;
+        if (r.poultry && r.poultry.length > 0) {
+            const rows = r.poultry.map(p => `
+            <tr>
+                <td>${escapeHtml(p.species)}</td>
+                <td>${escapeHtml(p.breed || '')}</td>
+                <td>${p.young_male || 0}</td>
+                <td>${p.young_female || 0}</td>
+                <td>${p.medium_male || 0}</td>
+                <td>${p.medium_female || 0}</td>
+                <td>${p.adult_male || 0}</td>
+                <td>${p.adult_female || 0}</td>
+                <td>${p.total || 0}</td>
+            </tr>
+        `).join('');
+            poultryHtml = `
+            <table class="modal-table">
+                <thead>
+                    <tr>
+                        <th rowspan="2">အမျိုးအစား</th>
+                        <th rowspan="2">မျိုး</th>
+                        <th colspan="2">ငယ်</th>
+                        <th colspan="2">လတ်</th>
+                        <th colspan="2">ကြီး</th>
+                        <th rowspan="2">စုစုပေါင်း</th>
+                    </tr>
+                    <tr>
+                        <th>အထီး</th><th>အမ</th>
+                        <th>အထီး</th><th>အမ</th>
+                        <th>အထီး</th><th>အမ</th>
+                    </tr>
+                </thead>
+                <tbody>${rows}</tbody>
+            </table>
+        `;
+        }
+
+        const breedingRows = Object.entries(r.breeding || {}).map(([k, v]) => `
+        <tr>
+            <td>${escapeHtml(BREED_LABELS[k] || v.species || k)}</td>
+            <td>${v.male || 0}</td>
+            <td>${v.female || 0}</td>
+            <td>${(v.male || 0) + (v.female || 0)}</td>
+        </tr>
+    `).join('') || `<tr><td colspan="4" style="text-align:center;color:#9ca3af;">မှတ်တမ်း မရှိပါ</td></tr>`;
+
+        const resp = r.respondent || {};
+        const head = r.household_head || {};
+        const intv = r.interviewer || {};
+
+        body.innerHTML = `
+        <div class="modal-section">
+            <div class="modal-section-title">
+                <i class="bi bi-person-vcard"></i>
+                အပိုင်း (၁) - လူတွေ့မေးမြန်းခြင်းဆိုင်ရာ အချက်များ
+            </div>
+            <div class="info-grid mb-2">
+                <div class="info-item" style="grid-column: span 2;">
+                    <span class="info-lbl">FormID</span>
+                    <span class="info-val" style="font-family:monospace; font-size:0.72rem;">${escapeHtml(r.id)}</span>
+                </div>
+                <div class="info-item">
+                    <span class="info-lbl">အိမ်ထောင်စုအမှတ်</span>
+                    <span class="info-val">${escapeHtml(r.householdNo || '')}</span>
+                </div>
+                <div class="info-item">
+                    <span class="info-lbl">တွေ့ဆုံမေးမြန်းသည့်နေ့</span>
+                    <span class="info-val">${escapeHtml(r.interview_date)}</span>
+                </div>
+                <div class="info-item">
+                    <span class="info-lbl">တိုင်း/ပြည်နယ်</span>
+                    <span class="info-val">${escapeHtml(r.state)}</span>
+                </div>
+                <div class="info-item">
+                    <span class="info-lbl">ခရိုင်</span>
+                    <span class="info-val">${escapeHtml(r.district)}</span>
+                </div>
+                <div class="info-item">
+                    <span class="info-lbl">မြို့နယ်</span>
+                    <span class="info-val">${escapeHtml(r.township)}</span>
+                </div>
+                <div class="info-item">
+                    <span class="info-lbl">ကျေးရွာအုပ်စု / ကျေးရွာ</span>
+                    <span class="info-val">${escapeHtml(r.ward_village || r.village_tract)}</span>
+                </div>
+            </div>
+
+            <div class="row g-2">
+                <div class="col-md-6">
+                    <div class="person-card">
+                        <div class="person-title">
+                            <i class="bi bi-person-circle"></i>ဖြေဆိုသူအချက်အလက်
+                        </div>
+                        <div class="person-fields">
+                            <div class="pf"><span class="lbl">အမည်</span><span class="val">${escapeHtml(resp.name)}</span></div>
+                            <div class="pf"><span class="lbl">ကျား/မ</span><span class="val">${escapeHtml(resp.gender)}</span></div>
+                            <div class="pf"><span class="lbl">အသက်</span><span class="val">${escapeHtml(resp.age)} နှစ်</span></div>
+                            <div class="pf"><span class="lbl">ပညာ</span><span class="val">${escapeHtml(resp.education)}</span></div>
+                            <div class="pf" style="grid-column: span 2;"><span class="lbl">ဖုန်း</span><span class="val">${escapeHtml(resp.phone)}</span></div>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-md-6">
+                    <div class="person-card">
+                        <div class="person-title">
+                            <i class="bi bi-house-door"></i>အိမ်ထောင်ဦးစီးအချက်အလက်
+                        </div>
+                        <div class="person-fields">
+                            <div class="pf"><span class="lbl">အမည်</span><span class="val">${escapeHtml(head.name)}</span></div>
+                            <div class="pf"><span class="lbl">ကျား/မ</span><span class="val">${escapeHtml(head.gender)}</span></div>
+                            <div class="pf"><span class="lbl">အသက်</span><span class="val">${escapeHtml(head.age)} နှစ်</span></div>
+                            <div class="pf"><span class="lbl">ပညာ</span><span class="val">${escapeHtml(head.education)}</span></div>
+                            <div class="pf" style="grid-column: span 2;"><span class="lbl">ဖုန်း</span><span class="val">${escapeHtml(head.phone)}</span></div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="modal-section">
+            <div class="modal-section-title">
+                <i class="bi bi-clipboard-data"></i>
+                အပိုင်း (၂) - တိရစ္ဆာန်ကောင်ရေ
+            </div>
+            <div style="font-size:0.72rem; font-weight:700; color:#065f46; margin-bottom:6px;">
+                (က) တိရစ္ဆာန်ကြီး
+            </div>
+            <div class="table-responsive mb-3">${largeHtml}</div>
+
+            <div style="font-size:0.72rem; font-weight:700; color:#065f46; margin-bottom:6px;">
+                (ခ) တိရစ္ဆာန်ငယ်
+            </div>
+            <div class="table-responsive">${smallHtml}</div>
+        </div>
+
+        <div class="modal-section">
+            <div class="modal-section-title">
+                <i class="bi bi-egg"></i>
+                အပိုင်း (၃) - ကြက်၊ ဘဲ၊ ငုံး စာရင်း
+            </div>
+            <div class="table-responsive">${poultryHtml}</div>
+        </div>
+
+        <div class="modal-section">
+            <div class="modal-section-title">
+                <i class="bi bi-heart-pulse"></i>
+                အပိုင်း (၄) - မျိုးတိရစ္ဆာန် မွေးမြူမှု
+            </div>
+            <table class="modal-table">
+                <thead>
+                    <tr>
+                        <th>အမျိုးအစား</th>
+                        <th>အထီး</th>
+                        <th>အမ</th>
+                        <th>စုစုပေါင်း</th>
+                    </tr>
+                </thead>
+                <tbody>${breedingRows}</tbody>
+            </table>
+        </div>
+
+        <div class="modal-section" style="margin-bottom:0;">
+            <div class="modal-section-title">
+                <i class="bi bi-person-badge"></i>
+                အပိုင်း (၅) - မေးမြန်းသူအချက်အလက်
+            </div>
+            <div class="info-grid">
+                <div class="info-item">
+                    <span class="info-lbl">အမည်</span>
+                    <span class="info-val">${escapeHtml(intv.name)}</span>
+                </div>
+                <div class="info-item">
+                    <span class="info-lbl">ဖုန်းနံပါတ်</span>
+                    <span class="info-val">${escapeHtml(intv.phone)}</span>
+                </div>
+            </div>
+        </div>
+    `;
+
+        if (!detailModal) {
+            detailModal = new bootstrap.Modal(document.getElementById('detailModal'));
+        }
+        detailModal.show();
+    }
+
+    // ==================================================
+    // 9. ELEMENTS
+    // ==================================================
+    const selState = document.getElementById('filterState');
+    const selDistrict = document.getElementById('filterDistrict');
+    const selTownship = document.getElementById('filterTownship');
+    const selVillage = document.getElementById('filterVillage');
+    const selFormID = document.getElementById('filterFormID');
+    const selHouseholdNo = document.getElementById('filterHouseholdNo');
+    const selHeadName = document.getElementById('filterHeadName');
+    // ⭐ Date elements
+    const inputStartDate = document.getElementById('filterStartDate');
+    const inputEndDate   = document.getElementById('filterEndDate');
+
+    const tableLoading = document.getElementById('tableLoading');
+    const tableWrap = document.getElementById('tableWrap');
+
+    const ALL = 'အားလုံး';
+    const NEED_QV = 'ကျေးရွာအုပ်စု အရင်ရွေးပါ';
+
+    const LOCK = {
+        state:    { state: true,  district: false, township: false, village: false },
+        district: { state: true,  district: true,  township: false, village: false },
+        township: { state: true,  district: true,  township: true,  village: false },
+        admin:    { state: false, district: false, township: false, village: false },
+    }[ROLE] || { state: false, district: false, township: false, village: false };
+
+    // ==================================================
+    // 10. HELPERS — Loading & Date
+    // ==================================================
+    function showTableLoading(show) {
+        if (show) {
+            tableLoading.classList.add('show');
+            tableWrap.style.opacity = '0.5';
+        } else {
+            tableLoading.classList.remove('show');
+            tableWrap.style.opacity = '1';
+        }
+    }
+
+    // ⭐ Start > End ဖြစ်ရင် အလိုအလျောက် swap
+    function normalizeDateRange() {
+        if (inputStartDate && inputEndDate && inputStartDate.value && inputEndDate.value) {
+            if (inputStartDate.value > inputEndDate.value) {
+                const tmp = inputStartDate.value;
+                inputStartDate.value = inputEndDate.value;
+                inputEndDate.value = tmp;
+            }
+        }
+    }
+    [inputStartDate, inputEndDate].forEach(el => {
+        if (!el) return;
+        el.addEventListener('change', normalizeDateRange);
+    });
+
+    // ==================================================
+    // 11. SERVER FETCH — Records
+    // ==================================================
+    async function fetchRecordsFromServer() {
+        const params = new URLSearchParams();
+
+        if (selState.value) params.set('state', selState.value);
+        if (selDistrict.value) params.set('district', selDistrict.value);
+        if (selTownship.value) params.set('township', selTownship.value);
+        if (selVillage.value) params.set('qv', selVillage.value);
+
+        // ⭐ Date range
+        if (inputStartDate && inputStartDate.value) params.set('start_date', inputStartDate.value);
+        if (inputEndDate   && inputEndDate.value)   params.set('end_date', inputEndDate.value);
+
+        if (checkFormID.checked && selFormID.value.trim()) {
+            params.set('formID', selFormID.value.trim());
+        }
+
+        if (checkHouseholdNo.checked && selHouseholdNo.value.trim()) {
+            params.set('householdNo', selHouseholdNo.value.trim());
+        }
+
+        if (checkHeadName.checked && selHeadName.value.trim()) {
+            params.set('headName', selHeadName.value.trim());
+        }
+
+        showTableLoading(true);
+
+        try {
+            const res = await fetch('/api/admin/records?' + params.toString(), { credentials: 'same-origin' });
+            if (!res.ok) throw new Error('HTTP ' + res.status);
+            const data = await res.json();
+            console.log('API response:', data);
+
+            const rows = Array.isArray(data) ? data :
+                         Array.isArray(data.records) ? data.records : null;
+            if (rows === null) throw new Error('API response တွင် records array မရှိပါ');
+
+            RECORDS = rows;
+            state.filtered = [...rows];
+            state.page = 1;
+
+            renderTable();
+            updateStatCards();
+        } catch (e) {
+            console.error('fetchRecordsFromServer error:', e);
+        } finally {
+            showTableLoading(false);
+        }
+    }
+
+    // ==================================================
+    // 12. CASCADING LOCATION
+    // ==================================================
+    async function fetchLocations(params = {}) {
+        const q = new URLSearchParams(params);
+        const url = '/api/locations' + (q.toString() ? '?' + q : '');
+        try {
+            const res = await fetch(url, { credentials: 'same-origin' });
+            if (!res.ok) return [];
+            return await res.json();
+        } catch (e) {
+            console.error('fetchLocations error:', e);
+            return [];
+        }
+    }
+
+    function resetSelect(sel, placeholder = ALL) {
+        sel.innerHTML = `<option value="">${placeholder}</option>`;
+        sel.value = '';
+        sel.disabled = true;
+    }
+
+    function fillSelect(sel, rows, valueKey, textKey, selectedValue, disableAfter) {
+        sel.innerHTML = `<option value="">${ALL}</option>`;
+        rows.forEach(r => {
+            const opt = document.createElement('option');
+            opt.value = r[valueKey];
+            opt.textContent = r[textKey];
+            sel.appendChild(opt);
+        });
+        if (selectedValue) sel.value = selectedValue;
+        sel.disabled = !!disableAfter;
+    }
+
+    const checkFormID = document.getElementById('checkFormID');
+    const checkHouseholdNo = document.getElementById('checkHouseholdNo');
+    const checkHeadName = document.getElementById('checkHeadName');
+
+    const detailSearchFilters = [
+        { input: selFormID, checkbox: checkFormID, list: document.getElementById('formIDOptions') },
+        { input: selHouseholdNo, checkbox: checkHouseholdNo, list: document.getElementById('householdNoOptions') },
+        { input: selHeadName, checkbox: checkHeadName, list: document.getElementById('headNameOptions') }
+    ];
+
+    function resetDropdownFilters(placeholder = NEED_QV) {
+        detailSearchFilters.forEach(({ input, checkbox, list }) => {
+            input.value = '';
+            input.disabled = true;
+            checkbox.checked = false;
+            checkbox.disabled = true;
+            list.replaceChildren();
+            input.placeholder = placeholder;
+        });
+    }
+
+    // ⭐ Dropdown filters load (QV + date range)
+    async function loadDropdownFilters() {
+        const sid = selState.value || (LOCK.state ? USER_STATE_ID : '');
+        const did = selDistrict.value || (LOCK.district ? USER_DISTRICT_ID : '');
+        const tid = selTownship.value || (LOCK.township ? USER_TOWNSHIP_ID : '');
+        const qv = selVillage.value;
+
+        if (!qv) {
+            resetDropdownFilters();
+            return;
+        }
+
+        const params = new URLSearchParams();
+        if (sid) params.set('state', sid);
+        if (did) params.set('district', did);
+        if (tid) params.set('township', tid);
+        params.set('qv', qv);
+        // ⭐ Date range
+        if (inputStartDate && inputStartDate.value) params.set('start_date', inputStartDate.value);
+        if (inputEndDate   && inputEndDate.value)   params.set('end_date', inputEndDate.value);
+
+        detailSearchFilters.forEach(({ input, checkbox, list }) => {
+            input.value = '';
+            input.disabled = true;
+            checkbox.checked = false;
+            checkbox.disabled = true;
+            list.replaceChildren();
+            input.placeholder = '⏳ ဒေတာ ရယူနေသည်...';
+        });
+
+        try {
+            const res = await fetch('/api/admin/filter-options?' + params.toString(), {
+                credentials: 'same-origin'
+            });
+            if (!res.ok) throw new Error('HTTP ' + res.status);
+            const data = await res.json();
+
+            const groups = [
+                { key: 'formIDs', list: document.getElementById('formIDOptions') },
+                { key: 'householdNos', list: document.getElementById('householdNoOptions') },
+                { key: 'headNames', list: document.getElementById('headNameOptions') }
+            ];
+
+            groups.forEach(({ key, list }, index) => {
+                list.replaceChildren();
+                (data[key] || []).forEach(item => {
+                    const option = document.createElement('option');
+                    option.value = item.value;
+                    option.label = item.label || item.value;
+                    list.appendChild(option);
+                });
+
+                const filter = detailSearchFilters[index];
+                filter.checkbox.disabled = false;
+                filter.input.placeholder = 'ရိုက်ထည့်ပါ သို့မဟုတ် စာရင်းမှရွေးပါ';
+            });
+        } catch (e) {
+            console.error('loadDropdownFilters error:', e);
+            resetDropdownFilters('— ဒေတာ ရယူမရပါ —');
+        }
+    }
+
+    detailSearchFilters.forEach(({ input, checkbox }) => {
+        checkbox.addEventListener('change', () => {
+            input.disabled = !checkbox.checked || checkbox.disabled;
+            if (!checkbox.checked) input.value = '';
+            if (checkbox.checked) input.focus();
+        });
+    });
+
+    async function loadStates() {
+        if (LOCK.state) {
+            const stateID = USER_STATE_ID;
+            const stateName = USER_STATE_NAME || USER_STATE_ID || '— မသတ်မှတ်ရသေးပါ —';
+            selState.innerHTML = `<option value="${stateID}">${stateName}</option>`;
+            selState.value = stateID;
+            selState.disabled = true;
+            return;
+        }
+        const data = await fetchLocations({});
+        fillSelect(selState, data, 'stateID', 'stateName', INIT_STATE, false);
+    }
+
+    async function loadDistricts() {
+        const sid = selState.value || (LOCK.state ? USER_STATE_ID : '');
+        if (!sid) { resetSelect(selDistrict); return; }
+
+        if (LOCK.district) {
+            const targetID = USER_DISTRICT_ID;
+            const targetName = USER_DISTRICT_NAME || targetID;
+            selDistrict.innerHTML = `<option value="${targetID}">${targetName}</option>`;
+            selDistrict.value = targetID;
+            selDistrict.disabled = true;
+            return;
+        }
+
+        selDistrict.innerHTML = `<option value="">⏳...</option>`;
+        selDistrict.disabled = true;
+
+        const data = await fetchLocations({ state_id: sid });
+        const preselected = INIT_DISTRICT || '';
+        fillSelect(selDistrict, data, 'districtID', 'districtName', preselected, false);
+    }
+
+    async function loadTownships() {
+        const sid = selState.value || (LOCK.state ? USER_STATE_ID : '');
+        const did = selDistrict.value || (LOCK.district ? USER_DISTRICT_ID : '');
+        if (!sid || !did) { resetSelect(selTownship); return; }
+
+        if (LOCK.township) {
+            const targetID = USER_TOWNSHIP_ID;
+            const targetName = USER_TOWNSHIP_NAME || targetID;
+            selTownship.innerHTML = `<option value="${targetID}">${targetName}</option>`;
+            selTownship.value = targetID;
+            selTownship.disabled = true;
+            return;
+        }
+
+        selTownship.innerHTML = `<option value="">⏳...</option>`;
+        selTownship.disabled = true;
+
+        const data2 = await fetchLocations({ state_id: sid, district_id: did });
+        const preselected = INIT_TOWNSHIP || '';
+        fillSelect(selTownship, data2, 'townshipID', 'townshipName', preselected, false);
+    }
+
+    async function loadVillages() {
+        const sid = selState.value || (LOCK.state ? USER_STATE_ID : '');
+        const did = selDistrict.value || (LOCK.district ? USER_DISTRICT_ID : '');
+        const tid = selTownship.value || (LOCK.township ? USER_TOWNSHIP_ID : '');
+        if (!sid || !did || !tid) { resetSelect(selVillage); return; }
+        selVillage.innerHTML = `<option value="">⏳...</option>`;
+        selVillage.disabled = true;
+        const data = await fetchLocations({ state_id: sid, district_id: did, township_id: tid });
+        fillSelect(selVillage, data, 'QVID', 'QVName', INIT_QV, false);
+    }
+
+    // ==================================================
+    // 13. EVENTS
+    // ==================================================
+    selState.addEventListener('change', async function() {
+        const v = this.value;
+        resetSelect(selDistrict);
+        resetSelect(selTownship);
+        resetSelect(selVillage);
+        resetDropdownFilters();
+        if (!v) return;
+        await loadDistricts();
+    });
+
+    selDistrict.addEventListener('change', async function() {
+        const v = this.value;
+        resetSelect(selTownship);
+        resetSelect(selVillage);
+        resetDropdownFilters();
+        if (!v) return;
+        await loadTownships();
+    });
+
+    selTownship.addEventListener('change', async function() {
+        const v = this.value;
+        resetSelect(selVillage);
+        resetDropdownFilters();
+        if (!v) return;
+        await loadVillages();
+    });
+
+    selVillage.addEventListener('change', async function() {
+        await loadDropdownFilters();
+    });
+
+    document.getElementById('btnSearch').addEventListener('click', function() {
+        for (const { input, checkbox } of detailSearchFilters) {
+            if (checkbox.checked && !input.value.trim()) {
+                alert('ရွေးထားသော စစ်ထုတ်မှုအတွက် ဒေတာဖြည့်ပေးပါ။');
+                input.focus();
+                return;
+            }
+        }
+        fetchRecordsFromServer();
+    });
+
+    document.getElementById('btnClear').addEventListener('click', async function() {
+        resetDropdownFilters();
+
+        // ⭐ Date input တွေကို ရှင်းမယ်
+        if (inputStartDate) inputStartDate.value = '';
+        if (inputEndDate)   inputEndDate.value   = '';
+
+        if (LOCK.state) {
+            selState.value = USER_STATE_ID;
+            await loadDistricts();
+        } else {
+            selState.value = '';
+            resetSelect(selDistrict);
+        }
+
+        resetSelect(selTownship);
+        resetSelect(selVillage);
+
+        if (LOCK.district) await loadTownships();
+        if (LOCK.township) await loadVillages();
+
+        await fetchRecordsFromServer();
+    });
+
+    // ==================================================
+    // 14. EXPORT EXCEL MODAL
+    // ==================================================
+    let confirmModal = null;
+
+    function buildFilterLabel() {
+        const parts = [];
+
+        function addSelectText(sel) {
+            if (!sel || !sel.value || sel.selectedIndex < 0) return;
+            const t = sel.options[sel.selectedIndex].text || '';
+            if (t.includes('အားလုံး') || t.includes('ရွေးပါ')) return;
+            parts.push(t);
+        }
+        addSelectText(selState);
+        addSelectText(selDistrict);
+        addSelectText(selTownship);
+        addSelectText(selVillage);
+        detailSearchFilters.forEach(({ input, checkbox }) => {
+            if (checkbox.checked && input.value.trim()) parts.push(input.value.trim());
+        });
+        // ⭐ Date range ပါ ထည့်
+        const dLabel = getDateRangeLabel();
+        if (dLabel) parts.push(dLabel);
+        return parts.length > 0 ? parts.join(' / ') : 'အားလုံး';
+    }
+
+    document.getElementById('btnExportExcel').addEventListener('click', function() {
+        const list = state.filtered || [];
+
+        if (list.length === 0) {
+            alert('Export လုပ်ရန် မှတ်တမ်း မရှိပါ။');
+            return;
+        }
+
+        document.getElementById('cfCount').textContent = list.length.toLocaleString();
+        document.getElementById('cfFilter').textContent = buildFilterLabel();
+
+        const modalElement = document.getElementById('confirmExportModal');
+        confirmModal = bootstrap.Modal.getOrCreateInstance(modalElement);
+        confirmModal.show();
+    });
+
+    document.getElementById('btnConfirmExport').addEventListener('click', function() {
+        const btn = this;
+        const originalHTML = btn.innerHTML;
+
+        btn.disabled = true;
+        btn.innerHTML = '<i class="bi bi-hourglass-split"></i> ပြင်ဆင်နေသည်...';
+
+        try {
+            const ok = exportRecordsExcel();
+            if (ok && confirmModal) {
+                confirmModal.hide();
+            }
+        } catch (error) {
+            console.error('Confirm export error:', error);
+            alert('Excel ထုတ်ယူရာတွင် အမှားဖြစ်နေပါသည်။');
+        } finally {
+            btn.disabled = false;
+            btn.innerHTML = originalHTML;
+        }
+    });
+
+    // ==================================================
+    // 15. INIT
+    // ==================================================
+    document.addEventListener('DOMContentLoaded', async function() {
+        window.printDetailModal = function() {
+            const modalContent = document.getElementById('modalBody').innerHTML;
+            const iframe = document.createElement('iframe');
+            iframe.style.position = 'absolute';
+            iframe.style.width = '0';
+            iframe.style.height = '0';
+            iframe.style.border = 'none';
+            document.body.appendChild(iframe);
+
+            const doc = iframe.contentWindow.document;
+            doc.open();
+            doc.write(`
+                <html>
+                <head>
+                    <title>အသေးစိတ် အချက်အလက်</title>
+                    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
+                    <style>
+                        @page { size: A4; margin: 15mm; }
+                        body { font-family: 'Pyidaungsu', 'Noto Sans Myanmar', sans-serif; background: #fff; color: #000; font-size: 12px; }
+                        .modal-section { page-break-inside: avoid; margin-bottom: 20px; }
+                        .modal-section-title { font-size: 15px; font-weight: bold; border-bottom: 2px solid #059669; padding-bottom: 5px; margin-bottom: 12px; color: #065f46; }
+                        .info-grid { display: flex; flex-wrap: wrap; gap: 10px; border: 1px solid #ccc; padding: 12px; border-radius: 6px; margin-bottom: 15px; background: #f9f9f9; }
+                        .info-item { width: 30%; }
+                        .info-lbl { font-size: 11px; color: #555; display: block; margin-bottom: 2px; }
+                        .info-val { font-size: 13px; font-weight: bold; display: block; }
+                        .person-card { border: 1px solid #ccc; padding: 12px; border-radius: 6px; margin-bottom: 15px; background: #fff; }
+                        .person-title { font-size: 14px; font-weight: bold; margin-bottom: 8px; border-bottom: 1px dashed #ccc; padding-bottom: 5px; }
+                        .person-fields { display: flex; flex-wrap: wrap; gap: 10px; }
+                        .pf { width: 30%; font-size: 12px; }
+                        .pf .lbl { color: #555; font-size: 11px; display: block; }
+                        .pf .val { font-weight: bold; display: block; }
+                        .modal-table { width: 100%; border-collapse: collapse; margin-bottom: 15px; font-size: 11px; }
+                        .modal-table th, .modal-table td { border: 1px solid #000; padding: 6px; text-align: center; }
+                        .modal-table th { background: #f0f0f0; font-weight: bold; }
+                        .modal-table td:first-child { text-align: left; font-weight: bold; }
+                        .modal-table td:last-child { font-weight: bold; }
+                        .row { display: flex; flex-wrap: wrap; margin: 0 -5px; }
+                        .col-md-6 { width: 50%; padding: 0 5px; }
+                        .mb-2 { margin-bottom: 10px; }
+                        .info-note { display: none; }
+                        .btn, .modal-header, .modal-footer { display: none !important; }
+                    </style>
+                </head>
+                <body>
+                    <div style="text-align: center; margin-bottom: 20px;">
+                        <h4 style="font-weight: bold; margin: 0;">မွေးမြူရေးနှင့် ကုသရေးဦးစီးဌာန</h4>
+                        <h5 style="margin: 5px 0;">တိရစ္ဆာန်ကောင်ရေစာရင်း - အသေးစိတ် အချက်အလက်</h5>
+                    </div>
+                    ${modalContent}
+                </body>
+                </html>
+            `);
+            doc.close();
+
+            setTimeout(() => {
+                iframe.contentWindow.focus();
+                iframe.contentWindow.print();
+                setTimeout(() => document.body.removeChild(iframe), 1000);
+            }, 500);
+        };
+
+        // ⭐ Date input တွေကို ပြန်ဖြည့်
+        if (inputStartDate) inputStartDate.value = INIT_START_DATE;
+        if (inputEndDate)   inputEndDate.value   = INIT_END_DATE;
+
+        await loadStates();
+        if (ROLE === 'state') {
+            await loadDistricts();
+        } else if (ROLE === 'district') {
+            await loadDistricts();
+            await loadTownships();
+        } else if (ROLE === 'township') {
+            await loadDistricts();
+            await loadTownships();
+            await loadVillages();
+        } else if (ROLE === 'admin') {
+            // Admin: state dropdown enabled
+        }
+
+        if (selVillage.value) {
+            await loadDropdownFilters();
+        }
+
+        state.filtered = RECORDS;
+        renderTable();
+    });
+</script>
+{% endblock %}

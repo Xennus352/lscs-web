@@ -1,0 +1,688 @@
+{% extends "systemAdminBase.html" %}
+
+{% block title %}တိရစ္ဆာန်အမျိုးအစား ထည့်ရန် - LBVD{% endblock %}
+
+{% block topbar_title %}<i class="bi bi-tags me-2"></i>တိရစ္ဆာန်အမျိုးအစား ထည့်ရန်{% endblock %}
+
+{% block extra_css %}
+<style>
+    .animal-page { max-width: 980px; margin: 0 auto; }
+
+    .page-hero {
+        background: linear-gradient(135deg, #ecfdf5 0%, #d1fae5 55%, #a7f3d0 100%);
+        border-radius: 18px; padding: 26px 28px; border: 1px solid #6ee7b7;
+        box-shadow: 0 4px 18px rgba(16, 185, 129, 0.12); margin-bottom: 24px;
+    }
+    .page-hero h4 { font-size: 1.2rem; font-weight: 700; color: #064e3b; margin: 0 0 4px; }
+    .page-hero p { font-size: 0.83rem; color: #047857; margin: 0; line-height: 1.6; }
+    .page-hero .hero-icon {
+        width: 56px; height: 56px; border-radius: 14px; background: #ffffff;
+        display: flex; align-items: center; justify-content: center;
+        font-size: 1.7rem; color: #059669; border: 1px solid #6ee7b7; flex-shrink: 0;
+    }
+
+    .step-indicator { display: flex; align-items: center; gap: 8px; margin-bottom: 22px; flex-wrap: wrap; }
+    .step-chip {
+        display: inline-flex; align-items: center; gap: 6px; padding: 6px 14px;
+        border-radius: 999px; font-size: 0.76rem; font-weight: 700;
+        background: #f3f4f6; color: #94a3b8; border: 1px solid #e5e7eb;
+        transition: all 0.25s ease;
+    }
+    .step-chip.active { background: #d1fae5; color: #047857; border-color: #6ee7b7; box-shadow: 0 2px 8px rgba(16, 185, 129, 0.2); }
+    .step-chip.done   { background: #ecfdf5; color: #10b981; border-color: #a7f3d0; }
+    .step-chip .num {
+        width: 20px; height: 20px; border-radius: 50%; background: #e5e7eb;
+        color: #6b7280; display: inline-flex; align-items: center;
+        justify-content: center; font-size: 0.7rem;
+    }
+    .step-chip.active .num, .step-chip.done .num { background: #10b981; color: #fff; }
+    .step-arrow { color: #cbd5e1; font-size: 0.75rem; }
+
+    .form-card {
+        background: #ffffff; border-radius: 16px; border: 1px solid #e5e7eb;
+        box-shadow: 0 2px 14px rgba(0, 0, 0, 0.04); overflow: hidden; margin-bottom: 22px;
+    }
+    .form-card .card-head {
+        padding: 16px 22px; background: #f9fafb; border-bottom: 1px solid #e5e7eb;
+        display: flex; align-items: center; gap: 10px;
+    }
+    .form-card .card-head i { font-size: 1.15rem; color: #10b981; }
+    .form-card .card-head h6 { margin: 0; font-size: 0.9rem; font-weight: 700; color: #111827; }
+    .form-card .card-body-custom { padding: 22px; }
+
+    .category-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(190px, 1fr)); gap: 14px; }
+    .category-option { position: relative; cursor: pointer; display: block; }
+    .category-option input[type="radio"] { position: absolute; opacity: 0; pointer-events: none; }
+    .category-option .option-box {
+        border: 2px solid #e5e7eb; border-radius: 14px; padding: 18px 16px;
+        text-align: center; transition: all 0.2s ease; background: #fff; height: 100%;
+    }
+    .category-option .option-box .opt-icon {
+        width: 64px; height: 64px; border-radius: 50%; margin: 0 auto 10px;
+        background: #f3f4f6; display: flex; align-items: center;
+        justify-content: center; font-size: 2rem; line-height: 1; color: #9ca3af;
+        transition: all 0.2s ease;
+    }
+    .category-option .option-box .opt-icon.emoji { font-size: 2.15rem; background: #f0fdf4; }
+    .category-option .option-box .opt-title { font-size: 0.88rem; font-weight: 700; color: #374151; line-height: 1.35; }
+    .category-option .option-box .opt-sub { font-size: 0.7rem; color: #9ca3af; margin-top: 3px; line-height: 1.4; }
+    .category-option:hover .option-box { border-color: #a7f3d0; transform: translateY(-2px); box-shadow: 0 6px 16px rgba(16, 185, 129, 0.1); }
+    .category-option input[type="radio"]:checked + .option-box { border-color: #10b981; background: #ecfdf5; box-shadow: 0 6px 18px rgba(16, 185, 129, 0.22); }
+    .category-option input[type="radio"]:checked + .option-box .opt-icon { background: #10b981; color: #fff; }
+    .category-option input[type="radio"]:checked + .option-box .opt-icon.emoji { background: #d1fae5; }
+    .category-option input[type="radio"]:checked + .option-box .opt-title { color: #047857; }
+    .category-option input[type="radio"]:checked + .option-box .opt-sub { color: #059669; }
+    .category-option .check-badge {
+        position: absolute; top: 10px; right: 10px; width: 22px; height: 22px;
+        border-radius: 50%; background: #10b981; color: #fff; display: none;
+        align-items: center; justify-content: center; font-size: 0.7rem;
+    }
+    .category-option input[type="radio"]:checked + .option-box .check-badge { display: flex; }
+
+    .form-label-custom { font-size: 0.82rem; font-weight: 700; color: #374151; margin-bottom: 6px; }
+    .form-label-custom .req { color: #ef4444; }
+    .form-control, .form-select {
+        border-radius: 10px; border: 1.5px solid #e5e7eb; padding: 0.6rem 0.9rem;
+        font-size: 0.86rem; font-family: inherit; transition: all 0.2s ease;
+    }
+    .form-control:focus, .form-select:focus { border-color: #10b981; box-shadow: 0 0 0 0.2rem rgba(16, 185, 129, 0.15); }
+    .form-control::placeholder { color: #b0b7c3; font-size: 0.83rem; }
+    .form-hint { font-size: 0.7rem; color: #9ca3af; margin-top: 5px; line-height: 1.5; }
+
+    .breed-input-wrap { position: relative; }
+    .breed-tags { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 10px; min-height: 10px; }
+    .breed-tag {
+        display: inline-flex; align-items: center; gap: 6px;
+        background: #ecfdf5; color: #047857; border: 1px solid #a7f3d0;
+        border-radius: 999px; padding: 5px 8px 5px 12px;
+        font-size: 0.78rem; font-weight: 600; animation: tagIn 0.2s ease;
+    }
+    @keyframes tagIn { from { opacity: 0; transform: scale(0.85); } to { opacity: 1; transform: scale(1); } }
+    .breed-tag .remove-tag {
+        width: 18px; height: 18px; border-radius: 50%; border: none;
+        background: #d1fae5; color: #059669; display: inline-flex;
+        align-items: center; justify-content: center; font-size: 0.62rem;
+        cursor: pointer; transition: all 0.15s ease;
+    }
+    .breed-tag .remove-tag:hover { background: #fecaca; color: #dc2626; }
+
+    .btn-primary-custom {
+        background: #10b981; border: 1px solid #10b981; color: #fff;
+        font-weight: 700; font-size: 0.86rem; border-radius: 10px;
+        padding: 0.62rem 1.4rem; display: inline-flex; align-items: center;
+        gap: 6px; transition: all 0.2s ease;
+    }
+    .btn-primary-custom:hover {
+        background: #059669; border-color: #059669; color: #fff;
+        transform: translateY(-1px); box-shadow: 0 6px 16px rgba(16, 185, 129, 0.3);
+    }
+    .btn-primary-custom:disabled { opacity: 0.55; transform: none; box-shadow: none; }
+    .btn-outline-custom {
+        background: #fff; border: 1.5px solid #e5e7eb; color: #6b7280;
+        font-weight: 600; font-size: 0.86rem; border-radius: 10px;
+        padding: 0.62rem 1.2rem; display: inline-flex; align-items: center;
+        gap: 6px; transition: all 0.2s ease;
+    }
+    .btn-outline-custom:hover { background: #f9fafb; border-color: #d1d5db; color: #374151; }
+
+    .d-none-step { display: none !important; }
+
+    .summary-box {
+        background: #f0fdf4; border: 1px dashed #6ee7b7; border-radius: 12px;
+        padding: 14px 16px; font-size: 0.8rem; color: #047857; line-height: 1.7;
+    }
+    .summary-box strong { color: #064e3b; }
+
+    /* ============================================================
+       ⭐ MODAL (shared for success + error)
+       ============================================================ */
+    .modal-overlay {
+        position: fixed;
+        inset: 0;
+        background: rgba(0, 0, 0, 0.45);
+        z-index: 9999;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        padding: 20px;
+        animation: fadeIn 0.2s ease;
+    }
+    .modal-overlay.d-none { display: none !important; }
+    @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
+
+    .modal-box {
+        background: #ffffff;
+        border-radius: 20px;
+        padding: 32px 28px 24px;
+        max-width: 400px;
+        width: 100%;
+        text-align: center;
+        box-shadow: 0 20px 60px rgba(0, 0, 0, 0.25);
+        animation: modalPop 0.35s cubic-bezier(0.16, 1, 0.3, 1);
+    }
+    @keyframes modalPop {
+        0%   { opacity: 0; transform: scale(0.85) translateY(20px); }
+        100% { opacity: 1; transform: scale(1) translateY(0); }
+    }
+
+    .modal-box.is-success .modal-icon {
+        background: linear-gradient(135deg, #10b981, #059669);
+        box-shadow: 0 8px 24px rgba(16, 185, 129, 0.4);
+    }
+    .modal-box.is-success .modal-title { color: #064e3b; }
+    .modal-box.is-success .modal-btn { background: #10b981; }
+    .modal-box.is-success .modal-btn:hover { background: #059669; box-shadow: 0 6px 16px rgba(16, 185, 129, 0.35); }
+
+    .modal-box.is-error .modal-icon {
+        background: linear-gradient(135deg, #ef4444, #dc2626);
+        box-shadow: 0 8px 24px rgba(239, 68, 68, 0.4);
+    }
+    .modal-box.is-error .modal-title { color: #7f1d1d; }
+    .modal-box.is-error .modal-btn { background: #ef4444; }
+    .modal-box.is-error .modal-btn:hover { background: #dc2626; box-shadow: 0 6px 16px rgba(239, 68, 68, 0.35); }
+
+    .modal-icon {
+        width: 76px;
+        height: 76px;
+        border-radius: 50%;
+        margin: 0 auto 18px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 2.3rem;
+        color: #ffffff;
+        animation: iconPop 0.45s ease 0.15s both;
+    }
+    @keyframes iconPop {
+        0%   { transform: scale(0); }
+        60%  { transform: scale(1.15); }
+        100% { transform: scale(1); }
+    }
+
+    .modal-title {
+        font-size: 1.18rem;
+        font-weight: 700;
+        margin-bottom: 8px;
+    }
+
+    .modal-msg {
+        font-size: 0.86rem;
+        color: #4b5563;
+        line-height: 1.7;
+        margin-bottom: 22px;
+    }
+    .modal-msg strong { color: #111827; }
+
+    .modal-btn {
+        border: none;
+        color: #fff;
+        font-weight: 700;
+        font-size: 0.88rem;
+        border-radius: 10px;
+        padding: 0.7rem 2rem;
+        cursor: pointer;
+        transition: all 0.2s ease;
+        min-width: 140px;
+    }
+    .modal-btn:hover { transform: translateY(-1px); }
+
+    @media (max-width: 575.98px) {
+        .page-hero { padding: 20px; }
+        .form-card .card-body-custom { padding: 16px; }
+        .category-grid { grid-template-columns: 1fr 1fr; gap: 10px; }
+        .category-option .option-box { padding: 14px 8px; }
+        .category-option .option-box .opt-icon { width: 48px; height: 48px; font-size: 1.6rem; }
+        .category-option .option-box .opt-icon.emoji { font-size: 1.7rem; }
+        .category-option .option-box .opt-title { font-size: 0.78rem; }
+        .category-option .option-box .opt-sub { font-size: 0.65rem; }
+        .step-chip { font-size: 0.7rem; padding: 5px 10px; }
+    }
+</style>
+{% endblock %}
+
+{% block page_content %}
+<div class="animal-page">
+
+    <div class="page-hero d-flex align-items-center gap-3">
+        <div class="hero-icon"><i class="bi bi-tags-fill"></i></div>
+        <div>
+            <h4>တိရစ္ဆာန်အမျိုးအစား ထည့်သွင်းရန်</h4>
+            <p>အရင်ဆုံး ထည့်သွင်းလိုသည့် အမျိုးအစားကို ရွေးချယ်ပါ။ ထို့နောက် တိရစ္ဆာန်အမည်နှင့် မျိုးစိတ်များကို ဖြည့်စွက်နိုင်ပါသည်။</p>
+        </div>
+    </div>
+
+    <div class="step-indicator">
+        <span class="step-chip active" id="stepChip1"><span class="num">1</span> အမျိုးအစား ရွေးရန်</span>
+        <i class="bi bi-chevron-right step-arrow"></i>
+        <span class="step-chip" id="stepChip2"><span class="num">2</span> အမည် ဖြည့်ရန်</span>
+        <i class="bi bi-chevron-right step-arrow"></i>
+        <span class="step-chip" id="stepChip3"><span class="num">3</span> မျိုးစိတ် ဖြည့်ရန်</span>
+    </div>
+
+    <!-- STEP 1 -->
+    <div class="form-card" id="step1Card">
+        <div class="card-head"><i class="bi bi-ui-checks"></i><h6>အဆင့် (၁) — ထည့်သွင်းလိုသည့် အမျိုးအစားကို ရွေးချယ်ပါ</h6></div>
+        <div class="card-body-custom">
+            <div class="category-grid">
+                <label class="category-option">
+                    <input type="radio" name="animalCategory" value="large" data-label="တိရစ္ဆာန်ကြီး" data-breed="yes">
+                    <div class="option-box">
+                        <span class="check-badge"><i class="bi bi-check-lg"></i></span>
+                        <div class="opt-icon emoji">🐄</div>
+                        <div class="opt-title">တိရစ္ဆာန်ကြီး</div>
+                        <div class="opt-sub">နွား၊ ကျွဲ၊ မြင်း စသည်</div>
+                    </div>
+                </label>
+                <label class="category-option">
+                    <input type="radio" name="animalCategory" value="small" data-label="တိရစ္ဆာန်ငယ်" data-breed="yes">
+                    <div class="option-box">
+                        <span class="check-badge"><i class="bi bi-check-lg"></i></span>
+                        <div class="opt-icon emoji">🐐</div>
+                        <div class="opt-title">တိရစ္ဆာန်ငယ်</div>
+                        <div class="opt-sub">ဆိတ်၊ သိုး၊ ဝက် စသည်</div>
+                    </div>
+                </label>
+                <label class="category-option">
+                    <input type="radio" name="animalCategory" value="poultry" data-label="ကြက်၊ ဘဲ၊ ငုံး" data-breed="yes">
+                    <div class="option-box">
+                        <span class="check-badge"><i class="bi bi-check-lg"></i></span>
+                        <div class="opt-icon emoji">🐔</div>
+                        <div class="opt-title">ကြက်၊ ဘဲ၊ ငုံး</div>
+                        <div class="opt-sub">ကြက်၊ ဘဲ၊ ငုံး အုပ်စု</div>
+                    </div>
+                </label>
+                <label class="category-option">
+                    <input type="radio" name="animalCategory" value="breeder" data-label="မျိုးတိရစ္ဆာန်" data-breed="no">
+                    <div class="option-box">
+                        <span class="check-badge"><i class="bi bi-check-lg"></i></span>
+                        <div class="opt-icon emoji">❤️</div>
+                        <div class="opt-title">မျိုးတိရစ္ဆာန်</div>
+                        <div class="opt-sub">မျိုးစိတ် မလိုအပ်ပါ</div>
+                    </div>
+                </label>
+            </div>
+            <div class="d-flex justify-content-end mt-4">
+                <button type="button" class="btn btn-primary-custom" id="nextToStep2" disabled>
+                    ရှေ့သို့ ဆက်သွားရန် <i class="bi bi-arrow-right"></i>
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- STEP 2 -->
+    <div class="form-card d-none-step" id="step2Card">
+        <div class="card-head"><i class="bi bi-pencil-square"></i><h6>အဆင့် (၂) — တိရစ္ဆာန်အမည် ဖြည့်စွက်ပါ</h6></div>
+        <div class="card-body-custom">
+            <div class="summary-box mb-4">
+                ရွေးချယ်ထားသည့် အမျိုးအစား — <strong id="selectedCategoryLabel">—</strong>
+            </div>
+            <div class="mb-3">
+                <label class="form-label-custom">တိရစ္ဆာန်အမည် <span class="req">*</span></label>
+                <input type="text" class="form-control" id="animalNameInput" placeholder="ဥပမာ — နွား၊ ဆိတ်၊ ကြက် ..." autocomplete="off">
+                <div class="form-hint">ထည့်သွင်းလိုသည့် တိရစ္ဆာန်၏ အမည်ကို ရိုက်ထည့်ပါ။</div>
+            </div>
+            <div class="d-flex justify-content-between mt-4">
+                <button type="button" class="btn btn-outline-custom" id="backToStep1"><i class="bi bi-arrow-left"></i> နောက်သို့</button>
+                <button type="button" class="btn btn-primary-custom" id="nextToStep3" disabled>ရှေ့သို့ ဆက်သွားရန် <i class="bi bi-arrow-right"></i></button>
+            </div>
+        </div>
+    </div>
+
+    <!-- STEP 3 -->
+    <div class="form-card d-none-step" id="step3Card">
+        <div class="card-head"><i class="bi bi-list-check"></i><h6 id="step3Title">အဆင့် (၃) — မျိုးစိတ်များ ဖြည့်စွက်ပါ</h6></div>
+        <div class="card-body-custom">
+            <div class="summary-box mb-4">
+                အမျိုးအစား — <strong id="summaryCategory">—</strong><br>
+                တိရစ္ဆာန်အမည် — <strong id="summaryAnimalName">—</strong>
+            </div>
+            <div id="breedSection">
+                <div class="mb-2">
+                    <label class="form-label-custom">မျိုးစိတ်များ <span class="req">*</span></label>
+                    <div class="breed-input-wrap">
+                        <div class="input-group">
+                            <input type="text" class="form-control" id="breedInput" placeholder="မျိုးစိတ်အမည် ရိုက်ထည့်ပြီး Enter နှိပ်ပါ" autocomplete="off">
+                            <button class="btn btn-primary-custom" type="button" id="addBreedBtn" style="border-radius: 0 10px 10px 0;">
+                                <i class="bi bi-plus-lg"></i> ထည့်
+                            </button>
+                        </div>
+                        <div class="form-hint">မျိုးစိတ် တစ်ခုချင်းစီကို ထည့်သွင်းပါ။ Enter ဖြင့်လည်း ထည့်နိုင်ပါသည်။</div>
+                    </div>
+                    <div class="breed-tags" id="breedTags"></div>
+                </div>
+            </div>
+            <div class="d-flex justify-content-between mt-4">
+                <button type="button" class="btn btn-outline-custom" id="backToStep2"><i class="bi bi-arrow-left"></i> နောက်သို့</button>
+                <button type="button" class="btn btn-primary-custom" id="saveAnimalBtn" disabled>
+                    <i class="bi bi-check2-circle"></i> သိမ်းဆည်းရန်
+                </button>
+            </div>
+        </div>
+    </div>
+
+</div>
+
+<!-- ⭐ MODAL — reused for both success and error -->
+<div class="modal-overlay d-none" id="msgOverlay">
+    <div class="modal-box is-success" id="msgBox">
+        <div class="modal-icon">
+            <i class="bi bi-check-lg" id="msgIcon"></i>
+        </div>
+        <div class="modal-title" id="msgTitle">အောင်မြင်ပါသည်</div>
+        <div class="modal-msg" id="msgBody">ထည့်သွင်းမှု အောင်မြင်ပါသည်။</div>
+        <button type="button" class="modal-btn" id="msgOkBtn">အိုကေ</button>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+(function () {
+    'use strict';
+
+    const state = {
+        category: null, categoryLabel: '', needsBreed: true,
+        animalName: '', breeds: []
+    };
+
+    const CATEGORY_EMOJI = { large:'🐄', small:'🐐', poultry:'🐔', breeder:'❤️' };
+
+    const step1Card = document.getElementById('step1Card');
+    const step2Card = document.getElementById('step2Card');
+    const step3Card = document.getElementById('step3Card');
+    const stepChip1 = document.getElementById('stepChip1');
+    const stepChip2 = document.getElementById('stepChip2');
+    const stepChip3 = document.getElementById('stepChip3');
+    const nextToStep2Btn = document.getElementById('nextToStep2');
+    const nextToStep3Btn = document.getElementById('nextToStep3');
+    const backToStep1Btn = document.getElementById('backToStep1');
+    const backToStep2Btn = document.getElementById('backToStep2');
+    const saveAnimalBtn  = document.getElementById('saveAnimalBtn');
+    const categoryRadios = document.querySelectorAll('input[name="animalCategory"]');
+    const selectedCategoryLabel = document.getElementById('selectedCategoryLabel');
+    const animalNameInput = document.getElementById('animalNameInput');
+    const summaryCategory   = document.getElementById('summaryCategory');
+    const summaryAnimalName = document.getElementById('summaryAnimalName');
+    const step3Title        = document.getElementById('step3Title');
+    const breedSection      = document.getElementById('breedSection');
+    const breedInput        = document.getElementById('breedInput');
+    const addBreedBtn       = document.getElementById('addBreedBtn');
+    const breedTags         = document.getElementById('breedTags');
+
+    const msgOverlay = document.getElementById('msgOverlay');
+    const msgBox     = document.getElementById('msgBox');
+    const msgIcon    = document.getElementById('msgIcon');
+    const msgTitle   = document.getElementById('msgTitle');
+    const msgBody    = document.getElementById('msgBody');
+    const msgOkBtn   = document.getElementById('msgOkBtn');
+
+    /* ============ STEP NAVIGATION ============ */
+    function setStepChip(chip, status) {
+        chip.classList.remove('active', 'done');
+        if (status === 'active') chip.classList.add('active');
+        else if (status === 'done') chip.classList.add('done');
+    }
+    function goToStep(step) {
+        step1Card.classList.toggle('d-none-step', step !== 1);
+        step2Card.classList.toggle('d-none-step', step !== 2);
+        step3Card.classList.toggle('d-none-step', step !== 3);
+        if (step === 1) { setStepChip(stepChip1,'active'); setStepChip(stepChip2,''); setStepChip(stepChip3,''); }
+        else if (step === 2) { setStepChip(stepChip1,'done'); setStepChip(stepChip2,'active'); setStepChip(stepChip3,''); }
+        else { setStepChip(stepChip1,'done'); setStepChip(stepChip2,'done'); setStepChip(stepChip3,'active'); }
+        window.scrollTo({ top: 0, behavior: 'smooth' });
+    }
+
+    /* ============ STEP 1 ============ */
+    categoryRadios.forEach(radio => {
+        radio.addEventListener('change', function () {
+            state.category = this.value;
+            state.categoryLabel = this.dataset.label || '';
+            state.needsBreed = this.dataset.breed === 'yes';
+            nextToStep2Btn.disabled = false;
+        });
+    });
+
+    nextToStep2Btn.addEventListener('click', () => {
+        if (!state.category) return;
+        selectedCategoryLabel.textContent = state.categoryLabel;
+        summaryCategory.textContent = state.categoryLabel;
+        goToStep(2);
+        animalNameInput.focus();
+    });
+
+    /* ============ STEP 2 ============ */
+    animalNameInput.addEventListener('input', function () {
+        state.animalName = this.value.trim();
+        nextToStep3Btn.disabled = state.animalName.length === 0;
+    });
+
+    nextToStep3Btn.addEventListener('click', () => {
+        if (!state.animalName) return;
+        summaryAnimalName.textContent = state.animalName;
+        state.breeds = [];
+        renderBreedTags();
+        if (state.needsBreed) {
+            step3Title.innerHTML = 'အဆင့် (၃) — မျိုးစိတ်များ ဖြည့်စွက်ပါ';
+            breedSection.classList.remove('d-none-step');
+            breedInput.value = '';
+            updateSaveButtonState();
+            goToStep(3);
+            setTimeout(() => breedInput.focus(), 250);
+        } else {
+            step3Title.innerHTML = 'အဆင့် (၃) — အတည်ပြုပြီး သိမ်းဆည်းပါ';
+            breedSection.classList.add('d-none-step');
+            updateSaveButtonState();
+            goToStep(3);
+        }
+    });
+
+    backToStep1Btn.addEventListener('click', () => goToStep(1));
+    backToStep2Btn.addEventListener('click', () => {
+        goToStep(2);
+        setTimeout(() => animalNameInput.focus(), 250);
+    });
+
+    /* ============ STEP 3: BREED TAGS ============ */
+    function renderBreedTags() {
+        breedTags.innerHTML = '';
+        state.breeds.forEach((breed, idx) => {
+            const tag = document.createElement('span');
+            tag.className = 'breed-tag';
+            tag.innerHTML = `
+                <span>${escapeHtml(breed)}</span>
+                <button type="button" class="remove-tag" data-idx="${idx}" title="ဖျက်ရန်">
+                    <i class="bi bi-x"></i>
+                </button>`;
+            breedTags.appendChild(tag);
+        });
+        updateSaveButtonState();
+    }
+
+    function addBreed() {
+        const val = breedInput.value.trim();
+        if (!val) return;
+        if (state.breeds.some(b => b.toLowerCase() === val.toLowerCase())) {
+            breedInput.value = '';
+            return;
+        }
+        state.breeds.push(val);
+        breedInput.value = '';
+        renderBreedTags();
+        breedInput.focus();
+    }
+
+    addBreedBtn.addEventListener('click', addBreed);
+    breedInput.addEventListener('keydown', e => {
+        if (e.key === 'Enter') { e.preventDefault(); addBreed(); }
+    });
+    breedTags.addEventListener('click', e => {
+        const btn = e.target.closest('.remove-tag');
+        if (!btn) return;
+        const idx = parseInt(btn.dataset.idx, 10);
+        if (Number.isNaN(idx)) return;
+        state.breeds.splice(idx, 1);
+        renderBreedTags();
+    });
+
+    function updateSaveButtonState() {
+        if (state.needsBreed) {
+            const hasPending = breedInput.value.trim().length > 0;
+            saveAnimalBtn.disabled = state.breeds.length === 0 && !hasPending;
+        } else {
+            saveAnimalBtn.disabled = false;
+        }
+    }
+    breedInput.addEventListener('input', updateSaveButtonState);
+
+    /* ============ SAVE (WITH DEBUG LOGGING) ============ */
+    saveAnimalBtn.addEventListener('click', async () => {
+        if (!state.category || !state.animalName) return;
+
+        // ⭐ Auto-commit typed-but-not-added breed
+        const pending = breedInput.value.trim();
+        if (pending) {
+            if (!state.breeds.some(b => b.toLowerCase() === pending.toLowerCase())) {
+                state.breeds.push(pending);
+                breedInput.value = '';
+                renderBreedTags();
+            } else {
+                breedInput.value = '';
+            }
+        }
+
+        if (state.needsBreed && state.breeds.length === 0) {
+            showError('မျိုးစိတ် အနည်းဆုံး တစ်ခု ထည့်ပါ။');
+            return;
+        }
+
+        const payload = {
+            category: state.category,
+            categoryLabel: state.categoryLabel,
+            animalName: state.animalName,
+            needsBreed: state.needsBreed,
+            breeds: state.needsBreed ? [...state.breeds] : []
+        };
+
+        // ⭐ DEBUG — Console မှာ ဘာတွေ ပို့နေလဲ ကြည့်ပါ
+        console.log('========================================');
+        console.log('📤 Sending payload:', JSON.stringify(payload, null, 2));
+        console.log('   category       :', payload.category);
+        console.log('   animalName     :', payload.animalName);
+        console.log('   needsBreed     :', payload.needsBreed);
+        console.log('   breeds (array) :', payload.breeds);
+        console.log('   breeds length  :', payload.breeds.length);
+        console.log('========================================');
+
+        saveAnimalBtn.disabled = true;
+        const originalHTML = saveAnimalBtn.innerHTML;
+        saveAnimalBtn.innerHTML = `<span class="spinner-border spinner-border-sm me-1" role="status" aria-hidden="true"></span> သိမ်းဆည်းနေသည်...`;
+
+        try {
+            const res = await fetch('/api/system/animals/create', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(payload)
+            });
+            let data = {};
+            try { data = await res.json(); } catch (_) {}
+
+            // ⭐ DEBUG — Backend က ဘာပြန်ပေးလဲ
+            console.log('========================================');
+            console.log('📥 Response status :', res.status);
+            console.log('📥 Response data   :', JSON.stringify(data, null, 2));
+            console.log('========================================');
+
+            if (!res.ok) {
+                const errMsg = data.detail || 'သိမ်းဆည်းမှု မအောင်မြင်ပါ။';
+                console.error('❌ Server returned error:', errMsg);
+                showError(errMsg);
+                return;
+            }
+
+            // ⭐ Success
+            const emoji = CATEGORY_EMOJI[payload.category] || '';
+            const breedInfo = (data.breeds && data.breeds.length)
+                ? `<br><span style="font-size:0.78rem;color:#6b7280;">မျိုးစိတ် ${data.breeds.length} မျိုး ပါဝင်သည်</span>`
+                : '';
+            showSuccess(
+                `${emoji} <strong>${escapeHtml(payload.animalName)}</strong> ကို<br>
+                 ${escapeHtml(payload.categoryLabel)} အောက်တွင်
+                 အောင်မြင်စွာ ထည့်သွင်းပြီးပါပြီ။${breedInfo}`
+            );
+            resetForm();
+        } catch (err) {
+            console.error('❌ Fetch error:', err);
+            showError(err.message || 'ကွန်ရက် ချို့ယွင်းမှု ဖြစ်ပေါ်နေပါသည်။');
+        } finally {
+            saveAnimalBtn.disabled = false;
+            saveAnimalBtn.innerHTML = originalHTML;
+        }
+    });
+
+    /* ============================================================
+       ⭐ SHARED MODAL — SUCCESS & ERROR
+       ============================================================ */
+    function showSuccess(htmlBody) {
+        msgBox.classList.remove('is-error');
+        msgBox.classList.add('is-success');
+        msgIcon.className = 'bi bi-check-lg';
+        msgTitle.textContent = 'အောင်မြင်ပါသည်';
+        msgBody.innerHTML = htmlBody;
+        msgOverlay.classList.remove('d-none');
+    }
+
+    function showError(textBody) {
+        msgBox.classList.remove('is-success');
+        msgBox.classList.add('is-error');
+        msgIcon.className = 'bi bi-exclamation-triangle-fill';
+        msgTitle.textContent = 'သတိပေးချက်';
+        msgBody.innerHTML = escapeHtml(textBody);
+        msgOverlay.classList.remove('d-none');
+    }
+
+    function hideModal() {
+        msgOverlay.classList.add('d-none');
+    }
+
+    msgOkBtn.addEventListener('click', hideModal);
+    msgOverlay.addEventListener('click', (e) => {
+        if (e.target === msgOverlay) hideModal();
+    });
+    document.addEventListener('keydown', (e) => {
+        if (e.key === 'Escape' && !msgOverlay.classList.contains('d-none')) {
+            hideModal();
+        }
+    });
+
+    /* ============ RESET FORM ============ */
+    function resetForm() {
+        state.category = null; state.categoryLabel = ''; state.needsBreed = true;
+        state.animalName = ''; state.breeds = [];
+        categoryRadios.forEach(r => (r.checked = false));
+        animalNameInput.value = '';
+        breedInput.value = '';
+        breedTags.innerHTML = '';
+        selectedCategoryLabel.textContent = '—';
+        summaryCategory.textContent = '—';
+        summaryAnimalName.textContent = '—';
+        nextToStep2Btn.disabled = true;
+        nextToStep3Btn.disabled = true;
+        saveAnimalBtn.disabled = true;
+        breedSection.classList.remove('d-none-step');
+        step3Title.innerHTML = 'အဆင့် (၃) — မျိုးစိတ်များ ဖြည့်စွက်ပါ';
+        goToStep(1);
+    }
+
+    /* ============ UTILS ============ */
+    function escapeHtml(s) {
+        return String(s == null ? '' : s)
+            .replace(/&/g, '&amp;').replace(/</g, '&lt;')
+            .replace(/>/g, '&gt;').replace(/"/g, '&quot;')
+            .replace(/'/g, '&#039;');
+    }
+
+    /* ============ INIT ============ */
+    goToStep(1);
+})();
+</script>
+{% endblock %}

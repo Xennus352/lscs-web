@@ -1,0 +1,1496 @@
+<!DOCTYPE html>
+<html lang="my">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{% block title %}အချက်အလက်ဖြည့်သွင်းရန် - LBVD{% endblock %}</title>
+
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+Myanmar:wght@400;500;600;700&display=swap" rel="stylesheet">
+
+    <style>
+        /* ================= GLOBAL ================= */
+        html, body {
+            overflow-x: hidden !important;
+            max-width: 100vw;
+        }
+
+        body {
+            font-family: 'Noto Sans Myanmar', 'Pyidaungsu', sans-serif;
+            background-color: #f3f4f6;
+        }
+
+        /* ================= SIDEBAR ================= */
+        #sidebar {
+            width: 280px;
+            height: 100vh;
+            background: #ffffff;
+            box-shadow: 2px 0 12px rgba(0, 0, 0, 0.08);
+            position: fixed;
+            top: 0;
+            left: 0;
+            z-index: 1040;
+            overflow: hidden;
+            display: flex;
+            flex-direction: column;
+            transition: width 0.3s ease-in-out, transform 0.3s ease-in-out;
+        }
+
+        @media (min-width: 992px) {
+            #sidebar.collapsed {
+                width: 0;
+                overflow: hidden;
+                box-shadow: none;
+            }
+            #mainContent {
+                margin-left: 280px;
+                transition: margin-left 0.3s ease-in-out;
+            }
+            #mainContent.expanded {
+                margin-left: 0;
+            }
+        }
+
+        @media (max-width: 991.98px) {
+            #sidebar {
+                transform: translateX(-100%);
+            }
+            #sidebar.mobile-open {
+                transform: translateX(0);
+            }
+            #mainContent {
+                margin-left: 0;
+            }
+        }
+
+        #mainContent {
+            min-width: 0 !important;
+            max-width: 100% !important;
+            overflow-x: hidden !important;
+            flex: 1 1 0% !important;
+            box-sizing: border-box;
+        }
+
+        body > .d-flex {
+            max-width: 100%;
+            overflow-x: hidden;
+        }
+
+        #mainContent > *,
+        #mainContent .p-4 {
+            max-width: 100%;
+            box-sizing: border-box;
+        }
+
+        /* ================= BRAND ================= */
+        .sidebar-brand {
+            background: linear-gradient(135deg, #059669 0%, #047857 50%, #10b981 100%);
+            padding: 22px 18px;
+            color: #fff;
+            border-bottom: 3px solid #34d399;
+            flex-shrink: 0;
+        }
+
+        .sidebar-brand .logo-box {
+            width: 56px;
+            height: 56px;
+            background: #ffffff;
+            border-radius: 14px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            overflow: hidden;
+            border: 2px solid rgba(255, 255, 255, 0.35);
+            flex-shrink: 0;
+        }
+
+        .sidebar-brand .logo-box img {
+            width: 100%;
+            height: 100%;
+            object-fit: contain;
+            padding: 4px;
+        }
+
+        .sidebar-brand h6 {
+            font-size: 0.85rem;
+            font-weight: 700;
+            line-height: 1.5;
+            margin: 0;
+        }
+
+        #sidebarDate {
+            font-size: 0.72rem;
+            color: #d1fae5;
+            font-weight: 500;
+            margin-top: 12px;
+            display: flex;
+            align-items: center;
+            gap: 5px;
+        }
+
+        /* ================= MENU ================= */
+        .sidebar-menu {
+            padding: 12px 10px 12px;
+            flex: 1;
+            overflow-y: auto;
+            overflow-x: hidden;
+        }
+
+        .menu-section-title {
+            font-size: 0.72rem;
+            font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            color: #94a3b8;
+            padding: 18px 16px 6px;
+        }
+
+        .sidebar-link {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            padding: 11px 16px;
+            border-radius: 10px;
+            color: #374151;
+            font-size: 0.85rem;
+            font-weight: 600;
+            text-decoration: none;
+            transition: all 0.2s ease;
+            margin-bottom: 2px;
+            cursor: pointer;
+            border: none;
+            background: transparent;
+            width: 100%;
+            text-align: left;
+            line-height: 1.45;
+        }
+
+        .sidebar-link:hover {
+            background-color: #d1fae5;
+            color: #047857;
+            padding-left: 20px;
+        }
+
+        .sidebar-link i {
+            font-size: 1.15rem;
+            width: 22px;
+            text-align: center;
+            color: #059669;
+            flex-shrink: 0;
+            transition: color 0.15s ease;
+        }
+
+        .sidebar-link:hover i {
+            color: #047857;
+        }
+
+        .sidebar-link.active {
+            background: linear-gradient(90deg, #059669 0%, #10b981 100%);
+            color: #ffffff;
+            box-shadow: 0 4px 12px rgba(5, 150, 105, 0.3);
+        }
+
+        .sidebar-link.active i {
+            color: #ffffff;
+        }
+
+        .sidebar-link.text-danger {
+            color: #dc2626 !important;
+        }
+
+        .sidebar-link.text-danger i {
+            color: #dc2626 !important;
+        }
+
+        .sidebar-link.text-danger:hover {
+            background-color: #fee2e2;
+            color: #b91c1c !important;
+        }
+
+        .sidebar-link.text-danger:hover i {
+            color: #b91c1c !important;
+        }
+
+        /* ================= SIDEBAR FOOTER ================= */
+        .sidebar-footer {
+            flex-shrink: 0;
+            padding: 12px 16px;
+            border-top: 1px solid #e5e7eb;
+            background: #f9fafb;
+            text-align: center;
+        }
+
+        .sidebar-footer .dev-text {
+            font-size: 0.65rem;
+            color: #2563eb; /* ⭐ အပြာရောင် ပြောင်းထားပါတယ် */
+            font-weight: 600;
+            line-height: 1.5;
+            margin: 0;
+        }
+
+        .sidebar-footer .dev-text i {
+            color: #2563eb;
+            font-size: 0.6rem;
+            margin-right: 4px;
+        }
+
+        /* ================= TOPBAR ================= */
+        .topbar {
+            background: #ffffff;
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.06);
+            padding: 12px 20px;
+            position: sticky;
+            top: 0;
+            z-index: 1030;
+            max-width: 100%;
+            box-sizing: border-box;
+        }
+
+        .toggle-btn {
+            border: none;
+            background: #ecfdf5;
+            color: #047857;
+            width: 42px;
+            height: 42px;
+            border-radius: 10px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1.3rem;
+            transition: all 0.2s ease;
+            flex-shrink: 0;
+        }
+
+        .toggle-btn:hover {
+            background: #047857;
+            color: #ffffff;
+        }
+
+        .topbar .topbar-title {
+            color: #047857;
+            font-size: 1.05rem;
+            font-weight: 700;
+            margin: 0;
+        }
+
+        .topbar .topbar-title i {
+            color: #059669;
+        }
+
+        .topbar-user {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+        /* ⭐ အသုံးပြုသူ ပုံလေးအတွက် Style */
+        .topbar-user .user-img {
+            width: 46px;
+            height: 46px;
+            border-radius: 50%;
+            object-fit: cover;
+            border: 2px solid #10b981;
+            background-color: #fff;
+            padding: 2px;
+            box-shadow: 0 2px 6px rgba(16, 185, 129, 0.2);
+        }
+
+        .topbar-user .user-name {
+            color: #111827;
+            font-weight: 700;
+            font-size: 0.82rem;
+            line-height: 1.2;
+        }
+
+        .topbar-user .user-role {
+            color: #6b7280;
+            font-size: 0.7rem;
+            font-weight: 500;
+            line-height: 1.2;
+        }
+
+        /* ================= OVERLAY ================= */
+        #overlay {
+            position: fixed;
+            inset: 0;
+            background: rgba(0, 0, 0, 0.5);
+            z-index: 1035;
+            opacity: 0;
+            visibility: hidden;
+            transition: opacity 0.3s ease, visibility 0.3s ease;
+        }
+
+        #overlay.show {
+            opacity: 1;
+            visibility: visible;
+        }
+
+        @media (min-width: 992px) {
+            #overlay {
+                display: none !important;
+            }
+        }
+
+        .sidebar-menu::-webkit-scrollbar {
+            width: 5px;
+        }
+
+        .sidebar-menu::-webkit-scrollbar-thumb {
+            background-color: #cbd5e1;
+            border-radius: 9999px;
+        }
+
+        .sidebar-menu::-webkit-scrollbar-track {
+            background-color: transparent;
+        }
+
+        @media (max-width: 575.98px) {
+            .topbar {
+                padding: 10px 14px;
+            }
+            #mainContent .p-4 {
+                padding: 1rem !important;
+            }
+            .sidebar-link {
+                font-size: 0.82rem;
+            }
+            .menu-section-title {
+                font-size: 0.7rem;
+            }
+        }
+
+        /* ================= FORM STYLES ================= */
+        .form-wrapper * {
+            box-sizing: border-box;
+        }
+
+        .form-container {
+            max-width: 72rem;
+            margin: 0 auto;
+        }
+
+        .form-card {
+            background: #fff;
+            border-radius: 1rem;
+            overflow: hidden;
+            box-shadow: 0 10px 30px -10px rgba(0, 0, 0, 0.15);
+        }
+
+        .top-accent {
+            height: 4px;
+            background: linear-gradient(to right, #065f46, #14b8a6, #065f46);
+        }
+
+        .survey-region {
+            display: flex; align-items: center; gap: 10px;
+            padding-bottom: 20px; margin-bottom: 24px;
+            border-bottom: 1px solid #e8eee9;
+        }
+        .survey-region-icon {
+            display: inline-flex; align-items: center; justify-content: center;
+            flex: 0 0 34px; height: 34px; border-radius: 10px;
+            color: #047857; background: #edf7f1; font-size: 18px;
+        }
+        .survey-region-details { display: flex; align-items: center; flex-wrap: wrap; gap: 8px 14px; min-width: 0; }
+        .survey-region label { margin: 0; color: #718078; font-size: .78rem; line-height: 1.9; }
+        .region-select {
+            min-width: 190px; max-width: 100%; border: 1px solid #dce7df; border-radius: 9px;
+            padding: 9px 12px; background: #fff; color: #174e35;
+            font-weight: 600; font-size: .85rem; line-height: 1.8;
+        }
+        .region-select:focus-visible { outline: 2px solid #047857; outline-offset: 3px; }
+        .region-select:disabled {
+            min-width: 0; width: auto; opacity: 1; color: #175337; -webkit-text-fill-color: #175337;
+            background: #eef7f1; border-color: #e0eee5;
+            appearance: none; cursor: default;
+        }
+
+        .form-body {
+            padding: 2rem 2.5rem;
+        }
+
+        @media (max-width: 576px) {
+            .form-body {
+                padding: 1.25rem;
+            }
+        }
+
+        .progress-container {
+            background: #fff;
+            border: 0;
+            border-radius: 0;
+            padding: 0;
+            margin-bottom: 2rem;
+        }
+
+        .progress-label {
+            color: #065f46;
+            font-weight: 700;
+            font-size: 0.8rem;
+            line-height: 1.9;
+        }
+
+        .progress-heading { display: flex; align-items: center; justify-content: space-between; gap: 16px; margin-bottom: 14px; }
+        .progress-eyebrow { display: block; color: #6b7e72; font-size: .72rem; margin-bottom: 5px; line-height: 1.8; }
+
+        .progress-percent {
+            background: #ecfdf5;
+            color: #047857;
+            font-weight: 700;
+            font-size: 1rem;
+            padding: 0.45rem 0.8rem;
+            flex-shrink: 0;
+            border-radius: 999px;
+            border: 1px solid #d1fae5;
+            box-shadow: 0 1px 2px rgba(0, 0, 0, 0.05);
+        }
+
+        .progress-track {
+            width: 100%;
+            background: #edf3ef;
+            border-radius: 999px;
+            height: 7px;
+            overflow: hidden;
+        }
+
+        .progress-fill {
+            background: linear-gradient(90deg, #047857, #34b789);
+            height: 7px;
+            border-radius: 999px;
+            transition: width 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+            width: 20%;
+        }
+
+        .survey-steps { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); list-style: none; margin: 24px 0 0; padding: 0; }
+        .survey-step { position: relative; display: flex; flex-direction: column; align-items: center; gap: 10px; text-align: center; color: #7a8780; min-width: 0; }
+        .survey-step:not(:last-child)::after { content: ''; position: absolute; top: 18px; left: calc(50% + 24px); right: calc(-50% + 24px); height: 2px; background: #e6ece8; }
+        .survey-step-number { display: flex; align-items: center; justify-content: center; width: 38px; height: 38px; border-radius: 50%; border: 1px solid #dce5df; background: #f8faf9; font-size: .85rem; font-weight: 600; }
+        .survey-step-label { font-size: .76rem; line-height: 1.9; padding: 0 5px; }
+        .survey-step.is-current { color: #065f46; font-weight: 700; }
+        .survey-step.is-current .survey-step-number { background: #047857; color: #fff; border-color: #047857; box-shadow: 0 0 0 5px #e8f5ed; }
+        .survey-step.is-complete .survey-step-number { color: #047857; background: #e8f5ed; border-color: #c5e5d3; }
+        .survey-step.is-complete::after { background: #9cd1b5; }
+        @media (max-width: 575.98px) {
+            .survey-region { align-items: flex-start; padding-bottom: 16px; margin-bottom: 20px; }
+            .survey-region-details { gap: 5px 10px; }
+            .survey-step-label { font-size: .68rem; }
+            .survey-step-number { width: 32px; height: 32px; font-size: .75rem; }
+            .survey-step:not(:last-child)::after { top: 15px; left: calc(50% + 20px); right: calc(-50% + 20px); }
+        }
+        @media (prefers-reduced-motion: reduce) { .progress-fill { transition: none; } }
+
+        .error-alert {
+            background: #fee2e2;
+            border: 1px solid #f87171;
+            color: #991b1b;
+            padding: 0.75rem 1rem;
+            border-radius: 0.5rem;
+            display: flex;
+            gap: 0.75rem;
+            align-items: flex-start;
+        }
+
+        .error-alert strong {
+            font-weight: 700;
+            font-size: 0.85rem;
+            display: block;
+        }
+
+        .error-alert span {
+            font-size: 0.8rem;
+        }
+
+        .section-title-box {
+            background: rgba(16, 185, 129, 0.08);
+            border-left: 4px solid #059669;
+            padding: 0.5rem 0.75rem;
+            border-radius: 0 0.5rem 0.5rem 0;
+            margin-bottom: 1.5rem;
+        }
+
+        .section-title-box h4 {
+            font-weight: 700;
+            font-size: 1.05rem;
+            color: #065f46;
+            margin: 0;
+        }
+
+        .section-title-box p {
+            font-size: 0.8rem;
+            color: #6b7280;
+            margin: 0;
+        }
+
+        .form-label {
+            font-weight: 700;
+            font-size: 0.8rem;
+            color: #374151;
+            margin-bottom: 0.4rem;
+        }
+
+        .form-control,
+        .form-select {
+            font-size: 0.875rem;
+        }
+
+        .radio-group {
+            background: #fff;
+            padding: 0.75rem;
+            border-radius: 0.5rem;
+            border: 1px solid #e5e7eb;
+        }
+
+        .radio-group input[type="radio"] {
+            accent-color: #047857;
+            width: 1.1rem;
+            height: 1.1rem;
+            margin-right: 0.4rem;
+        }
+
+        /* ============ FORM NAV ============ */
+        .form-nav {
+            margin-top: 2.5rem;
+            padding-top: 1.5rem;
+            border-top: 1px solid #a7f3d0;
+            display: flex;
+            flex-direction: column;
+            justify-content: space-between;
+            align-items: stretch;
+            gap: 1rem;
+        }
+
+        @media (min-width: 576px) {
+            .form-nav {
+                flex-direction: row;
+                align-items: center;
+            }
+        }
+
+        .btn-original {
+            font-weight: 700;
+            font-size: 0.875rem;
+            padding: 0.875rem 1.5rem;
+            border-radius: 0.5rem;
+            border: none;
+            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -2px rgba(0, 0, 0, 0.1);
+            transition: all 0.2s;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            gap: 0.5rem;
+            cursor: pointer;
+            width: 100%;
+        }
+
+        @media (min-width: 576px) {
+            .btn-original {
+                width: auto;
+            }
+        }
+
+        .btn-back-orig {
+            background: #6b7280;
+            color: #fff;
+        }
+
+        .btn-back-orig:hover {
+            background: #4b5563;
+            color: #fff;
+        }
+
+        .btn-next-orig {
+            background: #047857;
+            color: #fff;
+        }
+
+        .btn-next-orig:hover {
+            background: #065f46;
+            color: #fff;
+        }
+
+        .btn-submit-orig {
+            background: #047857;
+            color: #fff;
+        }
+
+        .btn-submit-orig:hover {
+            background: #065f46;
+            color: #fff;
+        }
+
+        .btn-original svg {
+            width: 1rem;
+            height: 1rem;
+            flex-shrink: 0;
+        }
+
+        .btn-submit-orig svg {
+            width: 1.25rem;
+            height: 1.25rem;
+        }
+
+        .btn-nav-group {
+            display: flex;
+            gap: 0.75rem;
+            margin-left: auto;
+            width: 100%;
+        }
+
+        @media (min-width: 576px) {
+            .btn-nav-group {
+                width: auto;
+            }
+        }
+
+        .error-input {
+            border-color: #ef4444 !important;
+            background-color: #fef2f2 !important;
+        }
+
+        .radio-group.error-input {
+            border-color: #ef4444 !important;
+            background-color: #fef2f2 !important;
+        }
+
+        .modal-enter {
+            animation: fadeInScale 0.25s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+        }
+
+        @keyframes fadeInScale {
+            from {
+                opacity: 0;
+                transform: scale(0.95);
+            }
+            to {
+                opacity: 1;
+                transform: scale(1);
+            }
+        }
+
+        .modal-icon {
+            width: 64px;
+            height: 64px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin: 0 auto 1rem auto;
+        }
+
+        .modal-icon.error {
+            background: #fee2e2;
+        }
+
+        .modal-icon.success {
+            background: #d1fae5;
+        }
+
+        .modal-icon svg {
+            width: 32px;
+            height: 32px;
+        }
+
+        .modal-icon.error svg {
+            color: #dc2626;
+        }
+
+        .modal-icon.success svg {
+            color: #059669;
+        }
+
+        .modal-btn {
+            background: #047857;
+            color: #fff;
+            font-weight: 700;
+            padding: 0.6rem 1rem;
+            border-radius: 0.5rem;
+            border: none;
+            width: 100%;
+        }
+
+        .modal-btn:hover {
+            background: #065f46;
+        }
+
+        .table-bordered-custom {
+            border-collapse: collapse;
+            width: 100%;
+        }
+
+        .table-bordered-custom th,
+        .table-bordered-custom td {
+            border: 1px solid #a7f3d0 !important;
+            padding: 0.5rem;
+            font-size: 0.8rem;
+        }
+
+        .table-bordered-custom thead tr {
+            background: #ecfdf5;
+            color: #065f46;
+            text-align: center;
+        }
+
+        .table-bordered-custom thead th {
+            vertical-align: middle;
+        }
+
+        .table-bordered-custom .count-input {
+            text-align: center;
+        }
+
+        /* ================= LOGOUT MODAL ================= */
+        #logoutModal .modal-dialog {
+            max-width: 380px;
+            width: calc(100% - 32px);
+        }
+
+        #logoutModal .modal-content {
+            border-radius: 18px;
+            overflow: hidden;
+            animation: logoutModalIn 0.25s cubic-bezier(0.16, 1, 0.3, 1);
+        }
+
+        @keyframes logoutModalIn {
+            from {
+                opacity: 0;
+                transform: scale(0.92) translateY(8px);
+            }
+            to {
+                opacity: 1;
+                transform: scale(1) translateY(0);
+            }
+        }
+
+        #logoutModal .logout-accent {
+            height: 6px;
+            background: linear-gradient(90deg, #dc2626, #ef4444, #f87171);
+        }
+
+        #logoutModal .modal-body {
+            padding: 1.5rem 1.5rem 1.25rem;
+        }
+
+        .logout-icon {
+            width: 68px !important;
+            height: 68px !important;
+            background: #fee2e2 !important;
+            position: relative;
+            animation: logoutIconBounce 0.4s ease-out;
+        }
+
+        @keyframes logoutIconBounce {
+            0% {
+                transform: scale(0.6);
+                opacity: 0;
+            }
+            70% {
+                transform: scale(1.08);
+                opacity: 1;
+            }
+            100% {
+                transform: scale(1);
+            }
+        }
+
+        .logout-icon i {
+            font-size: 1.85rem !important;
+        }
+
+        .logout-icon .logout-pulse {
+            position: absolute;
+            inset: 0;
+            border-radius: 50%;
+            border: 2px solid #ef4444;
+            animation: logoutPulse 1.8s ease-out infinite;
+            pointer-events: none;
+        }
+
+        @keyframes logoutPulse {
+            0% {
+                transform: scale(1);
+                opacity: 0.6;
+            }
+            100% {
+                transform: scale(1.45);
+                opacity: 0;
+            }
+        }
+
+        #logoutModal .logout-title {
+            font-size: 1.05rem;
+            font-weight: 700;
+            color: #111827;
+            margin-bottom: 0.5rem;
+            line-height: 1.4;
+        }
+
+        #logoutModal .logout-subtitle {
+            font-size: 0.82rem;
+            color: #6b7280;
+            line-height: 1.6;
+            margin-bottom: 1.25rem;
+        }
+
+        #logoutModal .btn {
+            padding: 0.6rem 0.9rem;
+            font-size: 0.85rem;
+            font-weight: 700;
+            border-radius: 10px;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            gap: 5px;
+            transition: all 0.2s ease;
+        }
+
+        #logoutModal .btn i {
+            font-size: 0.95rem;
+        }
+
+        #logoutModal .btn-danger {
+            background: #dc2626;
+            border-color: #dc2626;
+        }
+
+        #logoutModal .btn-danger:hover {
+            background: #b91c1c !important;
+            border-color: #b91c1c !important;
+            transform: translateY(-1px);
+            box-shadow: 0 6px 14px rgba(220, 38, 38, 0.35);
+        }
+
+        #logoutModal .btn-light {
+            background: #f9fafb;
+            border-color: #e5e7eb;
+            color: #374151;
+        }
+
+        #logoutModal .btn-light:hover {
+            background: #f3f4f6 !important;
+            border-color: #d1d5db !important;
+            transform: translateY(-1px);
+        }
+
+        #logoutModal {
+            z-index: 1060 !important;
+        }
+    </style>
+
+    {% block extra_css %}{% endblock %}
+    {% block extra_head %}{% endblock %}
+</head>
+
+<body class="{% block body_class %}{% endblock %}">
+
+    <div class="d-flex">
+
+        <!-- ================= SIDEBAR ================= -->
+        <aside id="sidebar">
+            <div class="sidebar-brand">
+                <div class="d-flex align-items-center gap-3">
+                    <div class="logo-box">
+                        <img src="https://lbvd.gov.mm/sites/default/files/Logo_LBVD.png" alt="LBVD" onerror="this.src='https://placehold.co/100x100/ffffff/047857?text=LBVD'">
+                    </div>
+                    <div>
+                        <h6 class="mb-0">မွေးမြူရေးနှင့် ကုသရေး<br>ဦးစီးဌာန</h6>
+                    </div>
+                </div>
+                <div id="sidebarDate"></div>
+            </div>
+
+            <nav class="sidebar-menu">
+                <div class="menu-section-title">အဓိကစာမျက်နှာများ</div>
+
+                <a href="/survey/dashboard" class="sidebar-link {% if active_page == 'home' %}active{% endif %}">
+                    <i class="bi bi-house-door"></i>
+                    <span>မူလစာမျက်နှာ</span>
+                 </a>
+
+
+
+
+                <a href="/survey/part1" class="sidebar-link {% if active_page in ['survey', 'survey1', 'survey2', 'survey3', 'survey4'] %}active{% endif %}">
+                    <i class="bi bi-pencil-square"></i>
+                    <span>အချက်အလက်များဖြည့်သွင်းရန်</span>
+                </a>
+
+                <!-- ⭐ ပြင်ဆင်ထားသော လင့်ခ်
+                <a href="#" class="sidebar-link" onclick="showDevInfoModal(event);">
+                    <i class="bi bi-pencil"></i>
+                    <span>အချက်အလက်များပြင်ဆင်ရန်</span>
+                </a> -->
+                 <a href="/enumerator/edit-form"
+                class="sidebar-link {% if active_page == 'edit_form' %}active{% endif %}">
+                    <i class="bi bi-pencil"></i>
+                    <span>အချက်အလက်များပြင်ဆင်ရန်</span>
+                </a>
+
+                <hr class="mx-3 my-3 text-muted">
+
+                <!-- ⭐ Settings menu အသစ် -->
+                <a href="/usersettings" class="sidebar-link {% if active_page == 'usersettings' %}active{% endif %}">
+                    <i class="bi bi-gear"></i>
+                    <span>settings</span>
+                </a>
+
+                <a href="/logout" class="sidebar-link text-danger" onclick="return confirmLogout(event);">
+                    <i class="bi bi-box-arrow-right"></i>
+                    <span>Logout</span>
+                </a>
+            </nav>
+
+            <!-- ⭐ SIDEBAR FOOTER -->
+            <div class="sidebar-footer">
+                <p class="dev-text">
+                    <i class="bi bi-code-slash"></i>
+                    Developed by University of Computer Studies<br>(Taungoo), Bago Region
+                </p>
+            </div>
+        </aside>
+
+        <!-- ================= MAIN CONTENT ================= -->
+        <div id="mainContent" class="flex-grow-1" style="min-height: 100vh;">
+
+            <!-- TOPBAR -->
+
+          
+
+            <div class="topbar d-flex align-items-center justify-content-between">
+                <div class="d-flex align-items-center gap-3">
+                    <button class="toggle-btn" onclick="toggleSidebar()">
+                        <i class="bi bi-list"></i>
+                    </button>
+                    <h5 class="topbar-title d-none d-md-block">
+                        {% block topbar_title %}<i class="bi bi-pencil-square me-2"></i>ဒေတာဖြည့်ရန်{% endblock %}
+                    </h5>
+                </div>
+
+                <div class="topbar-user">
+                    {% set sid = user_state_id if user_state_id else (user.stateID if user and user.stateID else '') %}
+                    
+                    {# ⭐ Default အနေနဲ့ မြန်မာနိုင်ငံတော်အလံနဲ့ နာမည်ကို သတ်မှတ်ထားပါတယ် #}
+                    {% set img_file = 'myanmar.jpg' %}
+                    {% set region_name = 'ပြည်ထောင်စုသမ္မတမြန်မာနိုင်ငံတော်' %}
+
+                    
+
+                    {% if sid == 's01' %}{% set img_file = 'kachin.jpg' %}{% set region_name = 'ကချင်ပြည်နယ်' %}
+                    {% elif sid == 's02' %}{% set img_file = 'kayar.png' %}{% set region_name = 'ကယားပြည်နယ်' %}
+                    {% elif sid == 's03' %}{% set img_file = 'kayin.png' %}{% set region_name = 'ကရင်ပြည်နယ်' %}
+                    {% elif sid == 's04' %}{% set img_file = 'chin.png' %}{% set region_name = 'ချင်းပြည်နယ်' %}
+                    {% elif sid == 's05' %}{% set img_file = 'sagaing.jpg' %}{% set region_name = 'စစ်ကိုင်းတိုင်းဒေသကြီး' %}
+                    {% elif sid == 's06' %}{% set img_file = 'tanintharyi.jpg' %}{% set region_name = 'တနင်္သာရီတိုင်းဒေသကြီး' %}
+                    {% elif sid == 's07' %}{% set img_file = 'bago.jpg' %}{% set region_name = 'ပဲခူးတိုင်းဒေသကြီး' %}
+                    {% elif sid == 's08' %}{% set img_file = 'magway.png' %}{% set region_name = 'မကွေးတိုင်းဒေသကြီး' %}
+                    {% elif sid == 's09' %}{% set img_file = 'mon.jpg' %}{% set region_name = 'မွန်ပြည်နယ်' %}
+                    {% elif sid == 's10' %}{% set img_file = 'mandalay.png' %}{% set region_name = 'မန္တလေးတိုင်းဒေသကြီး' %}
+                    {% elif sid == 's11' %}{% set img_file = 'rakhine.jpg' %}{% set region_name = 'ရခိုင်ပြည်နယ်' %}
+                    {% elif sid == 's12' %}{% set img_file = 'yangon.png' %}{% set region_name = 'ရန်ကုန်တိုင်းဒေသကြီး' %}
+                    {% elif sid == 's13' %}{% set img_file = 'shan.png' %}{% set region_name = 'ရှမ်းပြည်နယ်' %}
+                    {% elif sid == 's14' %}{% set img_file = 'ayawady.jpg' %}{% set region_name = 'ဧရာဝတီတိုင်းဒေသကြီး' %}
+                    {% elif sid == 's15' %}{% set img_file = 'naypyitaw.webp' %}{% set region_name = 'နေပြည်တော်' %}
+                    {% endif %}
+
+                    {% set sid = (user.stateID if user and user.stateID else user_state_id if user_state_id else '') | string | trim %}
+
+                    {% set region_map = {
+                        's01': {'img': 'kachin.jpg', 'name': 'ကချင်ပြည်နယ်'},
+                        's02': {'img': 'kayar.png', 'name': 'ကယားပြည်နယ်'},
+                        's03': {'img': 'kayin.png', 'name': 'ကရင်ပြည်နယ်'},
+                        's04': {'img': 'chin.png', 'name': 'ချင်းပြည်နယ်'},
+                        's05': {'img': 'sagaing.jpg', 'name': 'စစ်ကိုင်းတိုင်းဒေသကြီး'},
+                        's06': {'img': 'tanintharyi.jpg', 'name': 'တနင်္သာရီတိုင်းဒေသကြီး'},
+                        's07': {'img': 'bago.jpg', 'name': 'ပဲခူးတိုင်းဒေသကြီး'},
+                        's08': {'img': 'magway.png', 'name': 'မကွေးတိုင်းဒေသကြီး'},
+                        's09': {'img': 'mon.jpg', 'name': 'မွန်ပြည်နယ်'},
+                        's10': {'img': 'mandalay.png', 'name': 'မန္တလေးတိုင်းဒေသကြီး'},
+                        's11': {'img': 'rakhine.jpg', 'name': 'ရခိုင်ပြည်နယ်'},
+                        's12': {'img': 'yangon.png', 'name': 'ရန်ကုန်တိုင်းဒေသကြီး'},
+                        's13': {'img': 'shan.png', 'name': 'ရှမ်းပြည်နယ်'},
+                        's14': {'img': 'ayawady.jpg', 'name': 'ဧရာဝတီတိုင်းဒေသကြီး'},
+                        's15': {'img': 'naypyitaw.webp', 'name': 'နေပြည်တော်'}
+                    } %}
+
+                    {% set region = region_map.get(sid, {
+                        'img': 'myanmar.jpg',
+                        'name': 'ပြည်ထောင်စုသမ္မတမြန်မာနိုင်ငံတော်'
+                    }) %}
+
+                    <img
+                        src="/assets/images/logos/{{ region.img }}"
+                        alt="User Region"
+                        class="user-img"
+                        onerror="this.src='https://placehold.co/100x100/ecfdf5/047857?text=User'"
+                    >
+
+                    <div class="{% if role == 'enumerator' %}topbar-identity{% else %}d-none d-md-block{% endif %}">
+                        <div class="user-name">{{ region.name }}</div>
+                        <div class="user-role">
+                            {% if user and user.role == 'admin' %}Admin
+                            {% elif user and user.role == 'state' %}State
+                            {% elif user and user.role == 'district' %}District
+                            {% elif user and user.role == 'township' %}Township
+                            {% else %}Enumerator{% endif %}
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- PAGE CONTENT -->
+            <div class="p-4">
+                {% block page_content %}
+                <div class="form-wrapper">
+                    <div class="form-container">
+                        <div class="form-card">
+                            <div class="top-accent"></div>
+
+                            <!-- BODY -->
+                            <div class="form-body">
+                                <div class="survey-region">
+                                    <span class="survey-region-icon" aria-hidden="true"><i class="bi bi-geo-alt"></i></span>
+                                    <div class="survey-region-details">
+                                        <label for="regionState">တိုင်းဒေသကြီး/ပြည်နယ်</label>
+
+
+                                        
+
+<select
+    id="regionState"
+    name="region_state"
+    required
+    class="region-select"
+    {% if role == 'enumerator' %}
+        disabled
+        aria-disabled="true"
+    {% endif %}
+    onchange="if (this.value) {
+        fetch('/sendStateValue/' + encodeURIComponent(this.value), {
+            credentials: 'same-origin'
+        });
+    }"
+>
+    <option value="" disabled
+        {% if not user or not user.stateID %}selected{% endif %}>
+        ရွေးချယ်ပါ...
+    </option>
+
+    {% if states %}
+        {% for s in states %}
+            <option
+                value="{{ s.stateID }}"
+                {% if user and user.stateID|string|trim == s.stateID|string|trim %}
+                    selected
+                {% endif %}
+            >
+                {{ s.stateName }}
+            </option>
+        {% endfor %}
+    {% else %}
+        <option value="s01" {% if user and user.stateID == 's01' %}selected{% endif %}>ကချင်ပြည်နယ်</option>
+        <option value="s02" {% if user and user.stateID == 's02' %}selected{% endif %}>ကယားပြည်နယ်</option>
+        <option value="s03" {% if user and user.stateID == 's03' %}selected{% endif %}>ကရင်ပြည်နယ်</option>
+        <option value="s04" {% if user and user.stateID == 's04' %}selected{% endif %}>ချင်းပြည်နယ်</option>
+        <option value="s05" {% if user and user.stateID == 's05' %}selected{% endif %}>စစ်ကိုင်းတိုင်းဒေသကြီး</option>
+        <option value="s06" {% if user and user.stateID == 's06' %}selected{% endif %}>တနင်္သာရီတိုင်းဒေသကြီး</option>
+        <option value="s07" {% if user and user.stateID == 's07' %}selected{% endif %}>ပဲခူးတိုင်းဒေသကြီး</option>
+        <option value="s08" {% if user and user.stateID == 's08' %}selected{% endif %}>မကွေးတိုင်းဒေသကြီး</option>
+        <option value="s09" {% if user and user.stateID == 's09' %}selected{% endif %}>မွန်ပြည်နယ်</option>
+        <option value="s10" {% if user and user.stateID == 's10' %}selected{% endif %}>မန္တလေးတိုင်းဒေသကြီး</option>
+        <option value="s11" {% if user and user.stateID == 's11' %}selected{% endif %}>ရခိုင်ပြည်နယ်</option>
+        <option value="s12" {% if user and user.stateID == 's12' %}selected{% endif %}>ရန်ကုန်တိုင်းဒေသကြီး</option>
+        <option value="s13" {% if user and user.stateID == 's13' %}selected{% endif %}>ရှမ်းပြည်နယ်</option>
+        <option value="s14" {% if user and user.stateID == 's14' %}selected{% endif %}>ဧရာဝတီတိုင်းဒေသကြီး</option>
+        <option value="s15" {% if user and user.stateID == 's15' %}selected{% endif %}>နေပြည်တော်</option>
+    {% endif %}
+</select>
+
+
+                                    </div>
+                                </div>
+                                <div class="progress-container">
+                                    <div class="progress-heading">
+                                        <div>
+                                        <span class="progress-eyebrow">ဖြည့်သွင်းမှု တိုးတက်မှု</span>
+                                        <span id="progressSectionLabel" class="progress-label">
+                                            {% block progress_label %}အပိုင်း (၁) / ၅ - လူတွေ့မေးမြန်းခြင်းဆိုင်ရာ အချက်များ{% endblock %}
+                                        </span>
+                                        </div>
+                                        <!-- ⭐ Page-based: child template က % ကို သတ်မှတ် -->
+                                        <span id="progressText" class="progress-percent">
+                                            {% block progress_percent %}1/4{% endblock %}
+                                        </span>
+                                    </div>
+                                    <div class="progress-track" role="progressbar" aria-label="ဖြည့်သွင်းမှု တိုးတက်မှု" aria-valuemin="0" aria-valuemax="100" aria-valuenow="{{ progress_width|default(20) }}">
+                                        <div id="progressBar" class="progress-fill"
+                                             style="width: {{ progress_width|default(20) }}%;"
+                                             data-progress="{{ progress_width|default(20) }}"></div>
+                                    </div>
+                                    <ol class="survey-steps" aria-label="အချက်အလက်ဖြည့်သွင်းမှု အဆင့်များ">
+                                        <li class="survey-step is-current" data-step="1" aria-current="step"><span class="survey-step-number">၁</span><span class="survey-step-label">လူတွေ့မေးမြန်းခြင်း</span></li>
+                                        <li class="survey-step" data-step="2"><span class="survey-step-number">၂</span><span class="survey-step-label">တိရစ္ဆာန်ကောင်ရေ</span></li>
+                                        <li class="survey-step" data-step="3"><span class="survey-step-number">၃</span><span class="survey-step-label">ကြက်၊ ဘဲ၊ ငုံး</span></li>
+                                        <li class="survey-step" data-step="4"><span class="survey-step-number">၄–၅</span><span class="survey-step-label">မျိုးတိရစ္ဆာန်နှင့် မေးမြန်းသူ</span></li>
+                                    </ol>
+                                </div>
+
+                                <div id="errorAlert" class="error-alert mb-4 d-none">
+                                    <svg width="20" height="20" fill="currentColor" viewBox="0 0 16 16" style="color:#dc2626; flex-shrink:0; margin-top:2px;">
+                                        <path d="M8.982 1.566a1.13 1.13 0 0 0-1.96 0L.165 13.233c-.457.778.091 1.767.98 1.767h13.713c.889 0 1.438-.99.98-1.767L8.982 1.566zM8 5c.535 0 .954.462.9.995l-.35 3.507a.552.552 0 0 1-1.1 0L7.1 5.995A.905.905 0 0 1 8 5zm.002 6a1 1 0 1 1 0 2 1 1 0 0 1 0-2z"/>
+                                    </svg>
+                                    <div>
+                                        <strong>သတိပေးချက်!</strong>
+                                        <span>ကျေးဇူးပြု၍ မရှိမဖြစ်လိုအပ်သော အချက်အလက်များအားလုံးကို မှန်ကန်စွာ ဖြည့်စွက်ပေးပါ။</span>
+                                    </div>
+                                </div>
+
+                                <form id="livestockForm" action="{% block form_action %}#{% endblock %}" method="{% block form_method %}post{% endblock %}" novalidate>
+                                    {% block form_content %}{% endblock %}
+
+                                    <!-- ⭐ Form Nav -->
+                                    <div class="form-nav">
+                                        <button type="button" id="backBtn" class="btn-original btn-back-orig">
+                                            <i class="bi bi-arrow-left"></i> နောက်သို့
+                                        </button>
+
+                                        <div class="btn-nav-group">
+                                            <button type="button" id="nextPageBtn" class="btn-original btn-next-orig">
+                                                နောက်စာမျက်နှာသို့ <i class="bi bi-arrow-right"></i>
+                                            </button>
+
+                                            <button type="submit" id="submitBtn" class="btn-original btn-submit-orig" style="display:none;">
+                                                <i class="bi bi-check-circle"></i> သိမ်းဆည်းမည်
+                                            </button>
+                                        </div>
+                                    </div>
+                                </form>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                {% endblock %}
+            </div>
+        </div>
+    </div>
+
+    <!-- Overlay -->
+    <div id="overlay" onclick="toggleSidebar()"></div>
+
+    <!-- Modal -->
+    <div class="modal fade" id="customModal" tabindex="-1" aria-hidden="true">
+        <div class="modal-dialog modal-dialog-centered">
+            <div class="modal-content border-0 shadow-lg" style="border-radius: 1rem;">
+                <div class="modal-body text-center p-4 modal-enter">
+                    <div id="modalIconContainer" class="modal-icon"></div>
+                    <h4 id="modalTitle" class="fw-bold mb-2" style="color:#111827;"></h4>
+                    <p id="modalMessage" class="text-muted small mb-4"></p>
+                    <button type="button" id="modalOkBtn" class="modal-btn" data-bs-dismiss="modal">OK</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- LOGOUT CONFIRM MODAL -->
+    <div class="modal fade" id="logoutModal" tabindex="-1" aria-hidden="true" data-bs-backdrop="static" data-bs-keyboard="true">
+        <div class="modal-dialog modal-dialog-centered">
+            <div class="modal-content border-0 shadow-lg text-center">
+                <div class="logout-accent"></div>
+                <div class="modal-body">
+                    <div class="logout-icon mx-auto mb-3 d-flex align-items-center justify-content-center rounded-circle">
+                        <i class="bi bi-box-arrow-right text-danger"></i>
+                        <span class="logout-pulse"></span>
+                    </div>
+                    <h5 class="logout-title">အကောင့်မှ ထွက်မှာ သေချာပါသလား?</h5>
+                    <p class="logout-subtitle">ထွက်လိုက်ရင် ပြန်ဝင်ရန် Username နှင့်<br>Password ပြန်ထည့်ရပါမယ်။</p>
+                    <div class="d-flex gap-2">
+                        <button type="button" class="btn btn-light border flex-fill" data-bs-dismiss="modal">
+                            <i class="bi bi-x-lg"></i> မထွက်တော့ပါ
+                        </button>
+                        <button type="button" id="confirmLogoutBtn" class="btn btn-danger flex-fill">
+                            <i class="bi bi-box-arrow-right"></i> ထွက်မည်
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- ==================== DEVELOPER INFO MODAL ==================== -->
+    <div class="modal fade" id="devInfoModal" tabindex="-1" aria-hidden="true" data-bs-backdrop="static" data-bs-keyboard="true">
+        <div class="modal-dialog modal-dialog-centered">
+            <div class="modal-content border-0 shadow-lg text-center" style="border-radius: 18px; overflow: hidden;">
+                <div class="modal-body p-4">
+                    <div class="mx-auto mb-3 d-flex align-items-center justify-content-center rounded-circle" style="width: 68px; height: 68px; background: #e0f2fe;">
+                        <i class="bi bi-tools text-primary" style="font-size: 1.85rem;"></i>
+                    </div>
+                    <h5 class="fw-bold mb-3" style="color: #111827; font-size: 1.05rem;">အချက်အလက်ပြင်ဆင်ခြင်း</h5>
+                    <p class="text-muted small mb-4" style="line-height: 1.6;">
+                        အချက်အလက်ပြင်ဆင်ခြင်းစာမျက်နှာအား Developers များမှ မကြာမီထည့်သွင်းသွားမည်ဖြစ်ပါသည်။<br>
+                        အဆင်မပြေမှုအတွက် အနူးအညွတ်တောင်းပန်အပ်ပါသည်။<br>
+                        ကျေးဇူးတင်ပါသည်။
+                    </p>
+                    <button type="button" class="btn w-100 fw-bold py-2 text-white" data-bs-dismiss="modal" style="background: #047857; border: none; border-radius: 10px; font-size: 0.9rem;">
+                        ပိတ်မည်
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
+
+    <script>
+        // ============================================================
+        // SHARED HELPERS
+        // ============================================================
+        let customModalInstance = null;
+        let modalOkHandler = null;
+
+        document.addEventListener('DOMContentLoaded', function() {
+            const modalEl = document.getElementById('customModal');
+            if (modalEl) customModalInstance = new bootstrap.Modal(modalEl);
+        });
+
+        /**
+         * Modal ပြတယ်
+         * @param {string} type - 'error' | 'success'
+         * @param {string} title
+         * @param {string} message
+         * @param {Function} onOk - OK နှိပ်ရင် လုပ်မယ့် function (optional)
+         */
+        window.showModal = function(type, title, message, onOk) {
+            const iconC = document.getElementById('modalIconContainer');
+            const titleEl = document.getElementById('modalTitle');
+            const msgEl = document.getElementById('modalMessage');
+
+            if (type === 'error') {
+                iconC.className = 'modal-icon error';
+                iconC.innerHTML = '<svg fill="currentColor" viewBox="0 0 16 16"><path d="M8.982 1.566a1.13 1.13 0 0 0-1.96 0L.165 13.233c-.457.778.091 1.767.98 1.767h13.713c.889 0 1.438-.99.98-1.767L8.982 1.566zM8 5c.535 0 .954.462.9.995l-.35 3.507a.552.552 0 0 1-1.1 0L7.1 5.995A.905.905 0 0 1 8 5zm.002 6a1 1 0 1 1 0 2 1 1 0 0 1 0-2z"/></svg>';
+            } else {
+                iconC.className = 'modal-icon success';
+                iconC.innerHTML = '<svg fill="currentColor" viewBox="0 0 16 16"><path d="M16 8A8 8 0 1 1 0 8a8 8 0 0 1 16 0zm-3.97-3.03a.75.75 0 0 0-1.08.022L7.477 9.417 5.384 7.323a.75.75 0 0 0-1.06 1.06L6.97 11.03a.75.75 0 0 0 1.079-.02l3.992-4.99a.75.75 0 0 0-.01-1.05z"/></svg>';
+            }
+            titleEl.textContent = title;
+            msgEl.textContent = message;
+
+            // ⭐ OK ခလုတ်ရဲ့ handler ကို အသစ် သတ်မှတ်
+            const okBtn = document.getElementById('modalOkBtn');
+            if (okBtn) {
+                if (modalOkHandler) {
+                    okBtn.removeEventListener('click', modalOkHandler);
+                    modalOkHandler = null;
+                }
+                if (typeof onOk === 'function') {
+                    modalOkHandler = function() {
+                        // modal ပိတ်ပြီးမှ onOk ကို ခေါ်
+                        setTimeout(function() { onOk(); }, 150);
+                    };
+                    okBtn.addEventListener('click', modalOkHandler);
+                }
+            }
+
+            if (customModalInstance) customModalInstance.show();
+        };
+
+        // ⭐ Page-based progress: child template က % နဲ့ label ကို သတ်မှတ်
+        window.updateProgress = function(percentage, labelText) {
+            const bar = document.getElementById('progressBar');
+            const txt = document.getElementById('progressText');
+            const lbl = document.getElementById('progressSectionLabel');
+            if (bar) {
+                bar.style.width = percentage + '%';
+                bar.parentElement.setAttribute('aria-valuenow', percentage);
+            }
+            if (lbl && labelText) lbl.textContent = labelText;
+            const currentStep = percentage >= 80 ? 4 : Math.max(1, Math.round(percentage / 20));
+            if (txt) {
+                txt.textContent = currentStep + '/4';
+                txt.setAttribute('aria-label', 'အဆင့် ' + currentStep + ' / 4');
+            }
+            document.querySelectorAll('.survey-step').forEach(step => {
+                const number = Number(step.dataset.step);
+                step.classList.toggle('is-current', number === currentStep);
+                step.classList.toggle('is-complete', number < currentStep);
+                if (number === currentStep) step.setAttribute('aria-current', 'step');
+                else step.removeAttribute('aria-current');
+            });
+        };
+
+        window.phoneRegex = /^(09|\+959)\d{7,9}$/;
+
+        // ============================================================
+        // FORM DATA (sessionStorage)
+        // ============================================================
+        window.saveFormData = function() {
+            const form = document.getElementById('livestockForm');
+            if (!form) return;
+            const data = {};
+            new FormData(form).forEach((val, key) => {
+                data[key] = val;
+            });
+            const regionEl = document.getElementById('regionState');
+            if (regionEl && regionEl.value) data['region_state'] = regionEl.value;
+            const existing = JSON.parse(sessionStorage.getItem('lbvdFormData') || '{}');
+            Object.assign(existing, data);
+            sessionStorage.setItem('lbvdFormData', JSON.stringify(existing));
+        };
+
+        window.loadFormData = function() {
+            const saved = sessionStorage.getItem('lbvdFormData');
+            if (!saved) return;
+            try {
+                const data = JSON.parse(saved);
+                Object.keys(data).forEach(key => {
+                    const el = document.querySelector('[name="' + key + '"]');
+                    if (!el) return;
+                    if (el.type === 'radio') {
+                        document.querySelectorAll('[name="' + key + '"]').forEach(r => {
+                            if (r.value === data[key]) r.checked = true;
+                        });
+                    } else {
+                        el.value = data[key];
+                    }
+                });
+            } catch (e) {
+                console.error(e);
+            }
+        };
+
+        window.clearFormData = function() {
+            sessionStorage.removeItem('lbvdFormData');
+        };
+
+        // Error input ကို ရှင်းတဲ့ listener
+        document.addEventListener('input', function(e) {
+            if (e.target.classList.contains('error-input')) e.target.classList.remove('error-input');
+        });
+        document.addEventListener('change', function(e) {
+            if (e.target.classList.contains('error-input')) e.target.classList.remove('error-input');
+            const grp = e.target.closest('.radio-group');
+            if (grp) grp.classList.remove('error-input');
+        });
+
+        // ============================================================
+        // LOGOUT
+        // ============================================================
+        let logoutModalInstance = null;
+        let pendingLogoutUrl = null;
+
+        function confirmLogout(e) {
+            if (e) e.preventDefault();
+            pendingLogoutUrl = (e && e.currentTarget && e.currentTarget.getAttribute('href')) || '/logout';
+            if (!logoutModalInstance) {
+                const el = document.getElementById('logoutModal');
+                logoutModalInstance = new bootstrap.Modal(el, {
+                    backdrop: 'static',
+                    keyboard: true
+                });
+            }
+            logoutModalInstance.show();
+            return false;
+        }
+
+        document.addEventListener('DOMContentLoaded', function() {
+            const btn = document.getElementById('confirmLogoutBtn');
+            if (btn) {
+                btn.addEventListener('click', function() {
+                    btn.disabled = true;
+                    btn.innerHTML = `<span class="spinner-border spinner-border-sm me-1" role="status" aria-hidden="true"></span> ထွက်နေသည်...`;
+                    window.location.href = pendingLogoutUrl || '/logout';
+                });
+            }
+        });
+
+        // ============================================================
+        // DEVELOPER INFO MODAL
+        // ============================================================
+        let devInfoModalInstance = null;
+        function showDevInfoModal(e) {
+            if (e) e.preventDefault();
+            if (!devInfoModalInstance) {
+                const el = document.getElementById('devInfoModal');
+                devInfoModalInstance = new bootstrap.Modal(el, {
+                    backdrop: 'static',
+                    keyboard: true
+                });
+            }
+            devInfoModalInstance.show();
+            return false;
+        }
+
+        // ============================================================
+        // TOGGLE SIDEBAR
+        // ============================================================
+        function toggleSidebar() {
+            const sidebar = document.getElementById('sidebar');
+            const overlay = document.getElementById('overlay');
+            const mainContent = document.getElementById('mainContent');
+            if (window.innerWidth >= 992) {
+                sidebar.classList.toggle('collapsed');
+                mainContent.classList.toggle('expanded');
+            } else {
+                sidebar.classList.toggle('mobile-open');
+                overlay.classList.toggle('show');
+            }
+        }
+
+        document.querySelectorAll('#sidebar .sidebar-link, #sidebar .sidebar-submenu a').forEach(link => {
+            link.addEventListener('click', function() {
+                if (this.getAttribute('onclick') && this.getAttribute('onclick').includes('confirmLogout')) return;
+                if (window.innerWidth < 992) toggleSidebar();
+            });
+        });
+
+        let lastWidth = window.innerWidth;
+        window.addEventListener('resize', function() {
+            const sidebar = document.getElementById('sidebar');
+            const overlay = document.getElementById('overlay');
+            const mainContent = document.getElementById('mainContent');
+            const currentWidth = window.innerWidth;
+            const crossed = (lastWidth >= 992 && currentWidth < 992) || (lastWidth < 992 && currentWidth >= 992);
+            if (crossed) {
+                sidebar.classList.remove('mobile-open', 'collapsed');
+                overlay.classList.remove('show');
+                mainContent.classList.remove('expanded');
+            }
+            lastWidth = currentWidth;
+        });
+
+        // ============================================================
+        // SIDEBAR DATE
+        // ============================================================
+        const MYANMAR_TZ = 'Asia/Yangon';
+        const MM_DIGITS = ['၀', '၁', '၂', '၃', '၄', '၅', '၆', '၇', '၈', '၉'];
+
+        function toMMDigits(s) {
+            return String(s).replace(/[0-9]/g, d => MM_DIGITS[+d]);
+        }
+        const MM_MONTHS = ['ဇန်နဝါရီလ', 'ဖေဖော်ဝါရီလ', 'မတ်လ', 'ဧပြီလ', 'မေလ', 'ဇွန်လ', 'ဇူလိုင်လ', 'ဩဂုတ်လ', 'စက်တင်ဘာလ', 'အောက်တိုဘာလ', 'နိုဝင်ဘာလ', 'ဒီဇင်ဘာလ'];
+        const fmtDateParts = new Intl.DateTimeFormat('en-US', {
+            timeZone: MYANMAR_TZ,
+            year: 'numeric',
+            month: 'numeric',
+            day: 'numeric'
+        });
+
+        function updateSidebarDate() {
+            const sidebarDate = document.getElementById('sidebarDate');
+            if (!sidebarDate) return;
+            const now = new Date();
+            const parts = {};
+            fmtDateParts.formatToParts(now).forEach(p => {
+                parts[p.type] = p.value;
+            });
+            const dayNum = parseInt(parts.day, 10);
+            const monthIdx = parseInt(parts.month, 10) - 1;
+            const yearNum = parseInt(parts.year, 10);
+            sidebarDate.innerHTML = `<i class="bi bi-calendar3 me-1" style="font-size: 0.65rem;"></i>` + toMMDigits(yearNum) + ' ခုနှစ်၊ ' + MM_MONTHS[monthIdx] + ' ' + toMMDigits(dayNum) + ' ရက်';
+        }
+        updateSidebarDate();
+        setInterval(updateSidebarDate, 60000);
+    </script>
+
+    {% block part_js %}{% endblock %}
+</body>
+
+</html>

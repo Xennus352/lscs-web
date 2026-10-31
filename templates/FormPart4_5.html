@@ -1,0 +1,175 @@
+{% extends 'formBase.html' %}
+
+{% block form_content %}
+<div id="section4">
+    <!-- Part 4 -->
+    <div class="mb-4">
+        <div class="section-title-box">
+            <h4>အပိုင်း - (၄) မျိုးတိရစ္ဆာန်မွေးမြူထားရှိမှု</h4>
+            <p>အဓိက မျိုးတိရစ္ဆာန်အမျိုးအစားအလိုက် အထီး/အမ အရေအတွက်</p>
+        </div>
+
+        <div class="bg-white border rounded-3 overflow-hidden shadow-sm mb-4" style="border-color:#a7f3d0 !important;">
+            <div class="table-responsive custom-scrollbar">
+                <table class="table-bordered-custom mb-0" id="breedingTable" style="min-width:500px;">
+                    <thead style="background:#e8f5f1;">
+                        <tr>
+                            <th class="text-start" style="min-width:180px;">အမျိုးအစား</th>
+                            <th>အထီး (ကောင်)</th>
+                            <th>အမ (ကောင်)</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% if breedingStockAni %}
+                        {% for ani in breedingStockAni %}
+                        <tr>
+                            <td class="text-start fw-semibold">{{ani.animalName}}</td>
+                            <td><input type="number"
+                                    name="breeding[{{ani.animalID}}][male]"
+                                    class="form-control form-control-sm text-center breeding-male"
+                                    data-animal-id="{{ani.animalID}}" placeholder="0" min="0"></td>
+                            <td><input type="number"
+                                    name="breeding[{{ani.animalID}}][female]"
+                                    class="form-control form-control-sm text-center breeding-female"
+                                    data-animal-id="{{ani.animalID}}" placeholder="0" min="0"></td>
+                        </tr>
+                        {% endfor %}
+                        {% endif %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+
+    <!-- Part 5 -->
+    <div class="pt-2">
+        <div class="section-title-box">
+            <h4>အပိုင်း - (၅) မေးမြန်းသူဆိုင်ရာအချက်အလက်များ</h4>
+            <p>စာရင်းကောက်ယူသူ၏ အချက်အလက်နှင့် အတည်ပြုချက်</p>
+        </div>
+        <div class="row g-4 p-4 rounded-3" style="background: rgba(16,185,129,0.08); border: 1px solid #a7f3d0;">
+            <div class="col-md-6">
+                <label class="form-label">မေးမြန်းသူအမည် <span class="text-danger">*</span></label>
+                <input type="text" id="interviewerName" name="interviewer[name]" required class="form-control"
+                    placeholder="အမည် ရိုက်ထည့်ပါ..." style="background:#fff;">
+            </div>
+            <div class="col-md-6">
+                <label class="form-label">ဖုန်းနံပါတ် <span class="text-danger">*</span></label>
+                <input type="tel" id="interviewerPhone" name="interviewer[phone]" required class="form-control"
+                    placeholder="09-xxxxxxxxx" style="background:#fff;">
+                <p id="interviewerPhoneError" class="text-danger small mt-1 fw-bold d-none">ဖုန်းနံပါတ်ပုံစံ မှားယွင်းနေပါသည်။</p>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block part_js %}
+<script>
+    const SURVEY_PREFIX = {{ survey_prefix|default('/survey')|tojson }};
+    const FORM_ID = {{ form_id|default('')|tojson }};
+
+    document.addEventListener('DOMContentLoaded', function () {
+        // ⭐ Progress ကို 100% မှ စ (page-based)
+        updateProgress(100, 'အပိုင်း (၄) နှင့် (၅) / ၅ - မျိုးတိရစ္ဆာန်နှင့် မေးမြန်းသူအချက်အလက်');
+
+        const backBtn   = document.getElementById('backBtn');
+        const nextBtn   = document.getElementById('nextPageBtn');
+        const submitBtn = document.getElementById('submitBtn');
+
+        // ⭐ "နောက်သို့" ပြ၊ "ရှေ့သို့" ဖျောက်၊ "သိမ်းဆည်းမည်" ပြ
+        if (backBtn)   backBtn.classList.remove('d-none');
+        if (nextBtn)   nextBtn.classList.add('d-none');
+        if (submitBtn) submitBtn.style.display = 'inline-flex';
+
+        // ⭐ Back ကို part3 (GET) ကို သွား
+        if (backBtn) {
+            backBtn.onclick = function() {
+                saveFormData();
+                window.location.href = (SURVEY_PREFIX === '/enumerator')
+                    ? `/enumerator/part3/${encodeURIComponent(FORM_ID)}`
+                    : `/survey/part3/${encodeURIComponent(FORM_ID)}`;
+            };
+        }
+
+        loadFormData();
+
+        if (submitBtn) {
+            submitBtn.addEventListener('click', async function(e) {
+                e.preventDefault();
+                const name  = document.getElementById('interviewerName').value.trim();
+                const phone = document.getElementById('interviewerPhone').value.trim();
+
+                if (!name) {
+                    showModal('error', 'သတိပေးချက်', 'ကျေးဇူးပြု၍ မေးမြန်းသူအမည် ဖြည့်စွက်ပေးပါ။');
+                    return;
+                }
+                if (!phone || !phoneRegex.test(phone)) {
+                    showModal('error', 'သတိပေးချက်', 'ကျေးဇူးပြု၍ မေးမြန်းသူ၏ ဖုန်းနံပါတ်ကို မှန်ကန်စွာ ဖြည့်စွက်ပေးပါ။');
+                    return;
+                }
+
+                submitBtn.disabled = true;
+                submitBtn.innerHTML = '<span class="spinner-border spinner-border-sm me-1"></span> သိမ်းဆည်းနေသည်...';
+
+                try {
+                    // 1) Breeding data
+                    const breeding = getAnimalSurveyData(FORM_ID);
+                    const res4 = await fetch(`${SURVEY_PREFIX}/sendForm4Data/${encodeURIComponent(FORM_ID)}`, {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify(breeding)
+                    });
+                    if (!res4.ok) throw new Error('Breeding save failed');
+
+                    // 2) Interviewer info
+                    const res5 = await fetch(`${SURVEY_PREFIX}/sendForm5Data/${encodeURIComponent(FORM_ID)}`, {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({ name, phone })
+                    });
+                    if (!res5.ok) throw new Error('Interviewer save failed');
+
+                    // 3) Final submit
+                    const resSubmit = await fetch(`${SURVEY_PREFIX}/submit/${encodeURIComponent(FORM_ID)}`);
+                    if (!resSubmit.ok) throw new Error('Submit failed');
+
+                    // 4) sessionStorage ရှင်း
+                    clearFormData();
+
+                    // 5) Success modal — OK နှိပ်ရင် FormPart1 ကို သွား
+                    showModal('success', 'အောင်မြင်ပါသည်', 'အချက်အလက်များ အားလုံး အောင်မြင်စွာ သိမ်းဆည်းပြီးပါပြီ။', function() {
+                        window.location.href = (SURVEY_PREFIX === '/enumerator') ? '/enumerator/part1' : '/survey/part1';
+                    });
+                } catch (err) {
+                    console.error(err);
+                    submitBtn.disabled = false;
+                    submitBtn.innerHTML = '<i class="bi bi-check-circle"></i> သိမ်းဆည်းမည်';
+                    showModal('error', 'အမှားဖြစ်ပွားပါသည်', 'ဒေတာသိမ်းဆည်းရာတွင် အမှားရှိနေပါသည်။ ထပ်မံကြိုးစားပါ။');
+                }
+            });
+        }
+    });
+
+    function getAnimalSurveyData(formID) {
+        const records = [];
+        document.querySelectorAll('#breedingTable tbody tr').forEach(row => {
+            const maleInput   = row.querySelector('input.breeding-male');
+            const femaleInput = row.querySelector('input.breeding-female');
+            if (!maleInput) return;
+            const animalID    = maleInput.dataset.animalId || '';
+            const maleCount   = parseInt(maleInput.value, 10) || 0;
+            const femaleCount = parseInt(femaleInput?.value, 10) || 0;
+            if (maleCount > 0) records.push({
+                formID, animalTypeID: 'atID04', animalID,
+                speciesID: '', ageID: '', genderID: 'g01', dataCount: maleCount
+            });
+            if (femaleCount > 0) records.push({
+                formID, animalTypeID: 'atID04', animalID,
+                speciesID: '', ageID: '', genderID: 'g03', dataCount: femaleCount
+            });
+        });
+        return records;
+    }
+</script>
+{% endblock %}

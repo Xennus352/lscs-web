@@ -1,0 +1,1359 @@
+{% extends 'reportBase.html' %} {% set active_page = 'home' %} {% block title %}မူလစာမျက်နှာ - LBVD Admin{% endblock %} {% block topbar_title %}<i class="bi bi-house-door me-2"></i>မူလစာမျက်နှာ{% endblock %} {% block extra_css %}
+<style>
+    .page-head h5 {
+        font-size: 1.05rem;
+    }
+    
+    .page-head p {
+        font-size: 0.78rem;
+    }
+    
+    .info-note {
+        background: #fffbeb;
+        border: 1px solid #fde68a;
+        border-radius: 10px;
+        padding: 10px 14px;
+        font-size: 0.78rem;
+        color: #92400e;
+        display: flex;
+        align-items: flex-start;
+        gap: 8px;
+        margin-bottom: 12px;
+    }
+    
+    .info-note i {
+        color: #f59e0b;
+        flex-shrink: 0;
+        margin-top: 2px;
+    }
+    
+    .filter-card {
+        border: none;
+        border-radius: 12px;
+        box-shadow: 0 2px 10px rgba(0, 0, 0, 0.05);
+        background: #ffffff;
+    }
+    
+    .filter-card .filter-label {
+        font-size: 0.72rem;
+        font-weight: 700;
+        color: #065f46;
+        margin-bottom: 3px;
+        display: block;
+    }
+    
+    .filter-card .form-select {
+        font-size: 0.8rem;
+        border: 1px solid #d1fae5;
+        border-radius: 8px;
+        padding: 6px 28px 6px 10px;
+        color: #374151;
+        font-weight: 500;
+        background-color: #f9fafb;
+    }
+    
+    .filter-card .form-select:focus {
+        border-color: #10b981;
+        box-shadow: 0 0 0 0.15rem rgba(16, 185, 129, 0.2);
+    }
+    
+    .filter-card .form-select:disabled {
+        background-color: #f3f4f6;
+        color: #4b5563;
+        cursor: not-allowed;
+        opacity: 1;
+        font-weight: 700;
+    }
+    
+    .filter-actions {
+        display: flex;
+        justify-content: flex-end;
+        gap: 8px;
+        margin-top: 14px;
+    }
+    
+    .btn-filter-submit {
+        background: linear-gradient(135deg, #047857, #059669);
+        color: #fff;
+        border: none;
+        padding: 8px 20px;
+        border-radius: 8px;
+        font-weight: 700;
+        font-size: 0.8rem;
+        display: inline-flex;
+        align-items: center;
+        gap: 6px;
+        box-shadow: 0 2px 6px rgba(4, 120, 87, 0.25);
+        transition: all 0.15s ease;
+    }
+    
+    .btn-filter-submit:hover {
+        color: #fff;
+        transform: translateY(-1px);
+    }
+    
+    .btn-filter-submit:disabled {
+        opacity: 0.6;
+        cursor: wait;
+    }
+    
+    .btn-filter-reset {
+        background: #fff;
+        color: #4b5563;
+        border: 1px solid #d1d5db;
+        padding: 8px 20px;
+        border-radius: 8px;
+        font-weight: 700;
+        font-size: 0.8rem;
+        text-decoration: none;
+        display: inline-flex;
+        align-items: center;
+        gap: 6px;
+    }
+    
+    .btn-filter-reset:hover {
+        background: #f9fafb;
+        color: #111827;
+    }
+    
+    .stat-card {
+        border: none;
+        border-radius: 12px;
+        box-shadow: 0 2px 10px rgba(0, 0, 0, 0.05);
+        transition: transform 0.18s ease, box-shadow 0.18s ease;
+        height: 100%;
+    }
+    
+    .stat-card:hover {
+        transform: translateY(-3px);
+        box-shadow: 0 6px 16px rgba(0, 0, 0, 0.08);
+    }
+    
+    .stat-icon {
+        width: 44px;
+        height: 44px;
+        border-radius: 10px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 1.35rem;
+        line-height: 1;
+        flex-shrink: 0;
+    }
+    
+    .stat-card .stat-value {
+        font-size: 1.15rem;
+        font-weight: 700;
+        line-height: 1.15;
+    }
+    
+    .stat-card .stat-label {
+        font-size: 0.7rem;
+        font-weight: 600;
+        color: #6b7280;
+        margin-bottom: 2px;
+        line-height: 1.3;
+    }
+    
+    .stat-card .stat-sub {
+        font-size: 0.65rem;
+        color: #9ca3af;
+        font-weight: 500;
+    }
+    
+    .chart-card {
+        border: none;
+        border-radius: 12px;
+        box-shadow: 0 2px 10px rgba(0, 0, 0, 0.05);
+        height: 100%;
+    }
+    
+    .chart-card .card-header {
+        background: transparent;
+        border-bottom: 1px solid #f1f5f9;
+        padding: 12px 16px;
+    }
+    
+    .chart-card .card-header h6 {
+        font-size: 0.85rem;
+    }
+    
+    .chart-card .card-body {
+        padding: 12px 16px;
+    }
+    
+    .chart-container {
+        position: relative;
+        height: 260px;
+        width: 100%;
+    }
+    
+    .chart-container-sm {
+        position: relative;
+        height: 260px;
+        width: 100%;
+    }
+    
+    .quick-link {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        padding: 10px 12px;
+        border-radius: 10px;
+        background: #ffffff;
+        border: 1px solid #e5e7eb;
+        text-decoration: none;
+        color: #374151;
+        font-size: 0.78rem;
+        font-weight: 600;
+        transition: all 0.18s ease;
+        height: 100%;
+    }
+    
+    .quick-link:hover {
+        border-color: #10b981;
+        background: #f0fdf4;
+        color: #047857;
+        transform: translateY(-2px);
+        box-shadow: 0 4px 10px rgba(16, 185, 129, 0.15);
+    }
+    
+    .quick-link .ql-icon {
+        width: 32px;
+        height: 32px;
+        border-radius: 8px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 0.95rem;
+        flex-shrink: 0;
+    }
+    
+    .quick-link .ql-text {
+        line-height: 1.3;
+    }
+    
+    .table-card {
+        border: none;
+        border-radius: 12px;
+        box-shadow: 0 2px 10px rgba(0, 0, 0, 0.05);
+        overflow: hidden;
+    }
+    
+    .table-card .card-header {
+        background: #ffffff;
+        border-bottom: 1px solid #f1f5f9;
+        padding: 12px 16px;
+    }
+    
+    .table-card .card-header h6 {
+        font-size: 0.85rem;
+    }
+    
+    .custom-table {
+        margin: 0;
+        font-size: 0.8rem;
+    }
+    
+    .custom-table thead tr {
+        background: #ecfdf5;
+        color: #065f46;
+    }
+    
+    .custom-table thead th {
+        font-weight: 700;
+        font-size: 0.72rem;
+        text-transform: uppercase;
+        letter-spacing: 0.5px;
+        border-bottom: 2px solid #a7f3d0;
+        padding: 10px 12px;
+        vertical-align: middle;
+        white-space: nowrap;
+    }
+    
+    .custom-table tbody td {
+        padding: 10px 12px;
+        vertical-align: middle;
+        border-bottom: 1px solid #f1f5f9;
+    }
+    
+    .custom-table tbody tr:hover {
+        background: #f9fafb;
+    }
+    
+    .custom-table .num-cell {
+        text-align: right;
+        font-weight: 700;
+        color: #047857;
+    }
+    
+    .custom-table .badge-type {
+        display: inline-flex;
+        align-items: center;
+        gap: 4px;
+        padding: 2px 9px;
+        font-size: 0.68rem;
+        font-weight: 700;
+        border-radius: 999px;
+        background: #ecfdf5;
+        color: #065f46;
+    }
+    
+    /* ============================================
+       PAGINATION STYLES
+       ============================================ */
+    .pagination-bar {
+        display: flex;
+        flex-wrap: wrap;
+        align-items: center;
+        justify-content: space-between;
+        gap: 10px;
+        padding: 12px 16px;
+        border-top: 1px solid #f1f5f9;
+        background: #ffffff;
+    }
+    
+    .pagination-info {
+        font-size: 0.75rem;
+        color: #6b7280;
+        font-weight: 500;
+    }
+    
+    .pagination-info b {
+        color: #047857;
+    }
+    
+    .pagination-size {
+        display: flex;
+        align-items: center;
+        gap: 6px;
+        font-size: 0.75rem;
+        color: #6b7280;
+    }
+    
+    .pagination-size select {
+        font-size: 0.75rem;
+        padding: 3px 24px 3px 8px;
+        border: 1px solid #d1fae5;
+        border-radius: 6px;
+        background-color: #f9fafb;
+        color: #374151;
+        font-weight: 600;
+        cursor: pointer;
+    }
+    
+    .pagination-size select:focus {
+        border-color: #10b981;
+        box-shadow: 0 0 0 0.12rem rgba(16, 185, 129, 0.2);
+        outline: none;
+    }
+    
+    .pagination-controls {
+        display: flex;
+        align-items: center;
+        gap: 4px;
+        flex-wrap: wrap;
+    }
+    
+    .page-btn {
+        min-width: 30px;
+        height: 30px;
+        padding: 0 8px;
+        border: 1px solid #e5e7eb;
+        border-radius: 6px;
+        background: #ffffff;
+        color: #374151;
+        font-size: 0.75rem;
+        font-weight: 700;
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        cursor: pointer;
+        transition: all 0.15s ease;
+        line-height: 1;
+        user-select: none;
+    }
+    
+    .page-btn:hover:not(:disabled):not(.active) {
+        border-color: #10b981;
+        color: #047857;
+        background: #f0fdf4;
+    }
+    
+    .page-btn.active {
+        background: linear-gradient(135deg, #047857, #059669);
+        border-color: #047857;
+        color: #fff;
+        box-shadow: 0 2px 6px rgba(4, 120, 87, 0.3);
+    }
+    
+    .page-btn:disabled {
+        opacity: 0.4;
+        cursor: not-allowed;
+    }
+    
+    .page-btn.page-nav i {
+        font-size: 0.7rem;
+    }
+    
+    .page-ellipsis {
+        min-width: 24px;
+        height: 30px;
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        color: #9ca3af;
+        font-size: 0.75rem;
+        font-weight: 700;
+    }
+    
+    .loading-overlay {
+        position: fixed;
+        inset: 0;
+        background: rgba(255, 255, 255, 0.6);
+        backdrop-filter: blur(2px);
+        z-index: 9999;
+        display: none;
+        align-items: center;
+        justify-content: center;
+    }
+    
+    .loading-overlay.show {
+        display: flex;
+    }
+    
+    .loading-spinner {
+        width: 48px;
+        height: 48px;
+        border: 4px solid rgba(4, 120, 87, 0.15);
+        border-top-color: #047857;
+        border-radius: 50%;
+        animation: spin 0.8s linear infinite;
+    }
+    
+    @keyframes spin {
+        to {
+            transform: rotate(360deg);
+        }
+    }
+    
+    @media (max-width: 575.98px) {
+        .chart-container {
+            height: 220px;
+        }
+        .chart-container-sm {
+            height: 220px;
+        }
+        .stat-card .stat-value {
+            font-size: 1rem;
+        }
+        .stat-icon {
+            width: 38px;
+            height: 38px;
+            font-size: 1.15rem;
+        }
+        .filter-card .form-select {
+            font-size: 0.75rem;
+        }
+        .custom-table {
+            font-size: 0.72rem;
+        }
+        .custom-table thead th,
+        .custom-table tbody td {
+            padding: 8px 8px;
+        }
+        .pagination-bar {
+            padding: 10px 12px;
+        }
+        .pagination-info {
+            font-size: 0.7rem;
+        }
+        .page-btn {
+            min-width: 26px;
+            height: 26px;
+            font-size: 0.7rem;
+        }
+    }
+</style>
+{% endblock %} {% block page_content %}
+
+<!-- ============ LOADING OVERLAY ============ -->
+<div class="loading-overlay" id="loadingOverlay">
+    <div class="loading-spinner"></div>
+</div>
+
+<!-- ============ DATA CONTAINER (Jinja → JS) ============ -->
+<div id="dashboardData" data-animals='{{ animals|tojson }}' data-stats='{{ stats|tojson }}' data-role="{{ role }}" data-user-state-id="{{ user_state_id }}" data-user-state-name="{{ user_state_name|default('') }}" data-user-district-id="{{ user_district_id }}"
+    data-user-township-id="{{ user_township_id }}" data-filter-state="{{ filters.state or '' }}" data-filter-district="{{ filters.district or '' }}" data-filter-township="{{ filters.township or '' }}" data-filter-qv="{{ filters.qv or '' }}" hidden></div>
+
+<!-- ============ PAGE HEADER ============ -->
+<div class="page-head mb-3">
+    <h5 class="fw-bold text-success mb-1">
+        မူလစာမျက်နှာ{% if region_name %} — {{ region_name }}{% endif %}
+    </h5>
+    <p class="text-muted mb-0">သက်ဆိုင်ရာ တိုင်း/ခရိုင်/မြို့နယ်အလိုက် တိရစ္ဆာန်အရေအတွက်ပြ Graphs များ</p>
+</div>
+
+<!-- ============ ROLE NOTICE ============ -->
+{% if role in ('state', 'district', 'township') %}
+<!-- <div class="info-note">
+    <i class="bi bi-info-circle-fill"></i>
+    <div>
+        {% if role == 'state' %} သင့်
+        <b>တိုင်းဒေသကြီး/ပြည်နယ် ({{ region_name }})</b> အတွင်းရှိ ဒေတာများကိုသာ ကြည့်ရှု/စစ်ထုတ်နိုင်ပါသည်။ ခရိုင် / မြို့နယ် / ကျေးရွာအုပ်စုကို ရွေးချယ်နိုင်ပါသည်။ {% elif role == 'district' %} သင့်
+        <b>ခရိုင် ({{ region_name }})</b> အတွင်းရှိ ဒေတာများကိုသာ ကြည့်ရှု/စစ်ထုတ်နိုင်ပါသည်။ မြို့နယ် / ကျေးရွာအုပ်စုကို ရွေးချယ်နိုင်ပါသည်။ {% elif role == 'township' %} သင့်
+        <b>မြို့နယ် ({{ region_name }})</b> အတွင်းရှိ ဒေတာများကိုသာ ကြည့်ရှု/စစ်ထုတ်နိုင်ပါသည်။ ကျေးရွာအုပ်စုကို ရွေးချယ်နိုင်ပါသည်။ {% endif %}
+    </div>
+</div> -->
+{% endif %}
+
+<!-- ============ FILTER FORM ============ -->
+<form method="GET" action="/admin" id="filterForm">
+
+</form>
+
+<!-- ============ STAT CARDS ============ -->
+<div class="row g-2 g-md-3 mb-3">
+    <div class="col-6 col-lg-3">
+        <div class="stat-card card p-3">
+            <div class="d-flex align-items-center gap-2 gap-md-3">
+                <div class="stat-icon" style="background:#d1fae5;">🐄</div>
+                <div class="flex-grow-1 min-w-0">
+                    <div class="stat-label">တိရစ္ဆာန်ကြီး</div>
+                    <div class="stat-value text-success" id="countLarge">0</div>
+                    <div class="stat-sub">နွား၊ ကျွဲ၊ မြင်း စသည်</div>
+                </div>
+            </div>
+        </div>
+    </div>
+    <div class="col-6 col-lg-3">
+        <div class="stat-card card p-3">
+            <div class="d-flex align-items-center gap-2 gap-md-3">
+                <div class="stat-icon" style="background:#dbeafe;">🐐</div>
+                <div class="flex-grow-1 min-w-0">
+                    <div class="stat-label">တိရစ္ဆာန်ငယ်</div>
+                    <div class="stat-value text-primary" id="countSmall">0</div>
+                    <div class="stat-sub">ဆိတ်၊ သိုး၊ ဝက် စသည်</div>
+                </div>
+            </div>
+        </div>
+    </div>
+    <div class="col-6 col-lg-3">
+        <div class="stat-card card p-3">
+            <div class="d-flex align-items-center gap-2 gap-md-3">
+                <div class="stat-icon" style="background:#fef3c7;">🐔</div>
+                <div class="flex-grow-1 min-w-0">
+                    <div class="stat-label">ကြက်၊ ဘဲ၊ ငုံး</div>
+                    <div class="stat-value text-warning" id="countPoultry">0</div>
+                    <div class="stat-sub">အထီး/အမ စုစုပေါင်း</div>
+                </div>
+            </div>
+        </div>
+    </div>
+    <div class="col-6 col-lg-3">
+        <div class="stat-card card p-3">
+            <div class="d-flex align-items-center gap-2 gap-md-3">
+                <div class="stat-icon" style="background:#fce7f3;">💗</div>
+                <div class="flex-grow-1 min-w-0">
+                    <div class="stat-label">မျိုးတိရစ္ဆာန်</div>
+                    <div class="stat-value text-danger" id="countBreeding">0</div>
+                    <div class="stat-sub">ကျန်ရှိသည့် အုပ်စုများ</div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- ============ CHARTS ============ -->
+<div class="row g-2 g-md-3 mb-3">
+    <div class="col-lg-8">
+        <div class="chart-card card">
+            <div class="card-header d-flex justify-content-between align-items-center flex-wrap gap-2">
+                <h6 class="fw-bold mb-0">
+                    <i class="bi bi-bar-chart-line text-success me-2"></i>တိရစ္ဆာန် အုပ်စုအလိုက် ကောင်ရေ
+                </h6>
+            </div>
+            <div class="card-body">
+                <div class="chart-container"><canvas id="barChart"></canvas></div>
+            </div>
+        </div>
+    </div>
+    <div class="col-lg-4">
+        <div class="chart-card card">
+            <div class="card-header d-flex justify-content-between align-items-center flex-wrap gap-2">
+                <h6 class="fw-bold mb-0">
+                    <i class="bi bi-pie-chart text-success me-2"></i>အချိုးအစား
+                </h6>
+            </div>
+            <div class="card-body">
+                <div class="chart-container-sm"><canvas id="doughnutChart"></canvas></div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- ============ QUICK LINKS ============ -->
+<div class="row g-2 g-md-3 mb-3">
+    <div class="col-12">
+        <div class="filter-card p-3">
+            <div class="d-flex align-items-center gap-2 mb-2">
+                <i class="bi bi-lightning-charge-fill text-warning"></i>
+                <span class="fw-bold" style="font-size:0.85rem; color:#065f46;">အမြန်လုပ်ဆောင်ချက်များ</span>
+            </div>
+            <div class="row g-2">
+                <div class="col-6 col-md-3">
+                    <a href="/settings" class="quick-link">
+                        <div class="ql-icon bg-info-subtle text-info"><i class="bi bi-gear"></i></div>
+                        <div class="ql-text">Settings<br>ပြင်ဆင်ရန်</div>
+                    </a>
+                </div>
+                
+                <div class="col-6 col-md-3">
+                    <a href="/admin/records" class="quick-link">
+                        <div class="ql-icon bg-danger-subtle text-danger"><i class="bi bi-table"></i></div>
+                        <div class="ql-text">မှတ်တမ်းများ<br>ကြည့်ရှုရန်</div>
+                    </a>
+                </div>
+                <div class="col-6 col-md-3">
+                    <a href="/report/1" class="quick-link">
+                        <div class="ql-icon bg-primary-subtle text-primary"><i class="bi bi-geo-alt"></i></div>
+                        <div class="ql-text">နယ်မြေဒေသ<br>အနှစ်ချုပ်</div>
+                    </a>
+                </div>
+                <div class="col-6 col-md-3">
+                    <a href="/report/2" class="quick-link">
+                        <div class="ql-icon bg-warning-subtle text-warning"><i class="bi bi-tags"></i></div>
+                        <div class="ql-text">တိရစ္ဆာန်အုပ်စု<br>အနှစ်ချုပ်</div>
+                    </a>
+                </div>
+                
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- ============ ANIMAL TABLE ============ -->
+<div class="table-card card">
+    <div class="card-header d-flex justify-content-between align-items-center flex-wrap gap-2">
+        <h6 class="fw-bold mb-0">
+            <i class="bi bi-list-ul text-success me-2"></i>တိရစ္ဆာန်အမျိုးအစားအလိုက် အသေးစိတ်စာရင်း
+        </h6>
+        <span class="badge bg-success-subtle text-success" style="font-size:0.65rem;" id="tableFilterLabel">
+            မှတ်တမ်း {{ animals|length }} ခု
+        </span>
+    </div>
+    <div class="table-responsive">
+        <table class="table custom-table align-middle">
+            <thead>
+                <tr>
+                    <th style="width:50px;">စဉ်</th>
+                    <th>တိရစ္ဆာန်အမျိုးအစား</th>
+                    <th>တိရစ္ဆာန်အမည်</th>
+                    <th>မျိုးစိတ်</th>
+                    <th>အသက်</th>
+                    <th>ကျား/မ</th>
+                    <th class="text-end">စုစုပေါင်း</th>
+                </tr>
+            </thead>
+            <tbody id="animalTableBody">
+                {% for a in animals %}
+                <tr>
+                    <td><span class="fw-bold text-success">{{ loop.index }}</span></td>
+                    <td><span class="badge-type">{{ a.animal_type }}</span></td>
+                    <td class="fw-semibold">{{ a.animal_name }}</td>
+                    <td>{{ a.species_name }}</td>
+                    <td>{{ a.age_name }}</td>
+                    <td>{{ a.gender_name }}</td>
+                    <td class="num-cell">{{ a.total_count|toLocaleString }}</td>
+                </tr>
+                {% else %}
+                <tr>
+                    <td colspan="7" class="text-center text-muted py-4">
+                        <i class="bi bi-inbox fs-2 d-block mb-2" style="color:#d1fae5;"></i> ဒီစစ်ထုတ်မှုအတွက် မှတ်တမ်းမရှိပါ။
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+
+    <!-- ============ PAGINATION BAR ============ -->
+    <div class="pagination-bar" id="paginationBar" {% if animals|length == 0 %}style="display:none;"{% endif %}>
+        <div class="pagination-info" id="paginationInfo">
+            မှတ်တမ်း <b>0</b> ခုအနက် <b>0 – 0</b> ကို ပြသနေသည်
+        </div>
+
+        <div class="d-flex align-items-center gap-2 flex-wrap">
+            <div class="pagination-size">
+                <span>တစ်မျက်နှာ</span>
+                <select id="pageSizeSelect">
+                    <option value="10">10</option>
+                    <option value="25" selected>25</option>
+                    <option value="50">50</option>
+                    <option value="100">100</option>
+                </select>
+                <span>ခု</span>
+            </div>
+
+            <div class="pagination-controls" id="paginationControls">
+                <!-- JS မှ ထည့်သွင်းမည် -->
+            </div>
+        </div>
+    </div>
+</div>
+
+{% endblock %} {% block extra_js %}
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
+<script>
+    // ==================================================
+    // 1. DATA
+    // ==================================================
+    const dataEl = document.getElementById('dashboardData');
+
+    let ANIMALS = [];
+    let STATS = {
+        large: 0,
+        small: 0,
+        poultry: 0,
+        breeding: 0,
+        total: 0
+    };
+
+    try {
+        ANIMALS = JSON.parse(dataEl.dataset.animals || '[]');
+        STATS = JSON.parse(dataEl.dataset.stats || '{}');
+    } catch (e) {
+        console.error('Failed to parse dashboard data:', e);
+    }
+
+    STATS.large = Number(STATS.large) || 0;
+    STATS.small = Number(STATS.small) || 0;
+    STATS.poultry = Number(STATS.poultry) || 0;
+    STATS.breeding = Number(STATS.breeding) || 0;
+
+    const TOTAL = STATS.large + STATS.small + STATS.poultry + STATS.breeding;
+
+    function fmt(n) {
+        return Number(n || 0).toLocaleString();
+    }
+    document.getElementById('countLarge').textContent = fmt(STATS.large);
+    document.getElementById('countSmall').textContent = fmt(STATS.small);
+    document.getElementById('countPoultry').textContent = fmt(STATS.poultry);
+    document.getElementById('countBreeding').textContent = fmt(STATS.breeding);
+
+    // ⭐ User info from data attributes
+    const ROLE = dataEl.dataset.role || 'admin';
+    const USER_STATE_ID = dataEl.dataset.userStateId || '';
+    const USER_STATE_NAME = dataEl.dataset.userStateName || '';
+    const USER_DISTRICT_ID = dataEl.dataset.userDistrictId || '';
+    const USER_TOWNSHIP_ID = dataEl.dataset.userTownshipId || '';
+
+    const INIT_STATE = dataEl.dataset.filterState || '';
+    const INIT_DISTRICT = dataEl.dataset.filterDistrict || '';
+    const INIT_TOWNSHIP = dataEl.dataset.filterTownship || '';
+    const INIT_QV = dataEl.dataset.filterQv || '';
+
+    // ==================================================
+    // 2. CHARTS
+    // ==================================================
+    Chart.defaults.font.family = "'Noto Sans Myanmar', 'Pyidaungsu', sans-serif";
+    Chart.defaults.font.size = 11;
+    Chart.defaults.color = '#4b5563';
+
+    const LABELS = ['တိရစ္ဆာန်ကြီး', 'တိရစ္ဆာန်ငယ်', 'ကြက်၊ ဘဲ၊ ငုံး', 'မျိုးတိရစ္ဆာန်'];
+    const VALUES = [STATS.large, STATS.small, STATS.poultry, STATS.breeding];
+    const COLORS = [{
+        bg: 'rgba(16, 185, 129, 0.85)',
+        bd: 'rgb(16, 185, 129)',
+        solid: '#10b981'
+    }, {
+        bg: 'rgba(59, 130, 246, 0.85)',
+        bd: 'rgb(59, 130, 246)',
+        solid: '#3b82f6'
+    }, {
+        bg: 'rgba(245, 158, 11, 0.85)',
+        bd: 'rgb(245, 158, 11)',
+        solid: '#f59e0b'
+    }, {
+        bg: 'rgba(239, 68, 68, 0.85)',
+        bd: 'rgb(239, 68, 68)',
+        solid: '#ef4444'
+    }];
+
+    new Chart(document.getElementById('barChart').getContext('2d'), {
+        type: 'bar',
+        data: {
+            labels: LABELS,
+            datasets: [{
+                label: 'ကောင်ရေ',
+                data: VALUES,
+                backgroundColor: COLORS.map(c => c.bg),
+                borderColor: COLORS.map(c => c.bd),
+                borderWidth: 1.5,
+                borderRadius: 0,
+                borderSkipped: false,
+                barPercentage: 0.35,
+                categoryPercentage: 0.6,
+                maxBarThickness: 28
+            }]
+        },
+        options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            animation: {
+                duration: 1000,
+                easing: 'easeOutQuart'
+            },
+            plugins: {
+                legend: {
+                    display: false
+                },
+                tooltip: {
+                    backgroundColor: 'rgba(0,0,0,0.85)',
+                    padding: 10,
+                    cornerRadius: 8,
+                    callbacks: {
+                        label: ctx => {
+                            const v = ctx.parsed.y;
+                            const p = TOTAL > 0 ? ((v / TOTAL) * 100).toFixed(1) : 0;
+                            return ' ကောင်ရေ: ' + v.toLocaleString() + ' (' + p + '%)';
+                        }
+                    }
+                }
+            },
+            scales: {
+                y: {
+                    beginAtZero: true,
+                    grid: {
+                        color: '#f1f5f9'
+                    },
+                    ticks: {
+                        callback: v => v.toLocaleString()
+                    }
+                },
+                x: {
+                    grid: {
+                        display: false
+                    }
+                }
+            }
+        }
+    });
+
+    new Chart(document.getElementById('doughnutChart').getContext('2d'), {
+        type: 'doughnut',
+        data: {
+            labels: LABELS,
+            datasets: [{
+                data: VALUES,
+                backgroundColor: COLORS.map(c => c.bg),
+                borderColor: '#ffffff',
+                borderWidth: 2.5,
+                hoverOffset: 6
+            }]
+        },
+        options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            cutout: '62%',
+            animation: {
+                animateRotate: true,
+                duration: 1100
+            },
+            plugins: {
+                legend: {
+                    position: 'bottom',
+                    labels: {
+                        padding: 8,
+                        boxWidth: 10,
+                        boxHeight: 10,
+                        font: {
+                            size: 10,
+                            weight: '600'
+                        }
+                    }
+                },
+                tooltip: {
+                    backgroundColor: 'rgba(0,0,0,0.85)',
+                    padding: 10,
+                    cornerRadius: 8,
+                    callbacks: {
+                        label: ctx => {
+                            const v = ctx.parsed;
+                            const p = TOTAL > 0 ? ((v / TOTAL) * 100).toFixed(1) : 0;
+                            return ' ' + ctx.label + ': ' + v.toLocaleString() + ' (' + p + '%)';
+                        }
+                    }
+                }
+            }
+        },
+        plugins: [{
+            id: 'centerText',
+            beforeDraw: chart => {
+                const {
+                    ctx,
+                    chartArea
+                } = chart;
+                if (!chartArea) return;
+                ctx.save();
+                const cx = (chartArea.left + chartArea.right) / 2;
+                const cy = (chartArea.top + chartArea.bottom) / 2;
+                ctx.textAlign = 'center';
+                ctx.textBaseline = 'middle';
+                ctx.font = 'bold 17px "Noto Sans Myanmar", sans-serif';
+                ctx.fillStyle = '#047857';
+                ctx.fillText(TOTAL.toLocaleString(), cx, cy - 5);
+                ctx.font = '600 10px "Noto Sans Myanmar", sans-serif';
+                ctx.fillStyle = '#6b7280';
+                ctx.fillText('စုစုပေါင်း', cx, cy + 12);
+                ctx.restore();
+            }
+        }]
+    });
+
+    // ==================================================
+    // 3. TABLE PAGINATION
+    // ==================================================
+    const tbody = document.getElementById('animalTableBody');
+    const paginationBar = document.getElementById('paginationBar');
+    const paginationInfo = document.getElementById('paginationInfo');
+    const paginationControls = document.getElementById('paginationControls');
+    const pageSizeSelect = document.getElementById('pageSizeSelect');
+
+    const totalRecords = ANIMALS.length;
+    let pageSize = totalRecords <= 25 ? Math.max(10, totalRecords) : 25;
+    // ⭐ page size ကို ရွေးထားတဲ့ option နဲ့ ကိုက်ညီအောင် ချိန်
+    if (pageSize > 100) pageSize = 100;
+    if (pageSize < 10) pageSize = 10;
+
+    // select ကို default value နဲ့ ချိန်
+    if ([...pageSizeSelect.options].some(o => Number(o.value) === pageSize)) {
+        pageSizeSelect.value = String(pageSize);
+    } else {
+        pageSize = Number(pageSizeSelect.value) || 25;
+    }
+
+    let currentPage = 1;
+
+    function renderTable() {
+        if (totalRecords === 0) {
+            paginationBar.style.display = 'none';
+            tbody.innerHTML = `
+                <tr>
+                    <td colspan="7" class="text-center text-muted py-4">
+                        <i class="bi bi-inbox fs-2 d-block mb-2" style="color:#d1fae5;"></i>
+                        ဒီစစ်ထုတ်မှုအတွက် မှတ်တမ်းမရှိပါ။
+                    </td>
+                </tr>`;
+            return;
+        }
+
+        paginationBar.style.display = '';
+
+        const totalPages = Math.ceil(totalRecords / pageSize);
+        if (currentPage > totalPages) currentPage = totalPages;
+        if (currentPage < 1) currentPage = 1;
+
+        const startIdx = (currentPage - 1) * pageSize;
+        const endIdx = Math.min(startIdx + pageSize, totalRecords);
+        const pageRows = ANIMALS.slice(startIdx, endIdx);
+
+        // ---- Table body ----
+        tbody.innerHTML = pageRows.map((a, i) => {
+            const stt = startIdx + i + 1;
+            return `
+                <tr>
+                    <td><span class="fw-bold text-success">${stt}</span></td>
+                    <td><span class="badge-type">${a.animal_type || ''}</span></td>
+                    <td class="fw-semibold">${a.animal_name || ''}</td>
+                    <td>${a.species_name || ''}</td>
+                    <td>${a.age_name || ''}</td>
+                    <td>${a.gender_name || ''}</td>
+                    <td class="num-cell">${Number(a.total_count || 0).toLocaleString()}</td>
+                </tr>`;
+        }).join('');
+
+        // ---- Info ----
+        paginationInfo.innerHTML =
+            `မှတ်တမ်း <b>${totalRecords.toLocaleString()}</b> ခုအနက် <b>${(startIdx + 1).toLocaleString()} – ${endIdx.toLocaleString()}</b> ကို ပြသနေသည်`;
+
+        // ---- Controls ----
+        renderPaginationControls(totalPages);
+    }
+
+    function renderPaginationControls(totalPages) {
+        const parts = [];
+
+        // Prev
+        parts.push(`
+            <button type="button" class="page-btn page-nav" data-page="${currentPage - 1}"
+                ${currentPage === 1 ? 'disabled' : ''} title="ယခင်စာမျက်နှာ">
+                <i class="bi bi-chevron-left"></i>
+            </button>
+        `);
+
+        // Page numbers with ellipsis
+        const pages = buildPageList(currentPage, totalPages);
+        pages.forEach(p => {
+            if (p === '...') {
+                parts.push(`<span class="page-ellipsis">…</span>`);
+            } else {
+                parts.push(`
+                    <button type="button" class="page-btn ${p === currentPage ? 'active' : ''}" data-page="${p}">
+                        ${p}
+                    </button>
+                `);
+            }
+        });
+
+        // Next
+        parts.push(`
+            <button type="button" class="page-btn page-nav" data-page="${currentPage + 1}"
+                ${currentPage === totalPages ? 'disabled' : ''} title="နောက်စာမျက်နှာ">
+                <i class="bi bi-chevron-right"></i>
+            </button>
+        `);
+
+        paginationControls.innerHTML = parts.join('');
+    }
+
+    function buildPageList(current, total) {
+        const pages = [];
+        if (total <= 7) {
+            for (let i = 1; i <= total; i++) pages.push(i);
+            return pages;
+        }
+
+        pages.push(1);
+        if (current > 3) pages.push('...');
+
+        const start = Math.max(2, current - 1);
+        const end = Math.min(total - 1, current + 1);
+        for (let i = start; i <= end; i++) pages.push(i);
+
+        if (current < total - 2) pages.push('...');
+        pages.push(total);
+
+        return pages;
+    }
+
+    // ---- Pagination click events ----
+    paginationControls.addEventListener('click', (e) => {
+        const btn = e.target.closest('button.page-btn');
+        if (!btn || btn.disabled) return;
+
+        const page = Number(btn.dataset.page);
+        if (!page || page === currentPage) return;
+
+        const totalPages = Math.ceil(totalRecords / pageSize);
+        if (page < 1 || page > totalPages) return;
+
+        currentPage = page;
+        renderTable();
+
+        // table ရဲ့ အပေါ်ပိုင်းကို scroll
+        const tableCard = tbody.closest('.table-card');
+        if (tableCard) {
+            const y = tableCard.getBoundingClientRect().top + window.pageYOffset - 80;
+            window.scrollTo({ top: y, behavior: 'smooth' });
+        }
+    });
+
+    // ---- Page size change ----
+    pageSizeSelect.addEventListener('change', () => {
+        pageSize = Number(pageSizeSelect.value) || 25;
+        currentPage = 1;
+        renderTable();
+    });
+
+    // ---- Initial render ----
+    renderTable();
+
+    // ==================================================
+    // 4. ROLE-BASED CASCADING FILTER (Auto-Submit)
+    // ==================================================
+    const form = document.getElementById('filterForm');
+    const selState = document.getElementById('filterState');
+    const selDistrict = document.getElementById('filterDistrict');
+    const selTownship = document.getElementById('filterTownship');
+    const selVillage = document.getElementById('filterVillage');
+
+    const ALL = '— အားလုံး —';
+
+    // Loading overlay
+    const loadingOverlay = document.getElementById('loadingOverlay');
+
+    function showLoading() {
+        loadingOverlay.classList.add('show');
+    }
+
+    function hideLoading() {
+        loadingOverlay.classList.remove('show');
+    }
+
+    function autoSubmitForm() {
+        showLoading();
+        [selState, selDistrict, selTownship, selVillage].forEach(s => {
+            if (s) s.disabled = false;
+        });
+        form.submit();
+    }
+
+    let submitTimer = null;
+
+    function scheduleSubmit(delay = 400) {
+        if (submitTimer) clearTimeout(submitTimer);
+        submitTimer = setTimeout(() => {
+            autoSubmitForm();
+        }, delay);
+    }
+
+    // Role lock config
+    const LOCK = {
+        state: {
+            state: true,
+            district: false,
+            township: false,
+            village: false
+        },
+        district: {
+            state: true,
+            district: true,
+            township: false,
+            village: false
+        },
+        township: {
+            state: true,
+            district: true,
+            township: true,
+            village: false
+        },
+        admin: {
+            state: false,
+            district: false,
+            township: false,
+            village: false
+        },
+    }[ROLE] || {
+        state: false,
+        district: false,
+        township: false,
+        village: false
+    };
+
+    // ---- Helpers ----
+    async function fetchLocations(params = {}) {
+        const q = new URLSearchParams(params);
+        const url = '/api/locations' + (q.toString() ? '?' + q : '');
+        try {
+            const res = await fetch(url, {
+                credentials: 'same-origin'
+            });
+            if (!res.ok) return [];
+            return await res.json();
+        } catch (e) {
+            console.error('fetchLocations error:', e);
+            return [];
+        }
+    }
+
+    function resetSelect(sel) {
+        if (!sel) return;
+        sel.innerHTML = `<option value="">${ALL}</option>`;
+        sel.value = '';
+        sel.disabled = true;
+    }
+
+    function fillSelect(sel, rows, valueKey, textKey, selectedValue, disableAfter) {
+        if (!sel) return;
+        sel.innerHTML = `<option value="">${ALL}</option>`;
+        rows.forEach(r => {
+            const opt = document.createElement('option');
+            opt.value = r[valueKey];
+            opt.textContent = r[textKey];
+            sel.appendChild(opt);
+        });
+        if (selectedValue) sel.value = selectedValue;
+        sel.disabled = !!disableAfter;
+    }
+
+    // ---- Loaders ----
+
+    // STATE — State/District/Township user အတွက် သူ့ state ကို တိုက်ရိုက် ထည့်
+    async function loadStates() {
+        if (!selState) return;
+
+        if (LOCK.state) {
+            // State / District / Township user — သူ့ state ကို ပြပြီး lock
+            const stateID = USER_STATE_ID;
+            const stateName = USER_STATE_NAME || USER_STATE_ID || '— မသတ်မှတ်ရသေးပါ —';
+
+            selState.innerHTML = `<option value="${stateID}">${stateName}</option>`;
+            selState.value = stateID;
+            selState.disabled = true;
+            return;
+        }
+
+        // Admin — states အားလုံး
+        const data = await fetchLocations({});
+        fillSelect(selState, data, 'stateID', 'stateName', INIT_STATE, false);
+    }
+
+    async function loadDistricts() {
+        if (!selDistrict) return;
+
+        const sid = (selState && selState.value) || (LOCK.state ? USER_STATE_ID : '');
+        if (!sid) {
+            resetSelect(selDistrict);
+            return;
+        }
+
+        selDistrict.innerHTML = `<option value="">⏳...</option>`;
+        selDistrict.disabled = true;
+        const data = await fetchLocations({
+            state_id: sid
+        });
+
+        const locked = LOCK.district;
+        const preselected = locked ? (INIT_DISTRICT || USER_DISTRICT_ID) : INIT_DISTRICT;
+        fillSelect(selDistrict, data, 'districtID', 'districtName', preselected, locked);
+    }
+
+    async function loadTownships() {
+        if (!selTownship) return;
+
+        const sid = (selState && selState.value) || (LOCK.state ? USER_STATE_ID : '');
+        const did = (selDistrict && selDistrict.value) || (LOCK.district ? USER_DISTRICT_ID : '');
+        if (!sid || !did) {
+            resetSelect(selTownship);
+            return;
+        }
+
+        selTownship.innerHTML = `<option value="">⏳...</option>`;
+        selTownship.disabled = true;
+        const data = await fetchLocations({
+            state_id: sid,
+            district_id: did
+        });
+
+        const locked = LOCK.township;
+        const preselected = locked ? (INIT_TOWNSHIP || USER_TOWNSHIP_ID) : INIT_TOWNSHIP;
+        fillSelect(selTownship, data, 'townshipID', 'townshipName', preselected, locked);
+    }
+
+    async function loadVillages() {
+        if (!selVillage) return;
+
+        const sid = (selState && selState.value) || (LOCK.state ? USER_STATE_ID : '');
+        const did = (selDistrict && selDistrict.value) || (LOCK.district ? USER_DISTRICT_ID : '');
+        const tid = (selTownship && selTownship.value) || (LOCK.township ? USER_TOWNSHIP_ID : '');
+        if (!sid || !did || !tid) {
+            resetSelect(selVillage);
+            return;
+        }
+
+        selVillage.innerHTML = `<option value="">⏳...</option>`;
+        selVillage.disabled = true;
+        const data = await fetchLocations({
+            state_id: sid,
+            district_id: did,
+            township_id: tid
+        });
+        fillSelect(selVillage, data, 'QVID', 'QVName', INIT_QV, false);
+    }
+
+    // ==================================================
+    // 5. CHANGE EVENTS — Auto-Submit
+    // ==================================================
+    if (selState) {
+        selState.addEventListener('change', async() => {
+            resetSelect(selDistrict);
+            resetSelect(selTownship);
+            resetSelect(selVillage);
+
+            if (!selState.value) {
+                scheduleSubmit(200);
+                return;
+            }
+            await loadDistricts();
+            scheduleSubmit();
+        });
+    }
+
+    if (selDistrict) {
+        selDistrict.addEventListener('change', async() => {
+            resetSelect(selTownship);
+            resetSelect(selVillage);
+
+            if (!selDistrict.value) {
+                scheduleSubmit(200);
+                return;
+            }
+            await loadTownships();
+            scheduleSubmit();
+        });
+    }
+
+    if (selTownship) {
+        selTownship.addEventListener('change', async() => {
+            resetSelect(selVillage);
+
+            if (!selTownship.value) {
+                scheduleSubmit(200);
+                return;
+            }
+            await loadVillages();
+            scheduleSubmit();
+        });
+    }
+
+    if (selVillage) {
+        selVillage.addEventListener('change', () => {
+            scheduleSubmit(200);
+        });
+    }
+
+    // ==================================================
+    // 6. MANUAL SUBMIT
+    // ==================================================
+    form.addEventListener('submit', () => {
+        showLoading();
+        [selState, selDistrict, selTownship, selVillage].forEach(s => {
+            if (s) s.disabled = false;
+        });
+    });
+
+    // ==================================================
+    // 7. INIT
+    // ==================================================
+    (async function initFilters() {
+        await loadStates();
+
+        if (ROLE === 'state') {
+            await loadDistricts();
+            if (INIT_DISTRICT) {
+                await loadTownships();
+                if (INIT_TOWNSHIP) await loadVillages();
+            }
+        } else if (ROLE === 'district') {
+            await loadDistricts();
+            await loadTownships();
+            if (INIT_TOWNSHIP) await loadVillages();
+        } else if (ROLE === 'township') {
+            await loadDistricts();
+            await loadTownships();
+            await loadVillages();
+        } else if (ROLE === 'admin') {
+            if (INIT_STATE) {
+                await loadDistricts();
+                if (INIT_DISTRICT) {
+                    await loadTownships();
+                    if (INIT_TOWNSHIP) await loadVillages();
+                }
+            }
+        }
+
+        hideLoading();
+    })();
+</script>
+{% endblock %}

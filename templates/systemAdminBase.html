@@ -1,0 +1,675 @@
+<!DOCTYPE html>
+<html lang="my">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{% block title %}System Admin - LBVD{% endblock %}</title>
+
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+Myanmar:wght@400;500;600;700&display=swap" rel="stylesheet">
+
+    <style>
+        /* ================= GLOBAL ================= */
+        html, body {
+            overflow-x: hidden !important;
+            max-width: 100vw;
+        }
+        body {
+            font-family: 'Noto Sans Myanmar', 'Pyidaungsu', sans-serif;
+            background-color: #f3f4f6;
+        }
+
+        /* ================= SIDEBAR ================= */
+        #sidebar {
+            width: 280px;
+            height: 100vh;
+            background: #ffffff;
+            box-shadow: 2px 0 12px rgba(0, 0, 0, 0.05);
+            position: fixed;
+            top: 0;
+            left: 0;
+            z-index: 1040;
+            overflow: hidden;
+            display: flex;
+            flex-direction: column;
+            transition: width 0.3s ease-in-out, transform 0.3s ease-in-out;
+        }
+
+        @media (min-width: 992px) {
+            #sidebar.collapsed {
+                width: 0;
+                overflow: hidden;
+                box-shadow: none;
+            }
+            #mainContent {
+                margin-left: 280px;
+                transition: margin-left 0.3s ease-in-out;
+            }
+            #mainContent.expanded {
+                margin-left: 0;
+            }
+        }
+
+        @media (max-width: 991.98px) {
+            #sidebar { transform: translateX(-100%); }
+            #sidebar.mobile-open { transform: translateX(0); }
+            #mainContent { margin-left: 0; }
+        }
+
+        /* Flexbox fix */
+        #mainContent {
+            min-width: 0 !important;
+            max-width: 100% !important;
+            overflow-x: hidden !important;
+            flex: 1 1 0% !important;
+            box-sizing: border-box;
+        }
+        body > .d-flex {
+            max-width: 100%;
+            overflow-x: hidden;
+        }
+        #mainContent > *,
+        #mainContent .p-4 {
+            max-width: 100%;
+            box-sizing: border-box;
+        }
+
+        /* ================= BRAND ================= */
+        .sidebar-brand {
+            background: linear-gradient(135deg, rgba(209, 250, 229, 0.6) 0%, rgba(167, 243, 208, 0.6) 100%);
+            padding: 22px 18px 16px;
+            color: #064e3b;
+            border-bottom: 2px solid #6ee7b7;
+            flex-shrink: 0;
+        }
+        .sidebar-brand .logo-box {
+            width: 56px;
+            height: 56px;
+            background: #ffffff;
+            border-radius: 14px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            overflow: hidden;
+            border: 1px solid #6ee7b7;
+            flex-shrink: 0;
+        }
+        .sidebar-brand .logo-box img {
+            width: 100%;
+            height: 100%;
+            object-fit: contain;
+            padding: 4px;
+        }
+        .sidebar-brand h6 {
+            font-size: 0.85rem;
+            font-weight: 700;
+            line-height: 1.5;
+            margin: 0;
+            color: #064e3b;
+        }
+
+        /* ⭐ Brand အောက်က ရက်စွဲအတွက် Style */
+        .brand-date {
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            margin-top: 12px;
+            padding-top: 10px;
+            border-top: 1px dashed #6ee7b7;
+            font-size: 0.72rem;
+            font-weight: 700;
+            color: #047857;
+            white-space: nowrap;
+        }
+        .brand-date i {
+            font-size: 0.85rem;
+            color: #10b981;
+        }
+
+        /* ================= MENU ================= */
+        .sidebar-menu {
+            padding: 12px 10px 12px;
+            flex: 1;
+            overflow-y: auto;
+            overflow-x: hidden;
+        }
+
+        .menu-section-title {
+            font-size: 0.72rem;
+            font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            color: #94a3b8;
+            padding: 18px 16px 6px;
+        }
+
+        .sidebar-link {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            padding: 11px 16px;
+            border-radius: 10px;
+            color: #4b5563;
+            font-size: 0.85rem;
+            font-weight: 600;
+            text-decoration: none;
+            transition: all 0.2s ease;
+            margin-bottom: 2px;
+            cursor: pointer;
+            border: none;
+            background: transparent;
+            width: 100%;
+            text-align: left;
+            line-height: 1.45;
+        }
+        .sidebar-link:hover {
+            background-color: #ecfdf5;
+            color: #059669;
+            padding-left: 20px;
+        }
+        .sidebar-link i {
+            font-size: 1.15rem;
+            width: 22px;
+            text-align: center;
+            color: #34d399;
+            flex-shrink: 0;
+            transition: color 0.15s ease;
+        }
+        .sidebar-link:hover i {
+            color: #059669;
+        }
+
+        .sidebar-link.active {
+            background: rgba(209, 250, 229, 0.5);
+            color: #047857;
+            border-left: 4px solid #10b981;
+            font-weight: 700;
+        }
+        .sidebar-link.active i { color: #047857; }
+
+        .sidebar-link.text-danger { color: #ef4444 !important; }
+        .sidebar-link.text-danger i { color: #ef4444 !important; }
+        .sidebar-link.text-danger:hover {
+            background-color: #fef2f2;
+            color: #dc2626 !important;
+        }
+        .sidebar-link.text-danger:hover i { color: #dc2626 !important; }
+
+        /* ================= SIDEBAR FOOTER (NEW) ================= */
+        .sidebar-footer {
+            flex-shrink: 0;
+            padding: 12px 16px;
+            border-top: 1px solid #e5e7eb;
+            background: #f9fafb;
+            text-align: center;
+        }
+        .sidebar-footer .dev-text {
+            font-size: 0.65rem;
+            color: #2563eb; /* ⭐ အပြာရောင် ပြောင်းထားပါတယ် */
+            font-weight: 600;
+            line-height: 1.5;
+            margin: 0;
+        }
+        .sidebar-footer .dev-text i {
+            color: #2563eb;
+            font-size: 0.6rem;
+            margin-right: 4px;
+        }
+
+        /* ================= TOPBAR ================= */
+        .topbar {
+            background: #ffffff;
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
+            padding: 12px 20px;
+            position: sticky;
+            top: 0;
+            z-index: 1030;
+            max-width: 100%;
+            box-sizing: border-box;
+        }
+        .toggle-btn {
+            border: none;
+            background: #ecfdf5;
+            color: #059669;
+            width: 42px;
+            height: 42px;
+            border-radius: 10px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1.3rem;
+            transition: all 0.2s ease;
+            flex-shrink: 0;
+        }
+        .toggle-btn:hover {
+            background: #d1fae5;
+            color: #047857;
+        }
+
+        .topbar .topbar-title {
+            color: #047857;
+            font-size: 1.05rem;
+            font-weight: 700;
+            margin: 0;
+        }
+        .topbar .topbar-title i {
+            color: #10b981;
+        }
+
+        .topbar-user {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+        /* ⭐ အသုံးပြုသူ ပုံလေးအတွက် Style */
+        .topbar-user .user-img {
+            width: 46px;
+            height: 46px;
+            border-radius: 50%;
+            object-fit: cover;
+            border: 2px solid #10b981;
+            background-color: #fff;
+            padding: 2px;
+            box-shadow: 0 2px 6px rgba(16, 185, 129, 0.2);
+        }
+
+        .topbar-user .user-name {
+            color: #111827;
+            font-weight: 700;
+            font-size: 0.82rem;
+            line-height: 1.2;
+        }
+        .topbar-user .user-role {
+            color: #6b7280;
+            font-size: 0.7rem;
+            font-weight: 500;
+            line-height: 1.2;
+        }
+
+        /* ================= OVERLAY ================= */
+        #overlay {
+            position: fixed;
+            inset: 0;
+            background: rgba(0, 0, 0, 0.5);
+            z-index: 1035;
+            opacity: 0;
+            visibility: hidden;
+            transition: opacity 0.3s ease, visibility 0.3s ease;
+        }
+        #overlay.show { opacity: 1; visibility: visible; }
+        @media (min-width: 992px) {
+            #overlay { display: none !important; }
+        }
+
+        /* ================= SCROLLBAR ================= */
+        .sidebar-menu::-webkit-scrollbar { width: 5px; }
+        .sidebar-menu::-webkit-scrollbar-thumb {
+            background-color: #cbd5e1;
+            border-radius: 9999px;
+        }
+        .sidebar-menu::-webkit-scrollbar-track { background-color: transparent; }
+
+        /* ================= MOBILE TWEAKS ================= */
+        @media (max-width: 575.98px) {
+            .topbar { padding: 10px 14px; }
+            #mainContent .p-4 { padding: 1rem !important; }
+            .sidebar-link { font-size: 0.82rem; }
+            .menu-section-title { font-size: 0.7rem; }
+            .brand-date { font-size: 0.7rem; }
+            .topbar-user .user-img { width: 40px; height: 40px; }
+            .sidebar-footer .dev-text { font-size: 0.6rem; }
+        }
+
+        /* ================= LOGOUT MODAL ================= */
+        #logoutModal .modal-dialog { max-width: 380px; width: calc(100% - 32px); }
+        #logoutModal .modal-content {
+            border-radius: 18px; overflow: hidden;
+            animation: logoutModalIn 0.25s cubic-bezier(0.16, 1, 0.3, 1);
+        }
+        @keyframes logoutModalIn {
+            from { opacity: 0; transform: scale(0.92) translateY(8px); }
+            to   { opacity: 1; transform: scale(1) translateY(0); }
+        }
+        #logoutModal .logout-accent {
+            height: 6px; background: linear-gradient(90deg, #dc2626, #ef4444, #f87171);
+        }
+        #logoutModal .modal-body { padding: 1.5rem 1.5rem 1.25rem; }
+        .logout-icon {
+            width: 68px !important; height: 68px !important;
+            background: #fee2e2 !important; position: relative;
+            animation: logoutIconBounce 0.4s ease-out;
+        }
+        @keyframes logoutIconBounce {
+            0%   { transform: scale(0.6); opacity: 0; }
+            70%  { transform: scale(1.08); opacity: 1; }
+            100% { transform: scale(1); }
+        }
+        .logout-icon i { font-size: 1.85rem !important; }
+        .logout-icon .logout-pulse {
+            position: absolute; inset: 0; border-radius: 50%;
+            border: 2px solid #ef4444;
+            animation: logoutPulse 1.8s ease-out infinite;
+            pointer-events: none;
+        }
+        @keyframes logoutPulse {
+            0%   { transform: scale(1);   opacity: 0.6; }
+            100% { transform: scale(1.45); opacity: 0; }
+        }
+        #logoutModal .logout-title {
+            font-size: 1.05rem; font-weight: 700; color: #111827;
+            margin-bottom: 0.5rem; line-height: 1.4;
+        }
+        #logoutModal .logout-subtitle {
+            font-size: 0.82rem; color: #6b7280; line-height: 1.6;
+            margin-bottom: 1.25rem;
+        }
+        #logoutModal .btn {
+            padding: 0.6rem 0.9rem; font-size: 0.85rem; font-weight: 700;
+            border-radius: 10px; display: inline-flex; align-items: center;
+            justify-content: center; gap: 5px; transition: all 0.2s ease;
+        }
+        #logoutModal .btn i { font-size: 0.95rem; }
+        #logoutModal .btn-danger { background: #dc2626; border-color: #dc2626; }
+        #logoutModal .btn-danger:hover {
+            background: #b91c1c !important; border-color: #b91c1c !important;
+            transform: translateY(-1px); box-shadow: 0 6px 14px rgba(220, 38, 38, 0.35);
+        }
+        #logoutModal .btn-light { background: #f9fafb; border-color: #e5e7eb; color: #374151; }
+        #logoutModal .btn-light:hover {
+            background: #f3f4f6 !important; border-color: #d1d5db !important;
+            transform: translateY(-1px);
+        }
+            /* Modal Fix */
+        .modal { z-index: 1060 !important; }
+        .modal-backdrop { z-index: 1055 !important; }
+        .modal .modal-dialog { position: relative; z-index: 1061; }
+        .modal .modal-content { background-color: #fff; opacity: 1; visibility: visible; }
+        #logoutModal   { z-index: 1060 !important; }
+    </style>
+
+    {% block extra_css %}{% endblock %}
+</head>
+
+<body>
+
+    <div class="d-flex">
+
+        <!-- ================= SIDEBAR ================= -->
+        <aside id="sidebar">
+
+            <div class="sidebar-brand">
+                <div class="d-flex align-items-center gap-3">
+                    <div class="logo-box">
+                        <img src="https://lbvd.gov.mm/sites/default/files/Logo_LBVD.png" alt="LBVD" onerror="this.src='https://placehold.co/100x100/ffffff/047857?text=LBVD'">
+                    </div>
+                    <div>
+                        <h6>မွေးမြူရေးနှင့် ကုသရေး<br>ဦးစီးဌာန</h6>
+                    </div>
+                </div>
+
+                <div class="brand-date">
+                    <i class="bi bi-calendar3"></i>
+                    <span id="sidebarDate">--</span>
+                </div>
+            </div>
+
+            <nav class="sidebar-menu">
+
+                <div class="menu-section-title">System Admin</div>
+
+                <a href="/system/dashboard" class="sidebar-link {% if active_page == 'sys_home' %}active{% endif %}">
+                    <i class="bi bi-speedometer2"></i>
+                    <span>Dashboard</span>
+                </a>
+
+               <a href="/system/users" class="sidebar-link {% if active_page == 'sys_users' %}active{% endif %}">
+                    <i class="bi bi-person-plus-fill"></i>
+                    <span>အသုံးပြုသူအသစ် ထည့်ရန်</span>
+                </a>
+
+                <a href="/system/animals" class="sidebar-link {% if active_page == 'sys_animals' %}active{% endif %}">
+                    <i class="bi bi-tags-fill"></i>
+                    <span>တိရစ္ဆာန်အမျိုးအစား ထည့်ရန်</span>
+                </a>
+
+                <a href="/system/profile" class="sidebar-link {% if active_page == 'sys_profile' %}active{% endif %}">
+                    <i class="bi bi-person-gear"></i>
+                    <span>settings</span>
+                </a>
+
+                <hr class="mx-3 my-3 text-muted">
+
+                <!-- <a href="/admin" class="sidebar-link">
+                    <i class="bi bi-arrow-left-circle"></i>
+                    <span>ပင်မစာမျက်နှာသို့</span>
+                </a> -->
+
+                <a href="/logout" class="sidebar-link text-danger" onclick="return confirmLogout(event);">
+                    <i class="bi bi-box-arrow-right"></i>
+                    <span>Logout</span>
+                </a>
+
+            </nav>
+
+            <!-- ⭐ SIDEBAR FOOTER (NEW) -->
+            <div class="sidebar-footer">
+                <p class="dev-text">
+                    <i class="bi bi-code-slash"></i>
+                    Developed by University of Computer Studies<br>(Taungoo), Bago Region
+                </p>
+            </div>
+
+        </aside>
+
+        <!-- ================= MAIN CONTENT ================= -->
+        <div id="mainContent" class="flex-grow-1" style="min-height: 100vh;">
+
+            <!-- TOPBAR -->
+            <div class="topbar d-flex align-items-center justify-content-between">
+                <div class="d-flex align-items-center gap-3">
+                    <button class="toggle-btn" onclick="toggleSidebar()">
+                        <i class="bi bi-list"></i>
+                    </button>
+                    <h5 class="topbar-title d-none d-md-block">
+                        {% block topbar_title %}<i class="bi bi-gear me-2"></i>System Admin{% endblock %}
+                    </h5>
+                </div>
+
+                <div class="topbar-user">
+                    {% set sid = user_state_id if user_state_id else (user.stateID if user and user.stateID else '') %}
+                    
+                    {# ⭐ Default အနေနဲ့ မြန်မာနိုင်ငံတော်အလံနဲ့ နာမည်ကို သတ်မှတ်ထားပါတယ် #}
+                    {% set img_file = 'myanmar.jpg' %}
+                    {% set region_name = 'ပြည်ထောင်စုသမ္မတမြန်မာနိုင်ငံတော်' %}
+
+                    {% if sid == 's01' %}{% set img_file = 'kachin.jpg' %}{% set region_name = 'ကချင်ပြည်နယ်' %}
+                    {% elif sid == 's02' %}{% set img_file = 'kayar.png' %}{% set region_name = 'ကယားပြည်နယ်' %}
+                    {% elif sid == 's03' %}{% set img_file = 'kayin.png' %}{% set region_name = 'ကရင်ပြည်နယ်' %}
+                    {% elif sid == 's04' %}{% set img_file = 'chin.png' %}{% set region_name = 'ချင်းပြည်နယ်' %}
+                    {% elif sid == 's05' %}{% set img_file = 'sagaing.jpg' %}{% set region_name = 'စစ်ကိုင်းတိုင်းဒေသကြီး' %}
+                    {% elif sid == 's06' %}{% set img_file = 'tanintharyi.jpg' %}{% set region_name = 'တနင်္သာရီတိုင်းဒေသကြီး' %}
+                    {% elif sid == 's07' %}{% set img_file = 'bago.jpg' %}{% set region_name = 'ပဲခူးတိုင်းဒေသကြီး' %}
+                    {% elif sid == 's08' %}{% set img_file = 'magway.png' %}{% set region_name = 'မကွေးတိုင်းဒေသကြီး' %}
+                    {% elif sid == 's09' %}{% set img_file = 'mon.jpg' %}{% set region_name = 'မွန်ပြည်နယ်' %}
+                    {% elif sid == 's10' %}{% set img_file = 'mandalay.png' %}{% set region_name = 'မန္တလေးတိုင်းဒေသကြီး' %}
+                    {% elif sid == 's11' %}{% set img_file = 'rakhine.jpg' %}{% set region_name = 'ရခိုင်ပြည်နယ်' %}
+                    {% elif sid == 's12' %}{% set img_file = 'yangon.png' %}{% set region_name = 'ရန်ကုန်တိုင်းဒေသကြီး' %}
+                    {% elif sid == 's13' %}{% set img_file = 'shan.png' %}{% set region_name = 'ရှမ်းပြည်နယ်' %}
+                    {% elif sid == 's14' %}{% set img_file = 'ayawady.jpg' %}{% set region_name = 'ဧရာဝတီတိုင်းဒေသကြီး' %}
+                    {% elif sid == 's15' %}{% set img_file = 'naypyitaw.webp' %}{% set region_name = 'နေပြည်တော်' %}
+                    {% endif %}
+
+                    <img src="/assets/images/logos/{{ img_file }}" alt="User Region" class="user-img" onerror="this.src='https://placehold.co/100x100/ecfdf5/047857?text=User'">
+
+                    <div class="d-none d-md-block">
+                        <div class="user-name">{{ region_name }}</div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- PAGE CONTENT -->
+            <div class="p-4">
+                {% block page_content %}{% endblock %}
+            </div>
+        </div>
+    </div>
+
+    <!-- Overlay -->
+    <div id="overlay" onclick="toggleSidebar()"></div>
+
+    <!-- ==================== LOGOUT CONFIRM MODAL ==================== -->
+    <div class="modal fade" id="logoutModal" tabindex="-1" aria-hidden="true" data-bs-backdrop="static" data-bs-keyboard="true">
+        <div class="modal-dialog modal-dialog-centered">
+            <div class="modal-content border-0 shadow-lg text-center">
+                <div class="logout-accent"></div>
+                <div class="modal-body">
+                    <div class="logout-icon mx-auto mb-3 d-flex align-items-center justify-content-center rounded-circle">
+                        <i class="bi bi-box-arrow-right text-danger"></i>
+                        <span class="logout-pulse"></span>
+                    </div>
+                    <h5 class="logout-title">အကောင့်မှ ထွက်မှာ သေချာပါသလား?</h5>
+                    <p class="logout-subtitle">
+                        ထွက်လိုက်ရင် ပြန်ဝင်ရန် Username နှင့်<br>Password ပြန်ထည့်ရပါမယ်။
+                    </p>
+                    <div class="d-flex gap-2">
+                        <button type="button" class="btn btn-light border flex-fill" data-bs-dismiss="modal">
+                            <i class="bi bi-x-lg"></i> မထွက်တော့ပါ
+                        </button>
+                        <button type="button" id="confirmLogoutBtn" class="btn btn-danger flex-fill">
+                            <i class="bi bi-box-arrow-right"></i> ထွက်မည်
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Bootstrap 5 JS -->
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
+
+    <script>
+    // ==================================================
+    // ⭐ Web Inactivity Auto-Logout (၁၀ မိနစ်)
+    // ==================================================
+    (function() {
+        // Mobile App ဖြစ်နေရင် ဒီ Script ကို လုံးဝ မလုပ်ဆောင်ပါဘူး
+        const isMobileApp = /Mobile|Android|iPhone|iPad/i.test(navigator.userAgent);
+        if (isMobileApp) return;
+
+        const INACTIVITY_LIMIT = 10 * 60 * 1000; // ၁၀ မိနစ် (Milliseconds)
+        let timeoutId;
+
+        function resetTimer() {
+            clearTimeout(timeoutId);
+            timeoutId = setTimeout(() => {
+                // ⭐ Web Auto Logout API ကို ခေါ်မယ်
+                fetch('/api/web-auto-logout', { method: 'POST', credentials: 'same-origin' })
+                    .finally(() => {
+                        window.location.href = '/'; // Login စာမျက်နှာကို ပြန်ပို့မယ်
+                    });
+            }, INACTIVITY_LIMIT);
+        }
+
+        // Mouse လှုပ်ရှားမှု၊ ကီးဘုတ်ရိုက်မှု၊ Scroll လုပ်မှု စတဲ့ Event တွေ ဖြစ်တိုင်း Timer ကို ပြန်စမယ်
+        ['mousemove', 'keydown', 'click', 'scroll', 'touchstart'].forEach(event => {
+            window.addEventListener(event, resetTimer, { passive: true });
+        });
+
+        // စတင်ချိန်မှာ Timer စမယ်
+        resetTimer();
+    })();
+
+        // ============================================
+        // LOGOUT CONFIRM (Custom Modal)
+        // ============================================
+        let logoutModalInstance = null;
+        let pendingLogoutUrl = null;
+
+        function confirmLogout(e) {
+            if (e) e.preventDefault();
+            pendingLogoutUrl = (e && e.currentTarget && e.currentTarget.getAttribute('href')) || '/logout';
+            if (!logoutModalInstance) {
+                const el = document.getElementById('logoutModal');
+                logoutModalInstance = new bootstrap.Modal(el, { backdrop: 'static', keyboard: true });
+            }
+            logoutModalInstance.show();
+            return false;
+        }
+
+        document.addEventListener('DOMContentLoaded', function () {
+            const btn = document.getElementById('confirmLogoutBtn');
+            if (btn) {
+                btn.addEventListener('click', function () {
+                    btn.disabled = true;
+                    btn.innerHTML = `<span class="spinner-border spinner-border-sm me-1" role="status" aria-hidden="true"></span> ထွက်နေသည်...`;
+                    window.location.href = pendingLogoutUrl || '/logout';
+                });
+            }
+        });
+
+        // ============================================
+        // TOGGLE SIDEBAR
+        // ============================================
+        function toggleSidebar() {
+            const sidebar = document.getElementById('sidebar');
+            const overlay = document.getElementById('overlay');
+            const mainContent = document.getElementById('mainContent');
+            if (window.innerWidth >= 992) {
+                sidebar.classList.toggle('collapsed');
+                mainContent.classList.toggle('expanded');
+            } else {
+                sidebar.classList.toggle('mobile-open');
+                overlay.classList.toggle('show');
+            }
+        }
+
+        document.querySelectorAll('#sidebar .sidebar-link').forEach(link => {
+            link.addEventListener('click', function() {
+                if (window.innerWidth < 992) toggleSidebar();
+            });
+        });
+
+        let lastWidth = window.innerWidth;
+        window.addEventListener('resize', function() {
+            const sidebar = document.getElementById('sidebar');
+            const overlay = document.getElementById('overlay');
+            const mainContent = document.getElementById('mainContent');
+            const currentWidth = window.innerWidth;
+            const crossed = (lastWidth >= 992 && currentWidth < 992) || (lastWidth < 992 && currentWidth >= 992);
+            if (crossed) {
+                sidebar.classList.remove('mobile-open', 'collapsed');
+                overlay.classList.remove('show');
+                mainContent.classList.remove('expanded');
+            }
+            lastWidth = currentWidth;
+        });
+
+        // ============================================
+        // SIDEBAR DATE
+        // ============================================
+        const MYANMAR_TZ = 'Asia/Yangon';
+        const MM_DIGITS = ['၀','၁','၂','၃','၄','၅','၆','၇','၈','၉'];
+        function toMMDigits(s) { return String(s).replace(/[0-9]/g, d => MM_DIGITS[+d]); }
+        const MM_MONTHS = ['ဇန်နဝါရီ', 'ဖေဖော်ဝါရီ', 'မတ်', 'ဧပြီ', 'မေ', 'ဇွန်', 'ဇူလိုင်', 'ဩဂုတ်', 'စက်တင်ဘာ', 'အောက်တိုဘာ', 'နိုဝင်ဘာ', 'ဒီဇင်ဘာ'];
+        const fmtDateParts = new Intl.DateTimeFormat('en-US', { timeZone: MYANMAR_TZ, year: 'numeric', month: 'numeric', day: 'numeric' });
+
+        function updateSidebarDate() {
+            const el = document.getElementById('sidebarDate');
+            if (!el) return;
+            const now = new Date();
+            const parts = {};
+            fmtDateParts.formatToParts(now).forEach(p => { parts[p.type] = p.value; });
+            const dayNum = parseInt(parts.day, 10);
+            const monthIdx = parseInt(parts.month, 10) - 1;
+            const yearNum = parseInt(parts.year, 10);
+            el.textContent = toMMDigits(yearNum) + ' ခုနှစ် ' + MM_MONTHS[monthIdx] + 'လ ' + toMMDigits(dayNum) + ' ရက်';
+        }
+        updateSidebarDate();
+    </script>
+
+    {% block extra_js %}{% endblock %}
+</body>
+
+</html>

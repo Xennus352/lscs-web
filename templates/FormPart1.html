@@ -1,0 +1,509 @@
+{% extends 'formBase.html' %} {% block form_action %}{{ survey_prefix|default('/survey') }}/part1{% endblock %} {% block form_method %}post{% endblock %} {% block form_content %}
+<div id="section1">
+    <div class="section-title-box">
+        <h4>အပိုင်း - (၁) လူတွေ့မေးမြန်းခြင်းဆိုင်ရာ အချက်များ</h4>
+
+    </div>
+
+    <div class="row g-3 mb-4">
+        <div class="col-md-6 col-lg-4">
+            <label class="form-label">ခရိုင် <span class="text-danger">*</span></label>
+            <select id="district" name="districtID" required class="form-select" style="background:#f9fafb;" >
+               <option value="" disabled selected>---- ရွေးချယ်ပါ -----</option>
+            </select>
+        </div>
+        <div class="col-md-6 col-lg-4">
+            <label class="form-label">မြို့နယ် <span class="text-danger">*</span></label>
+            <select id="township" name="townshipID" required class="form-select" style="background:#f9fafb;" >
+                <option value="" disabled selected>---- ရွေးချယ်ပါ -----</option>
+                
+            </select>
+        </div>
+        <div class="col-md-6 col-lg-4">
+            <label class="form-label">ရပ်ကွက်/ကျေးရွာအုပ်စု <span class="text-danger">*</span></label>
+            <select id="villageTract" name="qvID" required class="form-select" style="background:#f9fafb;">
+                <option value="" disabled selected>---- ရွေးချယ်ပါ -----</option>
+            </select>
+        </div>
+        <div class="col-md-6 col-lg-4">
+            <label class="form-label">ရပ်ကွက်/ကျေးရွာ <span class="text-danger">*</span></label>
+            <input type="text" id="ward" name="wardName" required class="form-control" style="background:#f9fafb;">
+        </div>
+        <div class="col-md-6 col-lg-4">
+            <label class="form-label">အိမ်ထောင်စုအမှတ်စဉ် <span class="text-danger">*</span></label>
+            <input type="text" id="houseHoldNo" name="houseHoldNo" required class="form-control" style="background:#f9fafb;">
+        </div>
+        <div class="col-md-6 col-lg-4">
+            <label class="form-label">တွေ့ဆုံမေးမြန်းသည့်နေ့ <span class="text-danger">*</span></label>
+            <input type="date" id="interviewDate" name="interviewDate" required class="form-control" style="background:#f9fafb;">
+        </div>
+    </div>
+
+    {% if role == 'enumerator' %}
+    <fieldset class="household-match mb-4">
+        <legend class="household-match-title">
+            <span class="household-match-icon" aria-hidden="true"><i class="bi bi-clipboard-check"></i></span>
+            အချက်အလက်ကောက်ယူမှု <span class="text-danger">*</span>
+        </legend>
+        <p class="household-match-description">ဤအိမ်ထောင်စုအတွက် အချက်အလက် ကောက်ယူမည့် အခြေအနေကို ရွေးချယ်ပါ။</p>
+        <div class="household-match-options">
+            <label class="household-match-option">
+                <input type="radio" name="status" value="1" required>
+                <span class="household-match-copy">
+                    <span class="household-match-label">အချက်အလက် ကောက်ယူမည်</span>
+                    <span class="household-match-hint">ဖြေဆိုသူနှင့် မွေးမြူရေးအချက်အလက်များကို ဆက်လက် ဖြည့်သွင်းမည်</span>
+                </span>
+                <i class="bi bi-clipboard-plus household-option-icon" aria-hidden="true"></i>
+            </label>
+            <label class="household-match-option">
+                <input type="radio" name="status" value="0" required checked>
+                <span class="household-match-copy">
+                    <span class="household-match-label">အချက်အလက် မကောက်ယူပါ</span>
+                    <span class="household-match-hint">အိမ်ထောင်စု တည်နေရာနှင့် ကောက်ယူမှုအခြေအနေကိုသာ သိမ်းဆည်းမည်</span>
+                </span>
+                <i class="bi bi-house-check household-option-icon" aria-hidden="true"></i>
+            </label>
+        </div>
+    </fieldset>
+    {% endif %}
+    <div id="collectionDetails" class="row g-4{% if role == 'enumerator' %} d-none{% endif %}">
+        <div class="col-12">
+            <fieldset class="household-match">
+                <legend class="household-match-title">
+                    <span class="household-match-icon" aria-hidden="true"><i class="bi bi-person-check"></i></span>
+                    ဖြေဆိုသူသည် အိမ်ထောင်ဦးစီး ဖြစ်ပါသလား?
+                </legend>
+                <p class="household-match-description">တစ်ဦးတည်းဖြစ်ပါက ဖြေဆိုသူ၏ အချက်အလက်များကို အိမ်ထောင်ဦးစီးအတွက် အလိုအလျောက် ဖြည့်ပေးပါမည်။</p>
+                <div class="household-match-options">
+                    <label class="household-match-option">
+                        <input type="radio" name="respondent_is_head" value="yes">
+                        <span class="household-match-copy">
+                            <span class="household-match-label">ဟုတ်ပါသည်</span>
+                            <span class="household-match-hint">အချက်အလက်များကို အလိုအလျောက် ဖြည့်မည်</span>
+                        </span>
+                        <i class="bi bi-person-check household-option-icon" aria-hidden="true"></i>
+                    </label>
+                    <label class="household-match-option">
+                        <input type="radio" name="respondent_is_head" value="no" checked>
+                        <span class="household-match-copy">
+                            <span class="household-match-label">မဟုတ်ပါ</span>
+                            <span class="household-match-hint">အိမ်ထောင်ဦးစီးအချက်အလက်ကို သီးခြား ဖြည့်မည်</span>
+                        </span>
+                        <i class="bi bi-people household-option-icon" aria-hidden="true"></i>
+                    </label>
+                </div>
+            </fieldset>
+        </div>
+        <!-- ဖြေဆိုသူအချက်အလက် -->
+        <div class="col-lg-6">
+            <div class="p-4 rounded-3 h-100" style="background: rgba(16,185,129,0.08); border: 1px solid #a7f3d0;">
+                <h5 class="fw-bold d-flex align-items-center gap-2 pb-2 mb-3" style="color:#065f46; font-size:1rem; border-bottom: 1px solid #a7f3d0;">
+                    <svg width="20" height="20" fill="none" stroke="#059669" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"></path></svg>                    ဖြေဆိုသူအချက်အလက်
+                </h5>
+                <div class="mb-3">
+                    <label class="form-label">အမည် <span class="text-danger">*</span></label>
+                    <input type="text" id="respondentName" name="name" required class="form-control" style="background:#fff;">
+                </div>
+                <div class="mb-3">
+                    <label class="form-label d-block">ကျား/မ <span class="text-danger">*</span></label>
+                    <div class="radio-group d-flex gap-4">
+                        <label class="d-flex align-items-center gap-2 cursor-pointer" style="cursor:pointer;">
+                            <input type="radio" name="gender" value="ကျား" required>
+                            <span class="small fw-medium">ကျား</span>
+                        </label>
+                        <label class="d-flex align-items-center gap-2 cursor-pointer" style="cursor:pointer;">
+                            <input type="radio" name="gender" value="မ" required>
+                            <span class="small fw-medium">မ</span>
+                        </label>
+                    </div>
+                </div>
+                <div class="row g-3 mb-3">
+                    <div class="col-6">
+                        <label class="form-label">အသက် (နှစ်) <span class="text-danger">*</span></label>
+                        <input type="text" id="respondentAge" name="age" required inputmode="numeric" class="form-control" style="background:#fff;">
+                    </div>
+                    <div class="col-6">
+                        <label class="form-label">ပညာအရည်အချင်း <span class="text-danger">*</span></label>
+                        <input type="text" id="respondentEducation" name="eduStatus" required class="form-control" style="background:#fff;">
+                    </div>
+                </div>
+                <div>
+                    <label class="form-label">ဖုန်းနံပါတ် <span class="text-danger">*</span></label>
+                    <input type="tel" id="respondentPhone" name="phoneNo" required class="form-control" placeholder="09xxxxxxxxx" style="background:#fff;">
+                    <p id="respondentPhoneError" class="text-danger small mt-1 fw-bold d-none">ဖုန်းနံပါတ်ပုံစံ မှားယွင်းနေပါသည်။ (ဥပမာ - 09421234567)</p>
+                </div>
+            </div>
+        </div>
+
+        <!-- အိမ်ထောင်ဦးစီးအချက်အလက် -->
+        <div class="col-lg-6">
+            <div class="p-4 rounded-3 h-100" style="background: rgba(16,185,129,0.08); border: 1px solid #a7f3d0;">
+                <h5 class="fw-bold d-flex align-items-center gap-2 pb-2 mb-3" style="color:#065f46; font-size:1rem; border-bottom: 1px solid #a7f3d0;">
+                    <svg width="20" height="20" fill="none" stroke="#059669" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6"></path></svg>                    အိမ်ထောင်ဦးစီးအချက်အလက်
+                </h5>
+                <div class="mb-3">
+                    <label class="form-label">အမည် <span class="text-danger">*</span></label>
+                    <input type="text" id="headOfHousehold" name="headName" required class="form-control" style="background:#fff;">
+                </div>
+                <div class="mb-3">
+                    <label class="form-label d-block">ကျား/မ <span class="text-danger">*</span></label>
+                    <div class="radio-group d-flex gap-4">
+                        <label class="d-flex align-items-center gap-2" style="cursor:pointer;">
+                            <input type="radio" name="headGender" value="ကျား" required>
+                            <span class="small fw-medium">ကျား</span>
+                        </label>
+                        <label class="d-flex align-items-center gap-2" style="cursor:pointer;">
+                            <input type="radio" name="headGender" value="မ" required>
+                            <span class="small fw-medium">မ</span>
+                        </label>
+                    </div>
+                </div>
+                <div class="row g-3 mb-3">
+                    <div class="col-6">
+                        <label class="form-label">အသက် (နှစ်) <span class="text-danger">*</span></label>
+                        <input type="text" id="headAge" name="headAge" required inputmode="numeric" class="form-control" style="background:#fff;">
+                    </div>
+                    <div class="col-6">
+                        <label class="form-label">ပညာအရည်အချင်း <span class="text-danger">*</span></label>
+                        <input type="text" id="headEducation" name="headEduStatus" required class="form-control" style="background:#fff;">
+                    </div>
+                </div>
+                <div>
+                    <label class="form-label">ဖုန်းနံပါတ် <span class="text-danger">*</span></label>
+                    <input type="tel" id="headPhone" name="headPhoneNo" required class="form-control" placeholder="09xxxxxxxxx" style="background:#fff;">
+                    <p id="headPhoneError" class="text-danger small mt-1 fw-bold d-none">ဖုန်းနံပါတ်ပုံစံ မှားယွင်းနေပါသည်။</p>
+                </div>
+            </div>
+        </div>
+    </div>
+    <input type="hidden" name="formID" value="{{ form_id }}">
+</div>
+{% endblock %}
+
+{% block extra_css %}
+<style>
+    .household-match {
+        min-width: 0;
+        margin: 0;
+        padding: 24px;
+        border: 1px solid #d1e8dd;
+        border-radius: 18px;
+        background: linear-gradient(135deg, #f0fdf6 0%, #fff 75%);
+        box-shadow: 0 4px 16px rgba(6, 78, 59, .04);
+    }
+    .household-match-title {
+        float: none;
+        width: auto;
+        margin: 0 0 10px;
+        padding: 0;
+        display: flex;
+        align-items: center;
+        gap: 12px;
+        color: #064e3b;
+        font-size: 1rem;
+        font-weight: 700;
+        line-height: 1.8;
+    }
+    .household-match-icon {
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        flex: 0 0 40px;
+        height: 40px;
+        border-radius: 12px;
+        background: #d1fae5;
+        color: #047857;
+        font-size: 22px;
+    }
+    .household-match-description {
+        margin: 0 0 20px;
+        color: #52665e;
+        font-size: .85rem;
+        line-height: 1.9;
+    }
+    .household-match-options { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 14px; }
+    .household-match-option {
+        display: flex;
+        align-items: center;
+        gap: 12px;
+        margin: 0;
+        padding: 18px;
+        border: 1px solid #dce5df;
+        border-radius: 12px;
+        background: #fff;
+        cursor: pointer;
+        transition: border-color .15s ease, background-color .15s ease, box-shadow .15s ease;
+    }
+    .household-match-option:hover { border-color: #6dbd9a; background: #f8fdfb; }
+    .household-match-option:has(input:checked) {
+        border-color: #059669;
+        background: #ecfdf5;
+        box-shadow: 0 0 0 1px #059669;
+    }
+    .household-match-option:has(input:focus-visible) { outline: 3px solid #047857; outline-offset: 3px; }
+    .household-match-option input { flex: 0 0 18px; width: 18px; height: 18px; margin: 0; accent-color: #047857; }
+    .household-match-copy { display: flex; flex: 1; flex-direction: column; gap: 5px; min-width: 0; }
+    .household-match-label { color: #24483a; font-size: .95rem; font-weight: 700; line-height: 1.7; }
+    .household-match-hint { color: #52665e; font-size: .78rem; line-height: 1.9; }
+    .household-option-icon { color: #81978b; font-size: 24px; }
+    .household-match-option:has(input:checked) .household-option-icon { color: #047857; }
+    #collectionDetails input[readonly] { background: #f0fdf4 !important; border-color: #b9dfca; color: #23533b; }
+    @media (max-width: 575.98px) {
+        .household-match { padding: 18px; }
+        .household-match-options { grid-template-columns: 1fr; gap: 10px; }
+        .household-match-option { padding: 16px 14px; }
+    }
+    @media (prefers-reduced-motion: reduce) {
+        .household-match-option { transition: none; }
+    }
+</style>
+{% endblock %}
+
+{% block part_js %}
+<script>
+const SURVEY_PREFIX = {{ survey_prefix|default('/survey')|tojson }};
+const IS_ENUMERATOR = {{ (role == 'enumerator')|tojson }};
+
+function setupRespondentHeadSync(form) {
+    const pairs = [
+        ['name', 'headName'], ['age', 'headAge'],
+        ['eduStatus', 'headEduStatus'], ['phoneNo', 'headPhoneNo']
+    ];
+    const field = name => form.querySelector(`[name="${name}"]`);
+    const headRadios = form.querySelectorAll('[name="headGender"]');
+    const isSame = () => form.querySelector('[name="respondent_is_head"]:checked')?.value === 'yes';
+    let manualDetails = null;
+    let wasSame = false;
+
+    function sync() {
+        const same = isSame();
+        if (same && !wasSame) {
+            manualDetails = Object.fromEntries(pairs.map(([, head]) => [head, field(head).value]));
+            manualDetails.gender = form.querySelector('[name="headGender"]:checked')?.value || '';
+        }
+        pairs.forEach(([respondent, head]) => {
+            const target = field(head);
+            target.readOnly = same;
+            if (same) {
+                target.value = field(respondent).value;
+                target.classList.remove('error-input');
+            } else if (wasSame && manualDetails) {
+                target.value = manualDetails[head];
+            }
+        });
+        const gender = same ? form.querySelector('[name="gender"]:checked')?.value : manualDetails?.gender;
+        headRadios.forEach(radio => {
+            radio.setAttribute('aria-disabled', String(same));
+            if (same || wasSame) radio.checked = radio.value === gender;
+        });
+        wasSame = same;
+    }
+    form.querySelectorAll('[name="respondent_is_head"]').forEach(radio => radio.addEventListener('change', sync));
+    pairs.forEach(([respondent]) => field(respondent).addEventListener('input', () => {
+        if (respondent === 'age') field(respondent).value = field(respondent).value.replace(/[^0-9]/g, '');
+        if (isSame()) sync();
+    }));
+    form.querySelectorAll('[name="gender"]').forEach(radio => radio.addEventListener('change', sync));
+    headRadios.forEach(radio => {
+        radio.addEventListener('click', event => { if (isSame()) event.preventDefault(); });
+        radio.addEventListener('change', () => { if (isSame()) sync(); });
+    });
+    sync();
+    return sync;
+}
+
+function fillSelect(select, rows, idKey, nameKey, selectedValue) {
+    if (!select) return;
+    select.innerHTML = '<option value="">---- ရွေးချယ်ပါ -----</option>';
+    (rows || []).forEach(row => {
+        const option = document.createElement('option');
+        option.value = String(row[idKey]);
+        option.textContent = row[nameKey];
+        if (selectedValue != null && String(selectedValue) === option.value) option.selected = true;
+        select.appendChild(option);
+    });
+}
+
+async function loadLocationOptions() {
+    const stateEl = document.getElementById('regionState');
+    const districtEl = document.getElementById('district');
+    const townshipEl = document.getElementById('township');
+    const qvEl = document.getElementById('villageTract');
+    if (!stateEl || !districtEl || !townshipEl || !qvEl) return;
+
+    try {
+        if (IS_ENUMERATOR) {
+            const response = await fetch('/enumerator/locations', {credentials: 'same-origin'});
+            if (!response.ok) throw new Error('Enumerator Location မရရှိပါ။');
+            const data = await response.json();
+            stateEl.value = String(data.stateID);
+            fillSelect(districtEl, [data.district], 'districtID', 'districtName', data.district.districtID);
+            fillSelect(townshipEl, [data.township], 'townshipID', 'townshipName', data.township.townshipID);
+            fillSelect(qvEl, data.qvs || [], 'QVID', 'QVName');
+            // Keep assigned selects enabled so their values are included in the POST.
+            // Pointer blocking is UI-only; the backend independently validates the assignment.
+            districtEl.disabled = false;
+            townshipEl.disabled = false;
+            districtEl.style.pointerEvents = 'none';
+            townshipEl.style.pointerEvents = 'none';
+            qvEl.disabled = false;
+            return;
+        }
+        districtEl.disabled = false;
+        townshipEl.disabled = true;
+        qvEl.disabled = true;
+        if (!stateEl.value) return;
+        const res = await fetch('/api/locations?state_id=' + encodeURIComponent(stateEl.value), {credentials:'same-origin'});
+        if (!res.ok) throw new Error('ခရိုင်စာရင်း မရရှိပါ။');
+        fillSelect(districtEl, await res.json(), 'districtID', 'districtName');
+    } catch (error) {
+        console.error(error);
+        if (typeof showModal === 'function') showModal('error', 'သတိပေးချက်', error.message || 'Location မရရှိပါ။');
+    }
+}
+
+async function loadTownshipOptions() {
+    const state = document.getElementById('regionState')?.value;
+    const district = document.getElementById('district')?.value;
+    const townshipEl = document.getElementById('township');
+    const qvEl = document.getElementById('villageTract');
+    if (IS_ENUMERATOR || !state || !district) return;
+    townshipEl.disabled = true; qvEl.disabled = true;
+    const res = await fetch('/api/locations?state_id=' + encodeURIComponent(state) + '&district_id=' + encodeURIComponent(district), {credentials:'same-origin'});
+    if (!res.ok) return;
+    fillSelect(townshipEl, await res.json(), 'townshipID', 'townshipName');
+    townshipEl.disabled = false;
+}
+
+async function loadQVOptions() {
+    const state = document.getElementById('regionState')?.value;
+    const district = document.getElementById('district')?.value;
+    const township = document.getElementById('township')?.value;
+    const qvEl = document.getElementById('villageTract');
+    if (IS_ENUMERATOR || !state || !district || !township) return;
+    qvEl.disabled = true;
+    const res = await fetch('/api/locations?state_id=' + encodeURIComponent(state) + '&district_id=' + encodeURIComponent(district) + '&township_id=' + encodeURIComponent(township), {credentials:'same-origin'});
+    if (!res.ok) return;
+    fillSelect(qvEl, await res.json(), 'QVID', 'QVName');
+    qvEl.disabled = false;
+}
+
+document.addEventListener('DOMContentLoaded', async function () {
+    updateProgress(20, 'အပိုင်း (၁) / ၅ - လူတွေ့မေးမြန်းခြင်းဆိုင်ရာ အချက်များ');
+    const backBtn = document.getElementById('backBtn');
+    const nextBtn = document.getElementById('nextPageBtn');
+    const submitBtn = document.getElementById('submitBtn');
+    const form = document.getElementById('livestockForm');
+    if (backBtn) backBtn.classList.add('d-none');
+    if (nextBtn) nextBtn.classList.remove('d-none');
+    if (submitBtn) submitBtn.classList.add('d-none');
+    loadFormData();
+    const syncHouseholdHead = setupRespondentHeadSync(form);
+    // A new visit starts today in the user's local timezone; the date remains editable.
+    const today = new Date();
+    document.getElementById('interviewDate').value =
+        today.getFullYear() + '-' + String(today.getMonth() + 1).padStart(2, '0') + '-' + String(today.getDate()).padStart(2, '0');
+
+    function isCollecting() {
+        return !IS_ENUMERATOR || form.querySelector('input[name="status"]:checked')?.value === '1';
+    }
+    function updateCollectionFields() {
+        const collecting = isCollecting();
+        const details = document.getElementById('collectionDetails');
+        details.classList.toggle('d-none', !collecting);
+        details.querySelectorAll('input').forEach(input => {
+            input.disabled = !collecting;
+            input.required = collecting;
+            input.classList.remove('error-input');
+        });
+        if (nextBtn) nextBtn.innerHTML = collecting
+            ? 'နောက်စာမျက်နှာသို့ <i class="bi bi-arrow-right"></i>'
+            : '<i class="bi bi-check-circle"></i> သိမ်းဆည်းမည်';
+        document.getElementById('errorAlert')?.classList.add('d-none');
+    }
+    form.querySelectorAll('input[name="status"]').forEach(input => input.addEventListener('change', updateCollectionFields));
+    updateCollectionFields();
+
+    const stateEl = document.getElementById('regionState');
+    const districtEl = document.getElementById('district');
+    const townshipEl = document.getElementById('township');
+    if (stateEl) stateEl.addEventListener('change', loadLocationOptions);
+    if (districtEl) districtEl.addEventListener('change', loadTownshipOptions);
+    if (townshipEl) townshipEl.addEventListener('change', loadQVOptions);
+    await loadLocationOptions();
+
+    ['respondentAge', 'headAge'].forEach(id => {
+        const el = document.getElementById(id);
+        if (!el) return;
+        el.addEventListener('input', function () { this.value = this.value.replace(/[^0-9]/g, ''); });
+    });
+
+    function validateSection1() {
+        syncHouseholdHead();
+        let valid = true;
+        let firstError = null;
+        const errorBox = document.getElementById('errorAlert');
+        if (errorBox) errorBox.classList.add('d-none');
+        form.querySelectorAll('#section1 input[required], #section1 select[required]').forEach(el => {
+            if (el.disabled || el.type === 'radio') return;
+            if (!String(el.value || '').trim()) {
+                valid = false; el.classList.add('error-input'); if (!firstError) firstError = el;
+            }
+        });
+        (isCollecting() ? [['gender', 'respondentPhone', 'respondentPhoneError'], ['headGender', 'headPhone', 'headPhoneError']] : []).forEach(([genderName, phoneId, phoneErrorId]) => {
+            const selected = form.querySelector('input[name="' + genderName + '"]:checked');
+            if (!selected) {
+                valid = false;
+                const firstRadio = form.querySelector('input[name="' + genderName + '"]');
+                const group = firstRadio?.closest('.radio-group');
+                if (group) group.classList.add('error-input');
+                if (!firstError) firstError = firstRadio;
+            }
+            const phone = document.getElementById(phoneId);
+            const phoneError = document.getElementById(phoneErrorId);
+            if (phone && phone.value.trim() && !phoneRegex.test(phone.value.trim())) {
+                valid = false; phone.classList.add('error-input');
+                if (phoneError) phoneError.classList.remove('d-none');
+                if (!firstError) firstError = phone;
+            } else if (phoneError) phoneError.classList.add('d-none');
+        });
+        if (IS_ENUMERATOR) {
+            if (!districtEl.value || !townshipEl.value || !document.getElementById('villageTract').value) valid = false;
+        } else if (stateEl && !stateEl.value) {
+            valid = false; if (!firstError) firstError = stateEl;
+        }
+        if (!valid) {
+            if (errorBox) errorBox.classList.remove('d-none');
+            if (firstError) { firstError.scrollIntoView({behavior:'smooth', block:'center'}); firstError.focus(); }
+        }
+        return valid;
+    }
+
+    if (nextBtn) nextBtn.addEventListener('click', function () { if (validateSection1()) form.requestSubmit(); });
+    if (form) form.addEventListener('submit', async function (event) {
+        if (!validateSection1()) { event.preventDefault(); return; }
+        if (isCollecting()) { saveFormData(); return; }
+        event.preventDefault();
+        if (nextBtn.disabled) return;
+        nextBtn.disabled = true;
+        try {
+            const response = await fetch(form.action, {
+                method: 'POST', body: new FormData(form), credentials: 'same-origin'
+            });
+            const result = await response.json();
+            if (!response.ok || result.status !== 'success') {
+                throw new Error(typeof result.detail === 'string' ? result.detail : 'သိမ်းဆည်းမှု မအောင်မြင်ပါ။');
+            }
+            clearFormData();
+            showModal('success', 'သိမ်းဆည်းပြီးပါပြီ', 'အချက်အလက် မကောက်ယူသည့် အိမ်ထောင်စုကို သိမ်းဆည်းပြီးပါပြီ။', function () {
+                window.location.href = '/enumerator/part1';
+            });
+        } catch (error) {
+            showModal('error', 'သတိပေးချက်', error.message || 'သိမ်းဆည်းမှု မအောင်မြင်ပါ။');
+        } finally {
+            nextBtn.disabled = false;
+        }
+    });
+});
+</script>
+{% endblock %}

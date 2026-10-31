@@ -1,0 +1,1341 @@
+{% extends 'systemAdminBase.html' %}
+{% set active_page = 'sys_users' %}
+
+{% block title %}အသုံးပြုသူ စီမံခန့်ခွဲမှု - System Admin{% endblock %}
+{% block topbar_title %}<i class="bi bi-people-fill me-2"></i>အသုံးပြုသူ စီမံခန့်ခွဲမှု{% endblock %}
+
+{% block extra_css %}
+<style>
+    .page-head h5 { font-size: 1.05rem; }
+    .page-head p { font-size: 0.78rem; }
+
+    /* Filter Buttons */
+    .filter-btns { display: flex; gap: 8px; flex-wrap: wrap; margin-bottom: 15px; }
+    .btn-filter {
+        background: #fff; border: 1.5px solid #e5e7eb; color: #4b5563;
+        padding: 6px 16px; border-radius: 20px; font-size: 0.78rem;
+        font-weight: 600; cursor: pointer; transition: all 0.15s;
+    }
+    .btn-filter:hover { border-color: #10b981; color: #047857; background: #f0fdf4; }
+    .btn-filter.active {
+        background: #d1fae5; border-color: #10b981; color: #047857; font-weight: 700;
+        box-shadow: 0 2px 6px rgba(16,185,129,0.2);
+    }
+
+    /* Search Box */
+    .search-wrap { 
+        position: relative; 
+        width: 100%; 
+        max-width: 450px;
+    }
+    .search-wrap .search-icon {
+        position: absolute; left: 14px; top: 50%; transform: translateY(-50%);
+        color: #9ca3af; font-size: 1.1rem; pointer-events: none;
+    }
+    .search-input {
+        width: 100%; padding: 10px 16px 10px 40px; border: 1.5px solid #e5e7eb;
+        border-radius: 8px; font-size: 0.9rem; background: #f9fafb; transition: 0.15s;
+    }
+    .search-input:focus {
+        outline: none; border-color: #10b981; background: #fff;
+        box-shadow: 0 0 0 3px rgba(16,185,129,0.1);
+    }
+    .search-clear {
+        position: absolute; right: 10px; top: 50%; transform: translateY(-50%);
+        background: transparent; border: none; color: #9ca3af;
+        cursor: pointer; padding: 4px; display: none; font-size: 1.1rem;
+    }
+    .search-clear:hover { color: #ef4444; }
+
+    /* Table Card */
+    .table-card {
+        border: none; border-radius: 14px; background: #fff;
+        box-shadow: 0 2px 12px rgba(0,0,0,0.05); overflow: hidden;
+    }
+    .table-card .card-header {
+        background: #fff; border-bottom: 1px solid #f1f5f9;
+        padding: 15px 20px; display: flex; justify-content: space-between; align-items: center;
+        flex-wrap: wrap; gap: 10px;
+    }
+    .table-card .card-header h6 { font-size: 0.9rem; font-weight: 700; color: #065f46; margin: 0; }
+
+    .btn-add-new {
+        background: linear-gradient(135deg, #047857, #059669);
+        color: #fff; border: none; padding: 8px 16px;
+        border-radius: 8px; font-weight: 700; font-size: 0.8rem;
+        display: inline-flex; align-items: center; gap: 6px;
+        box-shadow: 0 2px 6px rgba(4,120,87,0.25); transition: 0.15s; text-decoration: none;
+    }
+    .btn-add-new:hover { transform: translateY(-1px); color: #fff; }
+
+    /* Table Design */
+    .custom-table { margin: 0; font-size: 0.8rem; }
+    .custom-table thead tr { background: #ecfdf5; color: #065f46; }
+    .custom-table thead th {
+        font-weight: 700; font-size: 0.72rem; padding: 12px 15px;
+        border-bottom: 2px solid #a7f3d0; white-space: nowrap;
+    }
+    .custom-table tbody td { padding: 12px 15px; vertical-align: middle; border-bottom: 1px solid #f1f5f9; }
+    .custom-table tbody tr:hover { background: #f9fafb; }
+
+    /* Badges */
+    .badge-role { padding: 3px 8px; border-radius: 6px; font-size: 0.7rem; font-weight: 700; }
+    .role-1 { background: #fee2e2; color: #991b1b; }
+    .role-2 { background: #fce7f3; color: #be185d; }
+    .role-3 { background: #dbeafe; color: #1e40af; }
+    .role-4 { background: #fef3c7; color: #92400e; }
+    .role-5 { background: #e0e7ff; color: #3730a3; }
+    .role-6 { background: #ccfbf1; color: #0f766e; }
+
+    /* Toggle Switch */
+    .form-switch .form-check-input { width: 2.5em; height: 1.3em; cursor: pointer; }
+    .form-switch .form-check-input:checked { background-color: #10b981; border-color: #10b981; }
+
+    /* Action Buttons */
+    .btn-edit {
+        background: #dbeafe; color: #1e40af; border: none;
+        padding: 5px 10px; border-radius: 6px; font-size: 0.75rem;
+        cursor: pointer; transition: 0.15s;
+    }
+    .btn-edit:hover { background: #bfdbfe; }
+
+    .btn-reset-pw {
+        background: #fee2e2; color: #991b1b; border: none;
+        padding: 5px 10px; border-radius: 6px; font-size: 0.75rem;
+        cursor: pointer; transition: 0.15s;
+        display: inline-flex; align-items: center; gap: 4px;
+    }
+    .btn-reset-pw:hover { background: #fecaca; color: #7f1d1d; }
+
+    /* Pagination */
+    .pagination-wrap {
+        display: flex; justify-content: space-between; align-items: center;
+        padding: 12px 20px; flex-wrap: wrap; gap: 10px;
+        border-top: 1px solid #f1f5f9; background: #fff;
+    }
+    .pagination-info { font-size: 0.75rem; color: #6b7280; }
+    .pagination-info b { color: #047857; }
+    .pagination { margin: 0; gap: 4px; display: flex; list-style: none; padding: 0; }
+    .page-btn {
+        background: #fff; border: 1.5px solid #e5e7eb;
+        color: #4b5563; padding: 5px 10px;
+        border-radius: 6px; font-size: 0.75rem; font-weight: 600;
+        cursor: pointer; transition: 0.15s; min-width: 32px; text-align: center;
+    }
+    .page-btn:hover:not(:disabled):not(.active) { border-color: #10b981; color: #047857; background: #f0fdf4; }
+    .page-btn.active { background: #047857; color: #fff; border-color: #047857; }
+    .page-btn:disabled { opacity: 0.4; cursor: not-allowed; }
+    .page-btn-ellipsis { background: transparent; border: none; color: #9ca3af; padding: 5px 4px; font-size: 0.75rem; cursor: default; }
+
+    /* Modal Fix */
+    .modal { z-index: 1060 !important; }
+    .modal-backdrop { z-index: 1055 !important; }
+    .modal-content { border: none; border-radius: 16px; overflow: hidden; }
+    .modal-header { background: linear-gradient(135deg, #ecfdf5, #d1fae5); border-bottom: 1px solid #a7f3d0; padding: 15px 20px; }
+    .modal-title { font-size: 1rem; font-weight: 700; color: #065f46; }
+    .modal-body { padding: 20px; }
+
+    .field-label { font-size: 0.75rem; font-weight: 700; color: #374151; margin-bottom: 4px; display: block; }
+    .field-label .req { color: #ef4444; margin-left: 2px; }
+    .input-field {
+        width: 100%; padding: 9px 12px; border: 1.5px solid #e5e7eb;
+        border-radius: 8px; font-size: 0.85rem; background: #f9fafb; transition: 0.15s;
+    }
+    .input-field:focus { outline: none; border-color: #10b981; background: #fff; box-shadow: 0 0 0 3px rgba(16,185,129,0.1); }
+
+    .location-box { background: #f0fdf4; border: 1px solid #d1fae5; border-radius: 10px; padding: 15px; margin-top: 15px; margin-bottom: 10px; }
+
+    /* Excel Buttons */
+    .btn-import-excel {
+        background: #fef3c7; color: #92400e; border: 1px solid #fcd34d;
+        padding: 8px 16px; border-radius: 8px; font-weight: 700; font-size: 0.8rem;
+        display: inline-flex; align-items: center; gap: 6px; transition: 0.15s; text-decoration: none; cursor: pointer;
+    }
+    .btn-import-excel:hover { background: #fde68a; color: #78350f; }
+
+    .btn-export-excel {
+        background: #d1fae5; color: #047857; border: 1px solid #a7f3d0;
+        padding: 8px 16px; border-radius: 8px; font-weight: 700; font-size: 0.8rem;
+        display: inline-flex; align-items: center; gap: 6px; transition: 0.15s; text-decoration: none; cursor: pointer;
+        box-shadow: 0 2px 6px rgba(16,185,129,0.15);
+    }
+    .btn-export-excel:hover { background: #a7f3d0; color: #065f46; transform: translateY(-1px); }
+
+    /* Checkbox Options in Export Modal */
+    .role-check-box {
+        display: flex; align-items: center; gap: 8px; padding: 10px 12px;
+        border: 1.5px solid #e5e7eb; border-radius: 8px; cursor: pointer;
+        transition: all 0.15s; background: #fff;
+    }
+    .role-check-box:hover { border-color: #10b981; background: #f0fdf4; }
+    .role-check-box input:checked ~ span { font-weight: 700; color: #047857; }
+    .role-check-box input { width: 1.2rem; height: 1.2rem; cursor: pointer; accent-color: #10b981; }
+</style>
+{% endblock %}
+
+{% block page_content %}
+<div class="page-head mb-3 d-flex justify-content-between align-items-center flex-wrap gap-2">
+    <div>
+        <h5 class="fw-bold text-success mb-1">အသုံးပြုသူများ စီမံခန့်ခွဲမှု</h5>
+        <p class="text-muted mb-0">စနစ်အတွင်း အသုံးပြုသူများကို စီမံခန့်ခွဲခြင်း</p>
+    </div>
+</div>
+
+<!-- Filter Buttons -->
+<div class="filter-btns" id="filterBtns">
+    <button class="btn-filter active" data-role="">အားလုံး</button>
+    <button class="btn-filter" data-role="1">Admin</button>
+    <button class="btn-filter" data-role="2">Union</button>
+    <button class="btn-filter" data-role="3">တိုင်းဒေသကြီး</button>
+    <button class="btn-filter" data-role="4">ခရိုင်</button>
+    <button class="btn-filter" data-role="5">မြို့နယ်</button>
+    <button class="btn-filter" data-role="6">စာရင်းကောက်သူ</button>
+</div>
+
+<!-- Table Card -->
+<div class="table-card">
+    <div class="card-header">
+        <h6><i class="bi bi-list-ul me-2"></i>အသုံးပြုသူ စာရင်း</h6>
+        <div class="d-flex gap-2 flex-wrap">
+            <button class="btn-export-excel" onclick="openExportModal()">
+                <i class="bi bi-file-earmark-arrow-down-fill"></i> Excel ထုတ်ယူရန်
+            </button>
+            <button class="btn-import-excel" onclick="openImportModal()">
+                <i class="bi bi-file-earmark-excel-fill"></i> Excel ဖြင့် ထည့်ရန်
+            </button>
+            <button class="btn-add-new" onclick="openCreateModal()">
+                <i class="bi bi-plus-lg"></i> အသုံးပြုသူအသစ် ထည့်ရန်
+            </button>
+        </div>
+    </div>
+
+    <!-- Search Bar -->
+    <div class="px-3 py-3" style="border-bottom: 1px solid #f1f5f9;">
+        <div class="d-flex gap-2 flex-wrap align-items-center justify-content-between">
+            <div class="search-wrap">
+                <i class="bi bi-search search-icon"></i>
+                <input type="text" id="searchInput" class="search-input"
+                       placeholder="အမည် သို့မဟုတ် အီးမေးလ်ဖြင့် ရှာပါ...">
+                <button type="button" id="searchClear" class="search-clear" title="ရှင်းမည်">
+                    <i class="bi bi-x-circle-fill"></i>
+                </button>
+            </div>
+            <div class="d-flex align-items-center gap-2 ms-auto">
+                <span class="text-muted" style="font-size:0.75rem;">တစ်မျက်နှာ</span>
+                <select id="perPageSelect" class="form-select form-select-sm" style="width:auto; font-size:0.78rem;">
+                    <option value="10" selected>10</option>
+                    <option value="25">25</option>
+                    <option value="50">50</option>
+                    <option value="100">100</option>
+                </select>
+            </div>
+        </div>
+    </div>
+
+    <div class="table-responsive">
+        <table class="table custom-table align-middle">
+            <thead>
+                <tr>
+                    <th>အမည်</th>
+                    <th>အီးမေးလ်</th>
+                    <th>ဖုန်း</th>
+                    <th>ရာထူး</th>
+                    <th>တည်နေရာ</th>
+                    <th class="text-center">အခြေအနေ</th>
+                    <th class="text-end">လုပ်ဆောင်ချက်</th>
+                </tr>
+            </thead>
+            <tbody id="userTableBody">
+                <tr><td colspan="7" class="text-center text-muted py-4">ဒေတာ ရယူနေသည်...</td></tr>
+            </tbody>
+        </table>
+    </div>
+
+    <div class="pagination-wrap" id="paginationWrap">
+        <div class="pagination-info" id="paginationInfo">—</div>
+        <ul class="pagination" id="paginationControls"></ul>
+    </div>
+</div>
+
+<!-- ================= CREATE / EDIT USER MODAL ================= -->
+<div class="modal fade" id="userFormModal" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-lg modal-dialog-centered">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h6 class="modal-title" id="modalTitle"><i class="bi bi-person-plus-fill me-2"></i>အသုံးပြုသူအသစ် ဖန်တီးခြင်း</h6>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <form id="userForm">
+                    <input type="hidden" id="editUserId" value="">
+                    <div class="row g-3">
+                        <div class="col-md-6">
+                            <label class="field-label">အသုံးပြုသူအမည် <span class="req">*</span></label>
+                            <input type="text" id="username" class="input-field" required>
+                        </div>
+                        <div class="col-md-6">
+                            <label class="field-label">အသုံးပြုသူ အမျိုးအစား <span class="req">*</span></label>
+                            <select id="role" class="input-field" required>
+                                <option value="">ရွေးချယ်ပါ...</option>
+                            </select>
+                        </div>
+
+                        <div class="col-md-6">
+                            <label class="field-label">အီးမေးလ် (Login) <span class="req">*</span></label>
+                            <input type="email" id="email" class="input-field" required>
+                        </div>
+                        <div class="col-md-6">
+                            <label class="field-label">ဖုန်းနံပါတ် <span class="req">*</span></label>
+                            <input type="tel" id="phone" class="input-field" required>
+                        </div>
+
+                        <div class="col-12">
+                            <div class="location-box" id="locationBox" style="display:none;">
+                                <div class="row g-3">
+                                    <div class="col-12 mb-2">
+                                        <span class="fw-bold text-success" style="font-size:0.8rem;"><i class="bi bi-geo-alt-fill me-1"></i>တည်နေရာ သတ်မှတ်ခြင်း</span>
+                                    </div>
+                                    <div class="col-md-4" id="modalStateWrap">
+                                        <label class="field-label">တိုင်းဒေသကြီး <span class="req">*</span></label>
+                                        <select id="modalState" class="input-field"><option value="">ရွေးပါ...</option></select>
+                                    </div>
+                                    <div class="col-md-4" id="modalDistrictWrap" style="display:none;">
+                                        <label class="field-label">ခရိုင် <span class="req">*</span></label>
+                                        <select id="modalDistrict" class="input-field" disabled><option value="">ရွေးပါ...</option></select>
+                                    </div>
+                                    <div class="col-md-4" id="modalTownshipWrap" style="display:none;">
+                                        <label class="field-label">မြို့နယ် <span class="req">*</span></label>
+                                        <select id="modalTownship" class="input-field" disabled><option value="">ရွေးပါ...</option></select>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="col-12 text-end mt-4">
+                            <button type="button" class="btn btn-light border me-2" data-bs-dismiss="modal">ဖျက်သိမ်း</button>
+                            <button type="submit" class="btn-add-new" id="btnSubmit">
+                                <i class="bi bi-check-circle"></i> သိမ်းဆည်းမည်
+                            </button>
+                        </div>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- ================= EXCEL IMPORT MODAL ================= -->
+<div class="modal fade" id="importExcelModal" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-lg modal-dialog-centered">
+        <div class="modal-content">
+            <div class="modal-header" style="background: linear-gradient(135deg, #fffbeb, #fef3c7); border-bottom: 1px solid #fcd34d;">
+                <h6 class="modal-title text-warning-emphasis"><i class="bi bi-file-earmark-excel-fill me-2"></i>Excel ဖြင့် အသုံးပြုသူ ထည့်သွင်းခြင်း</h6>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <div class="alert alert-warning py-2 mb-3" style="font-size:0.78rem;">
+                    <i class="bi bi-info-circle-fill me-1"></i> ကျေးဇူးပြု၍ မှန်ကန်သောဖိုင်အားရွေးချယ်ထည့်သွင်းပါ။
+                </div>
+
+                <form id="importForm">
+                    <div class="col-12">
+                        <div class="location-box" style="background:#f0f9ff; border-color:#bae6fd;">
+                            <label class="field-label text-primary"><i class="bi bi-file-earmark-excel me-1"></i> Excel ဖိုင် ရွေးချယ်ပါ <span class="req">*</span></label>
+                            <input type="file" id="excelFile" class="form-control" accept=".xlsx, .xls" style="font-size:0.85rem;" required>
+                        </div>
+                    </div>
+
+                    <div class="col-12 text-end mt-4">
+                        <button type="button" class="btn btn-light border me-2" data-bs-dismiss="modal">ဖျက်သိမ်း</button>
+                        <button type="submit" class="btn-import-excel" id="btnProcessImport">
+                            <i class="bi bi-upload"></i> ထည့်သွင်းမည်
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- ================= EXCEL EXPORT MODAL ================= -->
+<div class="modal fade" id="exportExcelModal" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content">
+            <div class="modal-header" style="background: linear-gradient(135deg, #ecfdf5, #d1fae5); border-bottom: 1px solid #a7f3d0;">
+                <h6 class="modal-title text-success"><i class="bi bi-file-earmark-arrow-down-fill me-2"></i>Excel ဖြင့် ထုတ်ယူခြင်း</h6>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <div class="d-flex justify-content-between align-items-center mb-3">
+                    <span class="fw-bold" style="font-size:0.85rem; color:#065f46;">ထုတ်ယူလိုသော ရာထူးများ ရွေးပါ</span>
+                    <!-- ⭐ Toggle Button -->
+                    <button type="button" class="btn btn-sm btn-outline-success" id="btnSelectAllRoles" style="font-size:0.75rem;">
+                        <i class="bi bi-check2-square"></i> အားလုံးရွေးမည်
+                    </button>
+                </div>
+
+                <div class="row g-2 mb-4">
+                    <div class="col-6">
+                        <label class="role-check-box">
+                            <input type="checkbox" class="export-role-check" value="1">
+                            <span>Admin</span>
+                        </label>
+                    </div>
+                    <div class="col-6">
+                        <label class="role-check-box">
+                            <input type="checkbox" class="export-role-check" value="2">
+                            <span>Union</span>
+                        </label>
+                    </div>
+                    <div class="col-6">
+                        <label class="role-check-box">
+                            <input type="checkbox" class="export-role-check" value="3">
+                            <span>တိုင်းဒေသကြီး</span>
+                        </label>
+                    </div>
+                    <div class="col-6">
+                        <label class="role-check-box">
+                            <input type="checkbox" class="export-role-check" value="4">
+                            <span>ခရိုင်</span>
+                        </label>
+                    </div>
+                    <div class="col-6">
+                        <label class="role-check-box">
+                            <input type="checkbox" class="export-role-check" value="5">
+                            <span>မြို့နယ်</span>
+                        </label>
+                    </div>
+                    <div class="col-6">
+                        <label class="role-check-box">
+                            <input type="checkbox" class="export-role-check" value="6">
+                            <span>စာရင်းကောက်သူ</span>
+                        </label>
+                    </div>
+                </div>
+
+                <div class="col-12 text-end">
+                    <button type="button" class="btn btn-light border me-2" data-bs-dismiss="modal">ဖျက်သိမ်း</button>
+                    <button type="button" class="btn-export-excel" id="btnConfirmExport">
+                        <i class="bi bi-download"></i> ထုတ်ယူမည်
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- ================= EXPORT OPTIONS MODAL ================= -->
+<div class="modal fade" id="exportOptionModal" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content text-center">
+            <div class="modal-body p-4">
+                <div class="mx-auto mb-3 d-flex align-items-center justify-content-center rounded-circle" style="width:60px; height:60px; background:#dbeafe;">
+                    <i class="bi bi-layers-fill text-primary" style="font-size:1.8rem;"></i>
+                </div>
+                <h6 class="fw-bold mb-2">Sheet ပုံစံ ရွေးချယ်ပါ</h6>
+                <p class="text-muted small mb-4">
+                    သင်ရွေးချယ်ထားသော ရာထူး (၁) ခုထက်ပိုပါဝင်နေပါသည်။ Sheet ကို ဘယ်လိုပုံစံဖြင့် ထုတ်ယူမည်လဲ?
+                </p>
+                <div class="d-flex flex-column gap-2 mb-3">
+                    <button type="button" class="sheet-option-btn btn btn-outline-success text-start p-3" data-split="1">
+                        <div class="d-flex align-items-center gap-2">
+                            <i class="bi bi-grid-3x3-gap-fill fs-4"></i>
+                            <div>
+                                <div class="fw-bold" style="font-size:0.85rem;">Sheet ခွဲထုတ်</div>
+                                <div class="text-muted" style="font-size:0.7rem;">ရာထူးတစ်ခုချင်းစီအတွက် Sheet သီးသန့်ခွဲထုတ်</div>
+                            </div>
+                        </div>
+                    </button>
+                    <button type="button" class="sheet-option-btn btn btn-outline-primary text-start p-3" data-split="0">
+                        <div class="d-flex align-items-center gap-2">
+                            <i class="bi bi-file-earmark-spreadsheet-fill fs-4"></i>
+                            <div>
+                                <div class="fw-bold" style="font-size:0.85rem;">Sheet တစ်ခုတည်း</div>
+                                <div class="text-muted" style="font-size:0.7rem;">အားလုံးကို Sheet တစ်ခုတည်းမှာ စုစည်းထုတ်</div>
+                            </div>
+                        </div>
+                    </button>
+                </div>
+                <button type="button" class="btn btn-light border w-100" data-bs-dismiss="modal">မလုပ်တော့ပါ</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- ================= CONFIRM IMPORT MODAL ================= -->
+<div class="modal fade" id="confirmImportModal" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content text-center">
+            <div class="modal-body p-4">
+                <div class="mx-auto mb-3 d-flex align-items-center justify-content-center rounded-circle" style="width:60px; height:60px; background:#fef3c7;">
+                    <i class="bi bi-exclamation-triangle-fill text-warning" style="font-size:1.8rem;"></i>
+                </div>
+                <h6 class="fw-bold mb-2">အတည်ပြုပါ</h6>
+                <p class="text-muted small mb-4">
+                    သင်တင်လိုက်သော Excel ဖိုင်အတွင်းရှိ အချက်အလက်များကို ထည့်သွင်းသွားမည်ဖြစ်ပါသည်။ ဆက်လက်လုပ်ဆောင်မှာ သေချာပါသလား?
+                </p>
+                <div class="d-flex gap-2">
+                    <button type="button" class="btn btn-light border flex-fill" data-bs-dismiss="modal">မလုပ်တော့ပါ</button>
+                    <button type="button" class="btn flex-fill text-white" id="btnConfirmImport" style="background:#d97706; border:none;">
+                        <i class="bi bi-upload"></i> ထည့်သွင်းမည်
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- ================= CONFIRM RESET PASSWORD MODAL ================= -->
+<div class="modal fade" id="resetPasswordModal" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered modal-sm">
+        <div class="modal-content text-center">
+            <div class="modal-body p-4">
+                <div class="mx-auto mb-3 d-flex align-items-center justify-content-center rounded-circle" style="width:60px; height:60px; background:#fee2e2;">
+                    <i class="bi bi-key-fill text-danger" style="font-size:1.8rem;"></i>
+                </div>
+                <h6 class="fw-bold mb-2">Password ပြန်ပြောင်းမည်</h6>
+                <p class="text-muted small mb-4" id="resetPwMessage">
+                    ဤအသုံးပြုသူ၏ Password ကို default သို့ ပြောင်းလဲသွားမည်။ ဆက်လက်လုပ်ဆောင်မှာ သေချာပါသလား?
+                </p>
+                <div class="d-flex gap-2">
+                    <button type="button" class="btn btn-light border flex-fill" data-bs-dismiss="modal">မလုပ်တော့ပါ</button>
+                    <button type="button" class="btn btn-danger flex-fill" id="btnConfirmResetPw">
+                        <i class="bi bi-arrow-clockwise"></i> ပြောင်းမည်
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- ================= RESULT MODAL ================= -->
+<div class="modal fade" id="resultModal" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered modal-sm">
+        <div class="modal-content text-center">
+            <div class="modal-body p-4">
+                <div id="resIconWrap" class="mx-auto mb-3 d-flex align-items-center justify-content-center rounded-circle" style="width:60px; height:60px;">
+                    <i id="resIcon" class="bi bi-check-circle-fill" style="font-size:1.8rem;"></i>
+                </div>
+                <h6 id="resTitle" class="fw-bold mb-2">အောင်မြင်ပါသည်</h6>
+                <p id="resMsg" class="text-muted small mb-4"></p>
+                <button type="button" class="btn w-100 fw-bold py-2 text-white" data-bs-dismiss="modal" style="background:#047857; border:none; border-radius:8px; font-size:0.85rem;">
+                    OK
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<!-- Excel Export/Import Library -->
+<script src="https://cdn.jsdelivr.net/npm/xlsx-js-style@1.2.0/dist/xlsx.bundle.js"></script>
+<script>
+    let userModalInstance = null;
+    let importModalInstance = null;
+    let confirmImportModalInstance = null;
+    let resetPwModalInstance = null;
+    let resultModalInstance = null;
+    let exportModalInstance = null;
+    let exportOptionModalInstance = null;
+    let currentRoleFilter = "";
+    
+    let currentPage = 1;
+    let perPage = 10;
+    let totalPages = 1;
+    let searchQuery = "";
+    let searchDebounceTimer = null;
+    let resetPwTarget = null;
+    let currentExportRoles = [];
+
+    function showResult(success, title, msg) {
+        const iconWrap = document.getElementById('resIconWrap');
+        const icon = document.getElementById('resIcon');
+        if (success) { iconWrap.style.background = '#d1fae5'; icon.className = 'bi bi-check-circle-fill text-success'; }
+        else { iconWrap.style.background = '#fee2e2'; icon.className = 'bi bi-x-circle-fill text-danger'; }
+        document.getElementById('resTitle').textContent = title;
+        document.getElementById('resMsg').textContent = msg;
+        if (!resultModalInstance) resultModalInstance = new bootstrap.Modal(document.getElementById('resultModal'));
+        resultModalInstance.show();
+    }
+
+    async function loadDropdowns() {
+        try {
+            const resState = await fetch('/api/locations');
+            const states = await resState.json();
+            const modalState = document.getElementById('modalState');
+            states.forEach(s => {
+                modalState.innerHTML += `<option value="${s.stateID}">${s.stateName}</option>`;
+            });
+
+            const resRole = await fetch('/api/system/roles');
+            const roles = await resRole.json();
+            const selRole = document.getElementById('role');
+
+            const ROLE_NAMES_MM = {
+                1: "Admin", 2: "Union", 3: "တိုင်းဒေသကြီး",
+                4: "ခရိုင်", 5: "မြို့နယ်", 6: "စာရင်းကောက်သူ"
+            };
+
+            roles.roles.forEach(r => {
+                const text = ROLE_NAMES_MM[r.id] || r.name;
+                selRole.innerHTML += `<option value="${r.id}">${text}</option>`;
+            });
+        } catch (e) { console.error(e); }
+    }
+
+    // ⭐ Create / Edit Modal Cascading (Admin/Union အတွက် တိုင်းမလိုအပ်အောင် ပြင်ထားသည်)
+    document.getElementById('role').addEventListener('change', function() {
+        const roleId = parseInt(this.value);
+        const box = document.getElementById('locationBox');
+        const stateWrap = document.getElementById('modalStateWrap');
+        const distWrap = document.getElementById('modalDistrictWrap');
+        const townWrap = document.getElementById('modalTownshipWrap');
+
+        document.getElementById('modalState').value = '';
+        document.getElementById('modalDistrict').value = '';
+        document.getElementById('modalTownship').value = '';
+        document.getElementById('modalDistrict').disabled = true;
+        document.getElementById('modalTownship').disabled = true;
+
+        // ⭐ Role 1 (Admin) နဲ့ 2 (Union) အတွက် Location လုံးဝ မပြပါ
+        if (!roleId || roleId === 1 || roleId === 2) { 
+            box.style.display = 'none'; 
+            return; 
+        }
+        
+        box.style.display = 'block';
+
+        if (roleId === 3) { stateWrap.style.display = 'block'; distWrap.style.display = 'none'; townWrap.style.display = 'none'; }
+        else if (roleId === 4) { stateWrap.style.display = 'block'; distWrap.style.display = 'block'; townWrap.style.display = 'none'; }
+        else { stateWrap.style.display = 'block'; distWrap.style.display = 'block'; townWrap.style.display = 'block'; }
+    });
+
+    document.getElementById('modalState').addEventListener('change', async function() {
+        const sid = this.value;
+        const selDist = document.getElementById('modalDistrict');
+        const selTown = document.getElementById('modalTownship');
+        selDist.innerHTML = '<option value="">ရွေးပါ...</option>';
+        selTown.innerHTML = '<option value="">ရွေးပါ...</option>';
+        selDist.disabled = true; selTown.disabled = true;
+        if (!sid) return;
+        const roleId = parseInt(document.getElementById('role').value);
+        if (roleId >= 4) {
+            selDist.disabled = false;
+            const res = await fetch(`/api/locations?state_id=${sid}`);
+            const data = await res.json();
+            data.forEach(d => selDist.innerHTML += `<option value="${d.districtID}">${d.districtName}</option>`);
+        }
+    });
+
+    document.getElementById('modalDistrict').addEventListener('change', async function() {
+        const sid = document.getElementById('modalState').value;
+        const did = this.value;
+        const selTown = document.getElementById('modalTownship');
+        selTown.innerHTML = '<option value="">ရွေးပါ...</option>';
+        selTown.disabled = true;
+        if (!sid || !did) return;
+        const roleId = parseInt(document.getElementById('role').value);
+        if (roleId >= 5) {
+            selTown.disabled = false;
+            const res = await fetch(`/api/locations?state_id=${sid}&district_id=${did}`);
+            const data = await res.json();
+            data.forEach(t => selTown.innerHTML += `<option value="${t.townshipID}">${t.townshipName}</option>`);
+        }
+    });
+
+    async function fetchUsers() {
+        const params = new URLSearchParams();
+        params.append('page', currentPage);
+        params.append('per_page', perPage);
+        if (currentRoleFilter) params.append('role_filter', currentRoleFilter);
+        if (searchQuery) params.append('q', searchQuery);
+
+        try {
+            const res = await fetch('/api/system/users/search?' + params.toString());
+            const data = await res.json();
+            if (!res.ok) {
+                showResult(false, 'မအောင်မြင်ပါ', data.detail || 'ဒေတာ ရယူ၍ မရပါ။');
+                return;
+            }
+            totalPages = data.total_pages || 1;
+            if (currentPage > totalPages) {
+                currentPage = totalPages;
+                return fetchUsers();
+            }
+            renderTable(data.users || []);
+            renderPagination(data.total || 0, data.page || 1, data.total_pages || 1);
+        } catch (e) {
+            console.error(e);
+            showResult(false, 'Server Error', 'ဆာဗာနှင့် ချိတ်ဆက်၍ မရပါ။');
+        }
+    }
+
+    function renderTable(users) {
+        const tbody = document.getElementById('userTableBody');
+        if (users.length === 0) {
+            tbody.innerHTML = `<tr><td colspan="7" class="text-center text-muted py-4">မှတ်တမ်း မရှိပါ</td></tr>`;
+            return;
+        }
+
+        const ROLE_NAMES_MM = {
+            1: "Admin", 2: "Union", 3: "တိုင်းဒေသကြီး",
+            4: "ခရိုင်", 5: "မြို့နယ်", 6: "စာရင်းကောက်သူ"
+        };
+
+        tbody.innerHTML = users.map(u => {
+            let loc = '';
+            if (u.stateName) loc += u.stateName;
+            if (u.districtName) loc += ' / ' + u.districtName;
+            if (u.townshipName) loc += ' / ' + u.townshipName;
+            if (!loc) loc = '—';
+
+            const isChecked = u.status == 1 ? 'checked' : '';
+            const roleNameMM = ROLE_NAMES_MM[u.userRole] || u.roleName;
+            
+            let badgeClass = `role-${u.userRole}`;
+
+            return `
+                <tr>
+                    <td class="fw-bold">${u.userName}</td>
+                    <td>${u.email}</td>
+                    <td>${u.phone || '—'}</td>
+                    <td><span class="badge-role ${badgeClass}">${roleNameMM}</span></td>
+                    <td>${loc}</td>
+                    <td class="text-center">
+                        <div class="form-check form-switch d-inline-block">
+                            <input class="form-check-input" type="checkbox" ${isChecked}
+                                   onchange="toggleStatus(${u.userId}, this.checked)">
+                        </div>
+                    </td>
+                    <td class="text-end">
+                        <div class="d-inline-flex gap-1">
+                            <button class="btn-edit" onclick='openEditModal(${JSON.stringify(u)})' title="ပြင်ဆင်မည်">
+                                <i class="bi bi-pencil-square"></i>
+                            </button>
+                            <button class="btn-reset-pw" onclick="openResetPwModal(${u.userId}, '${u.userName.replace(/'/g, "\\'")}')" title="Password Reset">
+                                <i class="bi bi-key-fill"></i> Reset
+                            </button>
+                        </div>
+                    </td>
+                </tr>
+            `;
+        }).join('');
+    }
+
+    function renderPagination(total, page, pages) {
+        const info = document.getElementById('paginationInfo');
+        const ctrl = document.getElementById('paginationControls');
+
+        if (total === 0) {
+            info.innerHTML = `မှတ်တမ်း မရှိပါ`;
+            ctrl.innerHTML = '';
+            return;
+        }
+
+        const start = (page - 1) * perPage + 1;
+        const end = Math.min(page * perPage, total);
+        info.innerHTML = `စုစုပေါင်း <b>${total}</b> ခုအနက် <b>${start}–${end}</b> ကို ပြနေသည်`;
+
+        let html = '';
+        html += `<li><button class="page-btn" ${page === 1 ? 'disabled' : ''} onclick="goToPage(${page - 1})"><i class="bi bi-chevron-left"></i></button></li>`;
+
+        const pageList = [];
+        if (pages <= 7) {
+            for (let i = 1; i <= pages; i++) pageList.push(i);
+        } else {
+            pageList.push(1);
+            if (page > 3) pageList.push('…');
+            const s = Math.max(2, page - 1);
+            const e = Math.min(pages - 1, page + 1);
+            for (let i = s; i <= e; i++) pageList.push(i);
+            if (page < pages - 2) pageList.push('…');
+            pageList.push(pages);
+        }
+
+        pageList.forEach(p => {
+            if (p === '…') {
+                html += `<li><span class="page-btn-ellipsis">…</span></li>`;
+            } else {
+                html += `<li><button class="page-btn ${p === page ? 'active' : ''}" onclick="goToPage(${p})">${p}</button></li>`;
+            }
+        });
+
+        html += `<li><button class="page-btn" ${page === pages ? 'disabled' : ''} onclick="goToPage(${page + 1})"><i class="bi bi-chevron-right"></i></button></li>`;
+        ctrl.innerHTML = html;
+    }
+
+    window.goToPage = function(p) {
+        if (p < 1 || p > totalPages || p === currentPage) return;
+        currentPage = p;
+        fetchUsers();
+        document.querySelector('.table-card').scrollIntoView({ behavior: 'smooth', block: 'start' });
+    };
+
+    document.getElementById('searchInput').addEventListener('input', function() {
+        const val = this.value;
+        const clearBtn = document.getElementById('searchClear');
+        clearBtn.style.display = val ? 'block' : 'none';
+        clearTimeout(searchDebounceTimer);
+        searchDebounceTimer = setTimeout(() => {
+            searchQuery = val.trim();
+            currentPage = 1;
+            fetchUsers();
+        }, 300);
+    });
+
+    document.getElementById('searchClear').addEventListener('click', function() {
+        const input = document.getElementById('searchInput');
+        input.value = '';
+        this.style.display = 'none';
+        searchQuery = '';
+        currentPage = 1;
+        fetchUsers();
+        input.focus();
+    });
+
+    document.getElementById('perPageSelect').addEventListener('change', function() {
+        perPage = parseInt(this.value);
+        currentPage = 1;
+        fetchUsers();
+    });
+
+    async function toggleStatus(userId, isChecked) {
+        const newStatus = isChecked ? 1 : 0;
+        try {
+            const res = await fetch('/api/system/users/action', {
+                method: 'POST', headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ userId, action: 'toggle', status: newStatus })
+            });
+            if (!res.ok) throw new Error();
+        } catch (e) {
+            showResult(false, 'မအောင်မြင်ပါ', 'Status ပြောင်းလဲမှု မအောင်မြင်ပါ။');
+            fetchUsers();
+        }
+    }
+
+    function resetForm() {
+        document.getElementById('userForm').reset();
+        document.getElementById('editUserId').value = '';
+        document.getElementById('role').value = '';
+        document.getElementById('locationBox').style.display = 'none';
+
+        const selState = document.getElementById('modalState');
+        const selDist = document.getElementById('modalDistrict');
+        const selTown = document.getElementById('modalTownship');
+
+        selState.value = '';
+        selDist.innerHTML = '<option value="">ရွေးပါ...</option>';
+        selTown.innerHTML = '<option value="">ရွေးပါ...</option>';
+        selDist.disabled = true; selTown.disabled = true;
+    }
+
+    function openCreateModal() {
+        resetForm();
+        document.getElementById('modalTitle').innerHTML = '<i class="bi bi-person-plus-fill me-2"></i>အသုံးပြုသူအသစ် ဖန်တီးခြင်း';
+        if (!userModalInstance) userModalInstance = new bootstrap.Modal(document.getElementById('userFormModal'));
+        userModalInstance.show();
+    }
+
+    async function openEditModal(user) {
+        resetForm();
+        document.getElementById('modalTitle').innerHTML = '<i class="bi bi-pencil-square me-2"></i>အချက်အလက် ပြင်ဆင်ခြင်း';
+
+        document.getElementById('editUserId').value = user.userId;
+        document.getElementById('username').value = user.userName;
+        document.getElementById('email').value = user.email;
+        document.getElementById('phone').value = user.phone || '';
+
+        document.getElementById('role').value = user.userRole;
+        document.getElementById('role').dispatchEvent(new Event('change'));
+
+        if (user.userRole >= 3) {
+            document.getElementById('modalState').value = user.stateID || '';
+
+            if (user.userRole >= 4) {
+                document.getElementById('modalState').dispatchEvent(new Event('change'));
+                setTimeout(async () => {
+                    if (user.districtID) {
+                        document.getElementById('modalDistrict').value = user.districtID;
+                        document.getElementById('modalDistrict').dispatchEvent(new Event('change'));
+                    }
+                    if (user.userRole >= 5 && user.townshipID) {
+                        setTimeout(() => {
+                            document.getElementById('modalTownship').value = user.townshipID;
+                        }, 300);
+                    }
+                }, 300);
+            }
+        }
+
+        if (!userModalInstance) userModalInstance = new bootstrap.Modal(document.getElementById('userFormModal'));
+        userModalInstance.show();
+    }
+
+    window.openResetPwModal = function(userId, userName) {
+        resetPwTarget = { userId, userName };
+        document.getElementById('resetPwMessage').innerHTML =
+            `<b>${userName}</b> ၏ Password ကို default (<b>12345678</b>) သို့ ပြောင်းလဲသွားမည်။ ဆက်လက်လုပ်ဆောင်မှာ သေချာပါသလား?`;
+        if (!resetPwModalInstance) resetPwModalInstance = new bootstrap.Modal(document.getElementById('resetPasswordModal'));
+        resetPwModalInstance.show();
+    };
+
+    document.getElementById('btnConfirmResetPw').addEventListener('click', async function() {
+        if (!resetPwTarget) return;
+        const btn = this;
+        btn.disabled = true;
+        btn.innerHTML = '<span class="spinner-border spinner-border-sm me-1"></span> ပြောင်းနေသည်...';
+
+        try {
+            const res = await fetch('/api/system/users/reset-password', {
+                method: 'POST', headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ userId: resetPwTarget.userId })
+            });
+            const data = await res.json();
+
+            if (resetPwModalInstance) resetPwModalInstance.hide();
+
+            if (res.ok) {
+                showResult(true, 'အောင်မြင်ပါသည်', data.message || 'Password ကို default ပြန်ပြောင်းပြီးပါပြီ။');
+            } else {
+                showResult(false, 'မအောင်မြင်ပါ', data.detail || 'Password Reset မအောင်မြင်ပါ။');
+            }
+        } catch (e) {
+            console.error(e);
+            if (resetPwModalInstance) resetPwModalInstance.hide();
+            showResult(false, 'Server Error', 'ဆာဗာနှင့် ချိတ်ဆက်၍ မရပါ။');
+        } finally {
+            btn.disabled = false;
+            btn.innerHTML = '<i class="bi bi-arrow-clockwise"></i> ပြောင်းမည်';
+            resetPwTarget = null;
+        }
+    });
+
+    function openImportModal() {
+        document.getElementById('importForm').reset();
+        if (!importModalInstance) importModalInstance = new bootstrap.Modal(document.getElementById('importExcelModal'));
+        importModalInstance.show();
+    }
+
+    function openExportModal() {
+        document.querySelectorAll('.export-role-check').forEach(cb => cb.checked = false);
+        document.getElementById('btnSelectAllRoles').innerHTML = '<i class="bi bi-check2-square"></i> အားလုံးရွေးမည်';
+        if (!exportModalInstance) exportModalInstance = new bootstrap.Modal(document.getElementById('exportExcelModal'));
+        exportModalInstance.show();
+    }
+
+    // ⭐ Toggle Button (အားလုံးရွေးမည် / အားလုံးဖြုတ်မည်) - တစ်ခုတည်း
+    document.getElementById('btnSelectAllRoles').addEventListener('click', function() {
+        const checkboxes = document.querySelectorAll('.export-role-check');
+        const allChecked = Array.from(checkboxes).every(cb => cb.checked);
+        checkboxes.forEach(cb => cb.checked = !allChecked);
+        this.innerHTML = !allChecked 
+            ? '<i class="bi bi-x-square"></i> အားလုံးဖြုတ်မည်' 
+            : '<i class="bi bi-check2-square"></i> အားလုံးရွေးမည်';
+    });
+
+    document.querySelectorAll('.btn-filter').forEach(btn => {
+        btn.addEventListener('click', function() {
+            document.querySelectorAll('.btn-filter').forEach(b => b.classList.remove('active'));
+            this.classList.add('active');
+            currentRoleFilter = this.dataset.role;
+            currentPage = 1;
+            fetchUsers();
+        });
+    });
+
+    document.getElementById('userForm').addEventListener('submit', async function(e) {
+        e.preventDefault();
+        const btn = document.getElementById('btnSubmit');
+        
+        // ⭐ Role 3, 4, 5, 6 အတွက်သာ တိုင်းရွေးထားရမယ်
+        const roleId = parseInt(document.getElementById('role').value);
+        if (roleId >= 3 && !document.getElementById('modalState').value) {
+            showResult(false, 'သတိပေးချက်', 'တိုင်းဒေသကြီး/ပြည်နယ် ရွေးပါ။');
+            return;
+        }
+
+        btn.disabled = true;
+        btn.innerHTML = '<span class="spinner-border spinner-border-sm me-1"></span> သိမ်းဆည်းနေသည်...';
+
+        const userId = document.getElementById('editUserId').value;
+        const isEdit = userId !== '';
+
+        const fd = new FormData();
+        if (isEdit) fd.append('userId', userId);
+
+        fd.append('username', document.getElementById('username').value);
+        fd.append('role_id', roleId);
+        fd.append('email', document.getElementById('email').value);
+        
+        const phoneVal = document.getElementById('phone').value.trim();
+        if (phoneVal) fd.append('phone', phoneVal);
+
+        if (document.getElementById('modalState').value) fd.append('stateID', document.getElementById('modalState').value);
+        if (document.getElementById('modalDistrict').value) fd.append('districtID', document.getElementById('modalDistrict').value);
+        if (document.getElementById('modalTownship').value) fd.append('townshipID', document.getElementById('modalTownship').value);
+
+        const url = isEdit ? '/api/system/users/update' : '/api/system/users/create';
+
+        try {
+            const res = await fetch(url, { method: 'POST', body: fd });
+            const data = await res.json();
+
+            if (res.ok) {
+                if (userModalInstance) userModalInstance.hide();
+                showResult(true, 'အောင်မြင်ပါသည်', data.message || 'သိမ်းဆည်းပြီးပါပြီ။');
+                fetchUsers();
+            } else {
+                showResult(false, 'မအောင်မြင်ပါ', data.detail || 'အမှားအယွင်း ရှိနေပါသည်။');
+            }
+        } catch (err) {
+            console.error(err);
+            showResult(false, 'Server Error', 'ဆာဗာနှင့် ချိတ်ဆက်၍ မရပါ။');
+        } finally {
+            btn.disabled = false;
+            btn.innerHTML = '<i class="bi bi-check-circle"></i> သိမ်းဆည်းမည်';
+        }
+    });
+
+    document.getElementById('importForm').addEventListener('submit', function(e) {
+        e.preventDefault();
+        const fileInput = document.getElementById('excelFile');
+        if (!fileInput.files.length) {
+            showResult(false, 'သတိပေးချက်', 'ကျေးဇူးပြု၍ Excel ဖိုင် ရွေးပါ။');
+            return;
+        }
+        if (!confirmImportModalInstance) confirmImportModalInstance = new bootstrap.Modal(document.getElementById('confirmImportModal'));
+        confirmImportModalInstance.show();
+    });
+
+    document.getElementById('btnConfirmImport').addEventListener('click', async function() {
+        const fileInput = document.getElementById('excelFile');
+        const file = fileInput.files[0];
+        const btn = this;
+
+        btn.disabled = true;
+        btn.innerHTML = '<span class="spinner-border spinner-border-sm me-1"></span> ထည့်သွင်းနေသည်...';
+
+        let overlay = document.getElementById('globalLoadingOverlay');
+        if (!overlay) {
+            overlay = document.createElement('div');
+            overlay.id = 'globalLoadingOverlay';
+            overlay.style.cssText = `position: fixed; inset: 0; background: rgba(255,255,255,0.8); backdrop-filter: blur(3px); z-index: 9999; display: flex; flex-direction: column; align-items: center; justify-content: center;`;
+            overlay.innerHTML = `<div class="spinner-border text-success" style="width: 3rem; height: 3rem;" role="status"></div><div class="mt-3 fw-bold text-success" style="font-size: 0.9rem;">ဒေတာများ ထည့်သွင်းနေပါသည်... ခဏစောင့်ပါ</div>`;
+            document.body.appendChild(overlay);
+        } else {
+            overlay.style.display = 'flex';
+        }
+
+        const fd = new FormData();
+        fd.append('file', file);
+
+        try {
+            const res = await fetch('/api/system/users/import-excel', { method: 'POST', body: fd });
+            const data = await res.json();
+
+            if (confirmImportModalInstance) confirmImportModalInstance.hide();
+            if (importModalInstance) importModalInstance.hide();
+
+            if (res.ok) {
+                if (data.duplicate_count > 0) {
+                    showImportResult(data);
+                } else {
+                    showResult(true, 'အောင်မြင်ပါသည်', `အကောင့် ${data.success_count} ခု ထည့်သွင်းပြီးပါပြီ။\nDefault Password: ${data.default_password}`);
+                }
+                currentPage = 1;
+                fetchUsers();
+            } else {
+                showResult(false, 'မအောင်မြင်ပါ', data.detail || 'အမှားအယွင်း ရှိနေပါသည်။');
+            }
+        } catch (err) {
+            console.error(err);
+            showResult(false, 'Server Error', 'ဆာဗာနှင့် ချိတ်ဆက်၍ မရပါ။');
+        } finally {
+            if (overlay) overlay.style.display = 'none';
+            btn.disabled = false;
+            btn.innerHTML = '<i class="bi bi-upload"></i> ထည့်သွင်းမည်';
+        }
+    });
+
+    function showImportResult(data) {
+        let errHtml = '';
+        if (data.duplicate_emails.length > 0) {
+            errHtml = data.duplicate_emails.map(e => `
+                <tr>
+                    <td>${e.row}</td><td>${e.username}</td>
+                    <td style="font-family:monospace;">${e.email}</td>
+                    <td style="color:#dc2626; font-weight:600;">${e.reason || 'Error'}</td>
+                </tr>
+            `).join('');
+        }
+
+        const resultModalHtml = `
+            <div class="modal fade" id="importResultModal" tabindex="-1">
+                <div class="modal-dialog modal-lg modal-dialog-centered">
+                    <div class="modal-content border-0 shadow-lg">
+                        <div class="modal-header" style="background:#fef3c7; border-bottom:1px solid #fcd34d;">
+                            <h6 class="modal-title fw-bold text-warning-emphasis">ထည့်သွင်းမှု ရလဒ်</h6>
+                            <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                        </div>
+                        <div class="modal-body p-4">
+                            <div class="alert alert-success py-2 mb-3"><i class="bi bi-check-circle-fill me-1"></i> အောင်မြင်စွာ ထည့်သွင်းပြီး: <b>${data.success_count}</b> ခု</div>
+                            <div class="alert alert-danger py-2 mb-3"><i class="bi bi-x-circle-fill me-1"></i> ထည့်သွင်း၍မရပါ: <b>${data.duplicate_count}</b> ခု</div>
+                            <div class="table-responsive" style="max-height:250px;">
+                                <table class="table table-sm table-bordered" style="font-size:0.8rem;">
+                                    <thead class="table-light"><tr><th>Row</th><th>အမည်</th><th>အီးမေးလ်</th><th>အကြောင်းရင်း</th></tr></thead>
+                                    <tbody>${errHtml}</tbody>
+                                </table>
+                            </div>
+                            <div class="mt-3 p-2 rounded" style="background:#ecfdf5; border:1px dashed #a7f3d0;"><i class="bi bi-key-fill text-success me-1"></i> Default Password: <b>${data.default_password}</b></div>
+                            <div class="d-flex gap-2 mt-4 justify-content-end">
+                                <button type="button" class="btn btn-outline-secondary" onclick="copyErrorEmails()"><i class="bi bi-clipboard"></i> Copy ကူးမည်</button>
+                                <button type="button" class="btn btn-danger" onclick="downloadErrorExcel()"><i class="bi bi-download"></i> Excel ဖြင့် ရယူမည်</button>
+                                <button type="button" class="btn btn-success" data-bs-dismiss="modal">ပိတ်မည်</button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        `;
+
+        const old = document.getElementById('importResultModal');
+        if (old) old.remove();
+
+        document.body.insertAdjacentHTML('beforeend', resultModalHtml);
+        const m = new bootstrap.Modal(document.getElementById('importResultModal'));
+        m.show();
+
+        window.copyErrorEmails = function() {
+            const emails = data.duplicate_emails.map(e => e.email).join('\n');
+            navigator.clipboard.writeText(emails).then(() => {
+                const copyBtns = document.querySelectorAll('button[onclick="copyErrorEmails()"]');
+                copyBtns.forEach(btn => {
+                    const originalHtml = btn.innerHTML;
+                    btn.innerHTML = '<i class="bi bi-check2-all"></i> ကူးယူပြီးပါပြီ';
+                    btn.classList.remove('btn-outline-secondary');
+                    btn.classList.add('btn-success');
+                    setTimeout(() => {
+                        btn.innerHTML = originalHtml;
+                        btn.classList.remove('btn-success');
+                        btn.classList.add('btn-outline-secondary');
+                    }, 2000);
+                });
+            });
+        };
+
+        window.downloadErrorExcel = async function() {
+            try {
+                const res = await fetch('/api/system/users/import-excel/errors', {
+                    method: 'POST', headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ errors: data.duplicate_emails })
+                });
+                if (res.ok) {
+                    const blob = await res.blob();
+                    const url = window.URL.createObjectURL(blob);
+                    const a = document.createElement('a');
+                    a.href = url;
+                    a.download = 'Import_Errors.xlsx';
+                    a.click();
+                    window.URL.revokeObjectURL(url);
+                } else { alert('Download မအောင်မြင်ပါ။'); }
+            } catch (e) { alert('Server Error'); }
+        };
+    }
+
+    // ==================================================
+    // ⭐ EXPORT EXCEL ENGINE
+    // ==================================================
+    
+    document.getElementById('btnConfirmExport').addEventListener('click', function() {
+        const selectedRoles = [];
+        document.querySelectorAll('.export-role-check:checked').forEach(cb => {
+            selectedRoles.push(cb.value);
+        });
+
+        if (selectedRoles.length === 0) {
+            alert('ကျေးဇူးပြု၍ အနည်းဆုံး ရာထူးတစ်ခု ရွေးပါ။');
+            return;
+        }
+
+        currentExportRoles = selectedRoles;
+
+        if (selectedRoles.length > 1) {
+            if (exportModalInstance) exportModalInstance.hide();
+            if (!exportOptionModalInstance) exportOptionModalInstance = new bootstrap.Modal(document.getElementById('exportOptionModal'));
+            exportOptionModalInstance.show();
+        } else {
+            if (exportModalInstance) exportModalInstance.hide();
+            doExportExcel(selectedRoles, false);
+        }
+    });
+
+    document.querySelectorAll('.sheet-option-btn').forEach(btn => {
+        btn.addEventListener('click', function() {
+            const split = this.dataset.split === '1';
+            if (exportOptionModalInstance) exportOptionModalInstance.hide();
+            setTimeout(() => {
+                doExportExcel(currentExportRoles, split);
+            }, 300);
+        });
+    });
+
+    async function doExportExcel(roleIds, splitSheets) {
+        let overlay = document.getElementById('globalLoadingOverlay');
+        if (!overlay) {
+            overlay = document.createElement('div');
+            overlay.id = 'globalLoadingOverlay';
+            overlay.style.cssText = `position: fixed; inset: 0; background: rgba(255,255,255,0.8); backdrop-filter: blur(3px); z-index: 9999; display: flex; flex-direction: column; align-items: center; justify-content: center;`;
+            overlay.innerHTML = `<div class="spinner-border text-success" style="width: 3rem; height: 3rem;" role="status"></div><div class="mt-3 fw-bold text-success" style="font-size: 0.9rem;">Excel ဖိုင် ထုတ်ယူနေပါသည်... ခဏစောင့်ပါ</div>`;
+            document.body.appendChild(overlay);
+        } else {
+            overlay.style.display = 'flex';
+        }
+
+        try {
+            const roleQuery = roleIds.join(',');
+            const res = await fetch(`/api/system/users/export-data?roles=${roleQuery}`);
+            const data = await res.json();
+
+            if (!res.ok) throw new Error(data.detail || 'ဒေတာ ရယူ၍ မရပါ။');
+
+            const allUsers = data.users || [];
+            if (allUsers.length === 0) {
+                alert('ရွေးချယ်ထားသော ရာထူးများအတွက် မှတ်တမ်း မရှိပါ။');
+                return;
+            }
+
+            const wb = XLSX.utils.book_new();
+            const ROLE_NAMES_MM = {
+                "1": "Admin", "2": "Union", "3": "တိုင်းဒေသကြီး", 
+                "4": "ခရိုင်", "5": "မြို့နယ်", "6": "စာရင်းကောက်သူ"
+            };
+
+            // ⭐ မြန်မာစာ ခေါင်းစဉ်များ
+            const headers = ["စဉ်", "အမည်", "အီးမေးလ်", "ဖုန်း", "ရာထူး", "တိုင်း", "ခရိုင်", "မြို့နယ်", "အကောင့်အခြေအနေ", "Default Password"];
+            
+            const TITLE_ROW_1 = "စိုက်ပျိုးရေး၊ မွေးမြူရေးနှင့် ဆည်မြောင်းဝန်ကြီးဌာန";
+            const TITLE_ROW_2 = "မွေးမြူရေးနှင့် ကုသရေးဦးစီးဌာန";
+            const TITLE_ROW_3 = "စနစ်အသုံးပြုသူများ၏ အချက်အလက်စာရင်း";
+
+            // ⭐ Style တွေ သတ်မှတ်မယ်
+            const titleStyle = { font: { name: 'Pyidaungsu', sz: 14, bold: true }, alignment: { horizontal: 'center', vertical: 'center' } };
+            const subTitleStyle = { font: { name: 'Pyidaungsu', sz: 12, bold: true }, alignment: { horizontal: 'center', vertical: 'center' } };
+            const headerStyle = { font: { name: 'Pyidaungsu', sz: 11, bold: true, color: { rgb: "FFFFFF" } }, fill: { fgColor: { rgb: "10B981" } }, alignment: { horizontal: 'center', vertical: 'center', wrapText: true }, border: { top: {style:"thin"}, bottom: {style:"thin"}, left: {style:"thin"}, right: {style:"thin"} } };
+            const cellStyle = { font: { name: 'Pyidaungsu', sz: 10 }, alignment: { horizontal: 'center', vertical: 'center' }, border: { top: {style:"thin"}, bottom: {style:"thin"}, left: {style:"thin"}, right: {style:"thin"} } };
+
+            function buildSheet(usersData, sheetTitle) {
+                const aoa = [];
+                // Title တွေ ထည့်မယ်
+                aoa.push([TITLE_ROW_1]);
+                aoa.push([TITLE_ROW_2]);
+                aoa.push([TITLE_ROW_3 + ` (${sheetTitle})`]);
+                aoa.push([]); // Space ခြားမယ်
+                aoa.push(headers);
+
+                usersData.forEach((u, i) => {
+                    let roleName = ROLE_NAMES_MM[u.userRole] || u.userRole;
+                    let statusText = u.status == 1 ? "အသုံးပြုနိုင်" : "ပိတ်ထား";
+                    
+                    aoa.push([
+                        i + 1,
+                        u.userName || "",
+                        u.email || "",
+                        u.phone || "",
+                        roleName,
+                        u.stateName || "",
+                        u.districtName || "",
+                        u.townshipName || "",
+                        statusText,
+                        "12345678" // Default Password ကို ပြမယ်
+                    ]);
+                });
+
+                const ws = XLSX.utils.aoa_to_sheet(aoa);
+                
+                // Column တွေရဲ့ အကျယ် သတ်မှတ်မယ်
+                ws['!cols'] = [
+                    {wch: 6}, {wch: 25}, {wch: 30}, {wch: 15}, {wch: 15}, 
+                    {wch: 20}, {wch: 20}, {wch: 20}, {wch: 15}, {wch: 18}
+                ];
+
+                // Merge Title
+                if (!ws['!merges']) ws['!merges'] = [];
+                ws['!merges'].push({ s: { r: 0, c: 0 }, e: { r: 0, c: 9 } });
+                ws['!merges'].push({ s: { r: 1, c: 0 }, e: { r: 1, c: 9 } });
+                ws['!merges'].push({ s: { r: 2, c: 0 }, e: { r: 2, c: 9 } });
+
+                // Row အမြင့်တွေ သတ်မှတ်မယ်
+                ws['!rows'] = [{ hpt: 24 }, { hpt: 24 }, { hpt: 24 }, { hpt: 10 }, { hpt: 30 }];
+
+                // Styles တွေ လိုက်ထည့်မယ်
+                const range = XLSX.utils.decode_range(ws['!ref']);
+                for (let R = range.s.r; R <= range.e.r; R++) {
+                    for (let C = range.s.c; C <= range.e.c; C++) {
+                        let cell = ws[XLSX.utils.encode_cell({ r: R, c: C })];
+                        if (!cell) continue;
+
+                        if (R === 0 || R === 1) cell.s = titleStyle;
+                        else if (R === 2) cell.s = subTitleStyle;
+                        else if (R === 4) cell.s = headerStyle;
+                        else if (R > 4) cell.s = cellStyle;
+                    }
+                }
+
+                return ws;
+            }
+
+            if (splitSheets) {
+                roleIds.forEach(rid => {
+                    const roleUsers = allUsers.filter(u => String(u.userRole) === String(rid));
+                    if (roleUsers.length === 0) return;
+
+                    const sheetName = ROLE_NAMES_MM[rid] || rid;
+                    const ws = buildSheet(roleUsers, sheetName);
+                    XLSX.utils.book_append_sheet(wb, ws, sheetName);
+                });
+            } else {
+                // ⭐ Role တစ်ခုတည်း ရွေးထားရင် အဲ့ဒီ Role နာမည်ကိုပဲ ပြမယ်
+                let sheetTitle = "အားလုံး";
+                let fileName = "Users_Export";
+                
+                if (roleIds.length === 1) {
+                    sheetTitle = ROLE_NAMES_MM[roleIds[0]] || roleIds[0];
+                    fileName = `${sheetTitle}_Export`;
+                }
+
+                const ws = buildSheet(allUsers, sheetTitle);
+                XLSX.utils.book_append_sheet(wb, ws, sheetTitle); // ⭐ Sheet Name ကိုပါ ပြောင်းလိုက်ပြီ
+                
+                const stamp = new Date();
+                const p = (n) => String(n).padStart(2, '0');
+                const ds = `${stamp.getFullYear()}${p(stamp.getMonth()+1)}${p(stamp.getDate())}_${p(stamp.getHours())}${p(stamp.getMinutes())}`;
+                const fname = `${fileName}_${ds}.xlsx`;
+
+                XLSX.writeFile(wb, fname);
+                showResult(true, 'အောင်မြင်ပါသည်', 'Excel ဖိုင် ထုတ်ယူပြီးပါပြီ။');
+                return;
+            }
+
+            const stamp = new Date();
+            const p = (n) => String(n).padStart(2, '0');
+            const ds = `${stamp.getFullYear()}${p(stamp.getMonth()+1)}${p(stamp.getDate())}_${p(stamp.getHours())}${p(stamp.getMinutes())}`;
+            const fname = `Users_Export_${ds}.xlsx`;
+
+            XLSX.writeFile(wb, fname);
+            showResult(true, 'အောင်မြင်ပါသည်', 'Excel ဖိုင် ထုတ်ယူပြီးပါပြီ။');
+
+        } catch (e) {
+            console.error(e);
+            alert('Excel ထုတ်ယူမှု မအောင်မြင်ပါ။\n' + (e.message || String(e)));
+        } finally {
+            if (overlay) overlay.style.display = 'none';
+        }
+    }
+
+    document.addEventListener('DOMContentLoaded', () => {
+        loadDropdowns();
+        fetchUsers();
+    });
+</script>
+{% endblock %}

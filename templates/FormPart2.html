@@ -1,0 +1,587 @@
+{% extends 'formBase.html' %}
+
+{% block form_content %}
+<div id="section2">
+    <div class="section-title-box">
+        <h4>အပိုင်း - (၂) တိရစ္ဆာန်ကောင်ရေ (တိရစ္ဆာန်ကြီးနှင့် တိရစ္ဆာန်ငယ်)</h4>
+
+    </div>
+
+    <div class="p-4 rounded-3 mb-4" style="background: rgba(16,185,129,0.08); border: 1px solid #a7f3d0;">
+        <label class="form-label fw-bold mb-3" style="color:#065f46;">တိရစ္ဆာန် မွေးမြူထားရှိခြင်း ရှိပါသလား? <span
+                class="text-danger">*</span></label>
+        <div class="d-flex flex-column flex-sm-row gap-3">
+            <label class="flex-grow-1 bg-white p-3 rounded-3 border d-flex align-items-center gap-2"
+                style="border-color:#a7f3d0 !important; cursor:pointer;">
+                <input type="radio" name="has_raised_animals" value="yes" required onchange="toggleForms()"
+                    style="accent-color:#047857; width:1.1rem; height:1.1rem;">
+                <span class="fw-bold small">မွေးမြူထားသည်</span>
+            </label>
+            <label class="flex-grow-1 bg-white p-3 rounded-3 border d-flex align-items-center gap-2"
+                style="border-color:#a7f3d0 !important; cursor:pointer;">
+                <input type="radio" name="has_raised_animals" value="no" required onchange="toggleForms()"
+                    style="accent-color:#047857; width:1.1rem; height:1.1rem;">
+                <span class="fw-bold small">မမွေးမြူထားပါ</span>
+            </label>
+        </div>
+    </div>
+
+    <div id="animalForms" class="d-none">
+        <!-- Large Animals -->
+        <div class="bg-white border rounded-3 overflow-hidden shadow-sm mb-4" style="border-color:#a7f3d0 !important;">
+            <div class="px-4 py-3 border-bottom d-flex  flex-row justify-content-between align-items-start align-items-sm-center gap-2"
+                style="background:#d1fae5; border-color:#a7f3d0 !important;">
+                <h5 class="fw-bold mb-0 d-flex align-items-center gap-2 w-100" style="color:#065f46; font-size:1rem;">
+                    <span class="d-inline-block rounded-circle"
+                        style="width:10px; height:10px; background:#047857;"></span>
+                    (က) တိရစ္ဆာန်ကြီး (နွား၊ ကျွဲ၊ မြင်း စသည်ဖြင့်)
+                </h5>
+                <div class="d-flex flex-wrap gap-2 w-100 w-sm-auto justify-content-end ">
+                    <button type="button" onclick="addLargeAnimalRow()"
+                        class="btn btn-sm text-white fw-bold d-flex align-items-center gap-1 p-2"
+                        style="background:#047857;">
+                        <svg width="16" height="16" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4">
+                            </path>
+                        </svg>
+                        ထပ်ထည့်ရန်
+                    </button>
+                    <!-- <button type="button" onclick="addOtherLargeAnimalRow()"
+                        class="btn btn-sm text-white fw-bold d-flex align-items-center gap-1"
+                        style="background:#10b981;">
+                        <svg width="16" height="16" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4">
+                            </path>
+                        </svg>
+                        အခြားတိရစ္ဆာန်မျိုးထည့်သွင်းရန်
+                    </button> -->
+                </div>
+            </div>
+            <div class="table-responsive custom-scrollbar">
+
+                <script>
+                    const largeAnimalsData = {{ largeAnimals | tojson | safe }};
+                    const animalOptions = largeAnimalsData.map(la => `<option value="${la.animalID}">${la.animalName}</option>`).join('');
+                    const smallAnimalsData = {{ smallAnimals | tojson | safe }};
+                    const sanimalOptions = smallAnimalsData.map(la => `<option value="${la.animalID}">${la.animalName}</option>`).join('');
+
+                </script>
+                
+                    <table class="table-bordered-custom mb-0" id="largeAnimalTable" style="min-width: 950px;">
+                        <thead>
+                            <tr>
+                                <th rowspan="2" class="text-start" style="min-width:150px;">တိရစ္ဆာန်မျိုး</th>
+                                <th rowspan="2" style="min-width:90px;">မျိုး (Breed)</th>
+                                <th colspan="3">(၁) နှစ်အောက်</th>
+                                <th colspan="3">(၁) နှစ်မှ (၃) နှစ်</th>
+                                <th colspan="3">(၃) နှစ်အထက်</th>
+                                <th rowspan="2" style="min-width:80px;">စုစုပေါင်း</th>
+                                <th rowspan="2" style="width:50px;">ဖယ်ရှား</th>
+                            </tr>
+                            <tr>
+                                <th>အထီး</th>
+                                <th>သင်းကွပ်</th>
+                                <th>အမ</th>
+                                <th>အထီး</th>
+                                <th>သင်းကွပ်</th>
+                                <th>အမ</th>
+                                <th>အထီး</th>
+                                <th>သင်းကွပ်</th>
+                                <th>အမ</th>
+                            </tr>
+                        </thead>
+                        <tbody id="largeAnimalBody"></tbody>
+                    </table>
+            </div>
+        </div>
+
+        <!-- Small Animals -->
+        <div class="bg-white border rounded-3 overflow-hidden shadow-sm" style="border-color:#a7f3d0 !important;">
+            <div class="px-4 py-3 border-bottom d-flex flex-column flex-sm-row justify-content-between align-items-start align-items-sm-center gap-2"
+                style="background:#d1fae5; border-color:#a7f3d0 !important;">
+                <h5 class="fw-bold mb-0 d-flex align-items-center gap-2 w-100" style="color:#065f46; font-size:1rem;">
+                    <span class="d-inline-block rounded-circle"
+                        style="width:10px; height:10px; background:#047857;"></span>
+                    (ခ) တိရစ္ဆာန်ငယ် (ဆိတ်၊ သိုး၊ ဝက် စသည်ဖြင့်)
+                </h5>
+                <div class="d-flex flex-wrap gap-2 w-100 w-sm-auto justify-content-end">
+                    <button type="button" onclick="addSmallAnimalRow()"
+                        class="btn btn-sm text-white fw-bold d-flex align-items-center gap-1 p-2"
+                        style="background:#047857;">
+                        <svg width="16" height="16" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4">
+                            </path>
+                        </svg>
+                        ထပ်ထည့်ရန်
+                    </button>
+                    <!-- <button type="button" onclick="addOtherSmallAnimalRow()"
+                        class="btn btn-sm text-white fw-bold d-flex align-items-center gap-1"
+                        style="background:#10b981;">
+                        <svg width="16" height="16" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4">
+                            </path>
+                        </svg>
+                        အခြားတိရစ္ဆာန်မျိုးထည့်သွင်းရန်
+                    </button> -->
+                </div>
+            </div>
+            <div class="table-responsive custom-scrollbar">
+                <table class="table-bordered-custom mb-0" id="smallAnimalTable" style="min-width: 950px;">
+                    <thead>
+                        <tr>
+                            <th rowspan="2" class="text-start" style="min-width:150px;">တိရစ္ဆာန်မျိုး</th>
+                            <th rowspan="2" style="min-width:90px;">မျိုး (Breed)</th>
+                            <th colspan="3">(၂) လအောက်</th>
+                            <th colspan="3">(၂) လ မှ (၆) လ</th>
+                            <th colspan="3">(၆) လအထက်</th>
+                            <th rowspan="2" style="min-width:80px;">စုစုပေါင်း</th>
+                            <th rowspan="2" style="width:50px;">ဖယ်ရှား</th>
+                        </tr>
+                        <tr>
+                            <th>အထီး</th>
+                            <th>သင်းကွပ်</th>
+                            <th>အမ</th>
+                            <th>အထီး</th>
+                            <th>သင်းကွပ်</th>
+                            <th>အမ</th>
+                            <th>အထီး</th>
+                            <th>သင်းကွပ်</th>
+                            <th>အမ</th>
+                        </tr>
+                    </thead>
+                    <tbody id="smallAnimalBody"></tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+
+    <input type="hidden" name="formID" value="{{form_id}}">
+</div>
+{% endblock %}
+
+{% block part_js %}
+<script>
+const SURVEY_PREFIX = {{ survey_prefix|default('/survey')|tojson }};
+</script>
+<script>
+    let largeAnimalRowCount = 1;
+    let smallAnimalRowCount = 1;
+
+    //document.getElementById('largeAnimalBody').querySelector('tr').querySelectorAll('.count-input').forEach(input => input.addEventListener('input', () => calculateRowTotal(tr)));
+
+    document.addEventListener('DOMContentLoaded', function () {
+        updateProgress(40, 'အပိုင်း (၂) / ၅ - တိရစ္ဆာန်ကောင်ရေစာရင်း');
+        document.getElementById('backBtn').classList.remove('d-none');
+        document.getElementById('nextPageBtn').classList.remove('d-none');
+        const backButton = document.getElementById('backBtn');
+        if (backButton) {
+            backButton.classList.remove('d-none');
+            backButton.onclick = function(event) {
+                event.preventDefault();
+                saveFormData();
+                window.location.href = `${SURVEY_PREFIX}/part1`;
+            };
+        }
+        document.getElementById('submitBtn').classList.add('d-none');
+        loadFormData();
+
+        const saved = document.querySelector('input[name="has_raised_animals"]:checked');
+        if (saved && saved.value === 'yes') {
+            document.getElementById('animalForms').classList.remove('d-none');
+            if (document.getElementById('largeAnimalBody').children.length === 0) addLargeAnimalRow();
+            if (document.getElementById('smallAnimalBody').children.length === 0) addSmallAnimalRow();
+        }
+
+        /*document.getElementById('backBtn').addEventListener('click', function() {
+            saveFormData();
+            window.history.back();
+        });
+       /* document.getElementById('nextPageBtn').addEventListener('click', function() {
+            if (validateSection2()) {
+                saveFormData();
+                window.location.href = `${SURVEY_PREFIX}/part3`;
+            }
+        });
+        */
+    });
+
+    function validateSection2() {
+        const hasRaised = document.querySelector('input[name="has_raised_animals"]:checked');
+        if (!hasRaised) {
+            showModal('error', 'သတိပေးချက်', 'ကျေးဇူးပြု၍ "တိရစ္ဆာန် မွေးမြူထားရှိခြင်း ရှိပါသလား?" ကို အရင်ရွေးချယ်ပေးပါ။');
+            return false;
+        }
+        if (hasRaised.value === 'yes') {
+            let hasData = false;
+            document.querySelectorAll('#largeAnimalBody tr, #smallAnimalBody tr').forEach(row => {
+                const ts = row.querySelector('select');
+                const ti = row.querySelector('input[type="text"]');
+                if ((ts && ts.value) || (ti && ti.value.trim())) hasData = true;
+            });
+            if (!hasData) {
+                showModal('error', 'သတိပေးချက်', 'တိရစ္ဆာန်ကြီး သို့မဟုတ် တိရစ္ဆာန်ငယ် အနည်းဆုံးတစ်မျိုး ဖြည့်သွင်းပေးပါ။');
+                return false;
+            }
+        }
+        return true;
+    }
+
+    window.toggleForms = function () {
+        const af = document.getElementById('animalForms');
+        const hr = document.querySelector('input[name="has_raised_animals"]:checked');
+        if (hr && hr.value === 'yes') {
+            af.classList.remove('d-none');
+            if (document.getElementById('largeAnimalBody').children.length === 0) addLargeAnimalRow();
+            if (document.getElementById('smallAnimalBody').children.length === 0) addSmallAnimalRow();
+        } else {
+            af.classList.add('d-none');
+        }
+    };
+
+    window.addLargeAnimalRow = function () {
+        largeAnimalRowCount++;
+        const tbody = document.getElementById('largeAnimalBody');
+        const tr = document.createElement('tr');
+        tr.id = 'largeRow_' + largeAnimalRowCount;
+
+        tr.innerHTML = `
+    <td>
+        <select name="large_animals[${largeAnimalRowCount}][breed]" 
+                class="form-select form-select-sm" 
+                id="largeAnimalId_${largeAnimalRowCount}" 
+                onchange="loadLargeAnimalSpecies('largeAnimalId_${largeAnimalRowCount}','largeAnimalSpeciesId_${largeAnimalRowCount}')">
+            <option value="">ရွေးချယ်ပါ...</option>
+            ${animalOptions}
+        </select>
+    </td>
+    <td>
+        <select name="large_animals[${largeAnimalRowCount}][species]" 
+                class="form-select form-select-sm"
+                id="largeAnimalSpeciesId_${largeAnimalRowCount}">
+             <!-- Species options go here -->
+        </select></td>
+            <td><input type="number" name="large_animals[${largeAnimalRowCount}][u1_male]" class="form-control form-control-sm count-input" placeholder="0" min="0"></td>
+            <td><input type="number" name="large_animals[${largeAnimalRowCount}][u1_castrated]" class="form-control form-control-sm count-input" placeholder="0" min="0"></td>
+            <td><input type="number" name="large_animals[${largeAnimalRowCount}][u1_female]" class="form-control form-control-sm count-input" placeholder="0" min="0"></td>
+            <td><input type="number" name="large_animals[${largeAnimalRowCount}][m1_3_male]" class="form-control form-control-sm count-input" placeholder="0" min="0"></td>
+            <td><input type="number" name="large_animals[${largeAnimalRowCount}][m1_3_castrated]" class="form-control form-control-sm count-input" placeholder="0" min="0"></td>
+            <td><input type="number" name="large_animals[${largeAnimalRowCount}][m1_3_female]" class="form-control form-control-sm count-input" placeholder="0" min="0"></td>
+            <td><input type="number" name="large_animals[${largeAnimalRowCount}][o3_male]" class="form-control form-control-sm count-input" placeholder="0" min="0"></td>
+            <td><input type="number" name="large_animals[${largeAnimalRowCount}][o3_castrated]" class="form-control form-control-sm count-input" placeholder="0" min="0"></td>
+            <td><input type="number" name="large_animals[${largeAnimalRowCount}][o3_female]" class="form-control form-control-sm count-input" placeholder="0" min="0"></td>
+            <td><input type="number" name="large_animals[${largeAnimalRowCount}][total]" class="form-control form-control-sm text-center fw-bold total-input" placeholder="0" readonly style="background:#f3f4f6;"></td>
+            <td class="text-center"><button type="button" onclick="removeRow('largeRow_${largeAnimalRowCount}')" class="btn btn-sm text-danger"><i class="bi bi-trash"></i></button></td>
+        `;
+        tbody.appendChild(tr);
+        tr.querySelectorAll('.count-input').forEach(input => input.addEventListener('input', () => calculateRowTotal(tr)));
+    };
+
+    window.addOtherLargeAnimalRow = function () {
+        largeAnimalRowCount++;
+        const tbody = document.getElementById('largeAnimalBody');
+        const tr = document.createElement('tr');
+        tr.id = 'largeOtherRow_' + largeAnimalRowCount;
+        tr.innerHTML = `
+            <td><input type="text" name="large_animals[${largeAnimalRowCount}][species]" class="form-control form-control-sm" placeholder="တိရစ္ဆာန်အမည်"></td>
+            <td><input type="text" name="large_animals[${largeAnimalRowCount}][breed]" class="form-control form-control-sm" placeholder="မျိုး"></td>
+            <td><input type="number" name="large_animals[${largeAnimalRowCount}][u1_male]" class="form-control form-control-sm count-input" placeholder="0" min="0"></td>
+            <td><input type="number" name="large_animals[${largeAnimalRowCount}][u1_castrated]" class="form-control form-control-sm count-input" placeholder="0" min="0"></td>
+            <td><input type="number" name="large_animals[${largeAnimalRowCount}][u1_female]" class="form-control form-control-sm count-input" placeholder="0" min="0"></td>
+            <td><input type="number" name="large_animals[${largeAnimalRowCount}][m1_3_male]" class="form-control form-control-sm count-input" placeholder="0" min="0"></td>
+            <td><input type="number" name="large_animals[${largeAnimalRowCount}][m1_3_castrated]" class="form-control form-control-sm count-input" placeholder="0" min="0"></td>
+            <td><input type="number" name="large_animals[${largeAnimalRowCount}][m1_3_female]" class="form-control form-control-sm count-input" placeholder="0" min="0"></td>
+            <td><input type="number" name="large_animals[${largeAnimalRowCount}][o3_male]" class="form-control form-control-sm count-input" placeholder="0" min="0"></td>
+            <td><input type="number" name="large_animals[${largeAnimalRowCount}][o3_castrated]" class="form-control form-control-sm count-input" placeholder="0" min="0"></td>
+            <td><input type="number" name="large_animals[${largeAnimalRowCount}][o3_female]" class="form-control form-control-sm count-input" placeholder="0" min="0"></td>
+            <td><input type="number" name="large_animals[${largeAnimalRowCount}][total]" class="form-control form-control-sm text-center fw-bold total-input" placeholder="0" readonly style="background:#f3f4f6;"></td>
+            <td class="text-center"><button type="button" onclick="removeRow('largeOtherRow_${largeAnimalRowCount}')" class="btn btn-sm text-danger"><i class="bi bi-trash"></i></button></td>
+        `;
+        tbody.appendChild(tr);
+        tr.querySelectorAll('.count-input').forEach(input => input.addEventListener('input', () => calculateRowTotal(tr)));
+    };
+
+    window.addSmallAnimalRow = function () {
+        smallAnimalRowCount++;
+        const tbody = document.getElementById('smallAnimalBody');
+        const tr = document.createElement('tr');
+        tr.id = 'smallRow_' + smallAnimalRowCount;
+        tr.innerHTML = `<td>
+            <select name="small_animals[${smallAnimalRowCount}][breed]" 
+                class="form-select form-select-sm " 
+                id="smallAnimalId_${smallAnimalRowCount}" 
+                onchange="loadSmallAnimalSpecies('smallAnimalId_${smallAnimalRowCount}','smallAnimalSpeciesId_${smallAnimalRowCount}')">
+            <option value="">ရွေးချယ်ပါ...</option>
+            ${sanimalOptions}
+        </select>
+    </td>
+    <td>
+        <select name="small_animals[${smallAnimalRowCount}][species]" 
+                class="form-select form-select-sm"
+                id="smallAnimalSpeciesId_${smallAnimalRowCount}">
+             <!-- Species options go here -->
+        </select></td>
+            <td><input type="number" name="small_animals[${smallAnimalRowCount}][u2m_male]" class="form-control form-control-sm count-input" placeholder="0" min="0"></td>
+            <td><input type="number" name="small_animals[${smallAnimalRowCount}][u2m_castrated]" class="form-control form-control-sm count-input" placeholder="0" min="0"></td>
+            <td><input type="number" name="small_animals[${smallAnimalRowCount}][u2m_female]" class="form-control form-control-sm count-input" placeholder="0" min="0"></td>
+            <td><input type="number" name="small_animals[${smallAnimalRowCount}][m2_6m_male]" class="form-control form-control-sm count-input" placeholder="0" min="0"></td>
+            <td><input type="number" name="small_animals[${smallAnimalRowCount}][m2_6m_castrated]" class="form-control form-control-sm count-input" placeholder="0" min="0"></td>
+            <td><input type="number" name="small_animals[${smallAnimalRowCount}][m2_6m_female]" class="form-control form-control-sm count-input" placeholder="0" min="0"></td>
+            <td><input type="number" name="small_animals[${smallAnimalRowCount}][o6m_male]" class="form-control form-control-sm count-input" placeholder="0" min="0"></td>
+            <td><input type="number" name="small_animals[${smallAnimalRowCount}][o6m_castrated]" class="form-control form-control-sm count-input" placeholder="0" min="0"></td>
+            <td><input type="number" name="small_animals[${smallAnimalRowCount}][o6m_female]" class="form-control form-control-sm count-input" placeholder="0" min="0"></td>
+            <td><input type="number" name="small_animals[${smallAnimalRowCount}][total]" class="form-control form-control-sm text-center fw-bold total-input" placeholder="0" readonly style="background:#f3f4f6;"></td>
+            <td class="text-center"><button type="button" onclick="removeRow('smallRow_${smallAnimalRowCount}')" class="btn btn-sm text-danger"><i class="bi bi-trash"></i></button></td>
+        `;
+        tbody.appendChild(tr);
+        tr.querySelectorAll('.count-input').forEach(input => input.addEventListener('input', () => calculateRowTotal(tr)));
+    };
+
+    window.addOtherSmallAnimalRow = function () {
+        smallAnimalRowCount++;
+        const tbody = document.getElementById('smallAnimalBody');
+        const tr = document.createElement('tr');
+        tr.id = 'smallOtherRow_' + smallAnimalRowCount;
+        tr.innerHTML = `
+            <td><input type="text" name="small_animals[${smallAnimalRowCount}][species]" class="form-control form-control-sm" placeholder="တိရစ္ဆာန်အမည်"></td>
+            <td><input type="text" name="small_animals[${smallAnimalRowCount}][breed]" class="form-control form-control-sm" placeholder="မျိုး"></td>
+            <td><input type="number" name="small_animals[${smallAnimalRowCount}][u2m_male]" class="form-control form-control-sm count-input" placeholder="0" min="0"></td>
+            <td><input type="number" name="small_animals[${smallAnimalRowCount}][u2m_castrated]" class="form-control form-control-sm count-input" placeholder="0" min="0"></td>
+            <td><input type="number" name="small_animals[${smallAnimalRowCount}][u2m_female]" class="form-control form-control-sm count-input" placeholder="0" min="0"></td>
+            <td><input type="number" name="small_animals[${smallAnimalRowCount}][m2_6m_male]" class="form-control form-control-sm count-input" placeholder="0" min="0"></td>
+            <td><input type="number" name="small_animals[${smallAnimalRowCount}][m2_6m_castrated]" class="form-control form-control-sm count-input" placeholder="0" min="0"></td>
+            <td><input type="number" name="small_animals[${smallAnimalRowCount}][m2_6m_female]" class="form-control form-control-sm count-input" placeholder="0" min="0"></td>
+            <td><input type="number" name="small_animals[${smallAnimalRowCount}][o6m_male]" class="form-control form-control-sm count-input" placeholder="0" min="0"></td>
+            <td><input type="number" name="small_animals[${smallAnimalRowCount}][o6m_castrated]" class="form-control form-control-sm count-input" placeholder="0" min="0"></td>
+            <td><input type="number" name="small_animals[${smallAnimalRowCount}][o6m_female]" class="form-control form-control-sm count-input" placeholder="0" min="0"></td>
+            <td><input type="number" name="small_animals[${smallAnimalRowCount}][total]" class="form-control form-control-sm text-center fw-bold total-input" placeholder="0" readonly style="background:#f3f4f6;"></td>
+            <td class="text-center"><button type="button" onclick="removeRow('smallOtherRow_${smallAnimalRowCount}')" class="btn btn-sm text-danger"><i class="bi bi-trash"></i></button></td>
+        `;
+        tbody.appendChild(tr);
+        tr.querySelectorAll('.count-input').forEach(input => input.addEventListener('input', () => calculateRowTotal(tr)));
+    };
+
+    function calculateRowTotal(row) {
+        const total = row.querySelector('.total-input');
+        if (total.readOnly) {
+            let sum = 0;
+            row.querySelectorAll('.count-input').forEach(input => { if (!input.disabled) sum += Number(input.value) || 0; });
+            total.value = sum;
+        }
+    }
+
+    window.removeRow = function (rowId) {
+        const r = document.getElementById(rowId);
+        if (r) r.remove();
+    };
+    async function loadLargeAnimalSpecies(largeAnimalId, largeAnimalSpeciesId, largeAnimalSpeciesSelected = "") {
+
+        const lanimalSelect = document.getElementById(largeAnimalId);
+        const laSpeciesSelect = document.getElementById(largeAnimalSpeciesId);
+
+        const lanimalValue = lanimalSelect.value;
+
+        if (!lanimalValue) {
+            return;
+        }
+        //alert(districtValue);
+        //alert(lanimalValue)
+        laSpeciesSelect.innerHTML = "";
+        try {
+            const response = await fetch(
+                `/fetchlargeAniSpecies/${encodeURIComponent(lanimalValue)}`
+            );
+            const data = await response.json();
+
+            //alert(data.largeSpecies.length);
+            data.largeSpecies.forEach(qv => {
+                const option = document.createElement("option");
+                option.value = qv.speciesID;
+                option.textContent = qv.speciesName;
+                if (qv.speciesName === largeAnimalSpeciesSelected) {
+                    option.selected = true;
+                }
+                laSpeciesSelect.appendChild(option);
+            });
+            laSpeciesSelect.disabled = false;
+        }
+        catch (error) {
+            console.error(
+                "QV load error:",
+                error
+            );
+        }
+
+    }
+    async function loadSmallAnimalSpecies(smallAnimalId, smallAnimalSpeciesId, smallAnimalSpeciesSelected = "") {
+
+        const sanimalSelect = document.getElementById(smallAnimalId);
+        const saSpeciesSelect = document.getElementById(smallAnimalSpeciesId);
+
+        const sanimalValue = sanimalSelect.value;
+
+        if (!sanimalValue) {
+            return;
+        }
+        //alert(districtValue);
+        //alert(sanimalValue)
+        saSpeciesSelect.innerHTML = "";
+        try {
+            const response = await fetch(
+                `/fetchsmallAniSpecies/${encodeURIComponent(sanimalValue)}`
+            );
+            const data = await response.json();
+
+            // alert(data.smallSpecies.length);
+            data.smallSpecies.forEach(qv => {
+                const option = document.createElement("option");
+                option.value = qv.speciesID;
+                option.textContent = qv.speciesName;
+                if (qv.speciesName === smallAnimalSpeciesSelected) {
+                    option.selected = true;
+                }
+                saSpeciesSelect.appendChild(option);
+            });
+            saSpeciesSelect.disabled = false;
+        }
+        catch (error) {
+            console.error(
+                "QV load error:",
+                error
+            );
+        }
+
+    }
+    var formID = {{ form_id | tojson | safe }};
+    document.getElementById("nextPageBtn").addEventListener("click", function (event) {
+        // alert("formID from formPart2: "+formID);
+        submitDataTable(formID);
+        //window.location.href = `${SURVEY_PREFIX}/part4`; 
+    });
+
+    async function submitDataTable(formID) {
+        const records = [];
+        const lrecords = [];
+        const yrecords = [];
+        const large_ani_rows = document.querySelectorAll("#largeAnimalBody tr"); // Adjust selector to your table rows
+        const young_ani_rows = document.querySelectorAll("#smallAnimalBody tr");
+        large_ani_rows.forEach(row => {
+            // Extract dropdowns / text input identifiers from the row
+            const lanimalID = row.querySelector('select[name*="[breed]"]').value;
+            const lspeciesID = row.querySelector('select[name*="[species]"]').value;
+            const lanimalTypeID = "atID01";
+            // alert(lanimalID);
+            // alert(lspeciesID);
+            // Or maps from your logic if applicable
+            // Define your matrix mapping to exact IDs matching your database mapping rules
+            const large_matrices = [
+                { selector: 'u1_male', age: "ageID03", gender: "g01" },
+                { selector: 'u1_castrated', age: "ageID03", gender: "g02" },
+                { selector: 'u1_female', age: "ageID03", gender: "g03" },
+
+                { selector: 'm1_3_male', age: "ageID02", gender: "g01" },
+                { selector: 'm1_3_castrated', age: "ageID02", gender: "g02" },
+                { selector: 'm1_3_female', age: "ageID02", gender: "g03" },
+
+                { selector: 'o3_male', age: "ageID01", gender: "g01" },
+                { selector: 'o3_castrated', age: "ageID01", gender: "g02" },
+                { selector: 'o3_female', age: "ageID01", gender: "g03" }
+            ];
+
+            large_matrices.forEach(item => {
+                // alert("----------"+item.selector);
+                const inputEl = row.querySelector(`input[name*="${item.selector}"]`);
+                //alert(inputEl.value);
+                const dataCount = Number(inputEl?.value) || 0;
+                //alert(dataCount);
+                if (dataCount > 0) {
+                    const record = {
+                        formID: String(formID || ""),
+                        animalTypeID: String(lanimalTypeID || ""),
+                        animalID: String(lanimalID || ""),
+                        speciesID: String(lspeciesID || ""),
+
+                        // Ensure these fall back to an empty string if item properties are undefined
+                        ageID: String(item.age || ""),
+                        genderID: String(item.gender || ""),
+
+                        // CRUCIAL: Parse into a number. Fall back to 0 if empty or invalid (NaN)
+                        dataCount: parseInt(dataCount, 10) || 0
+                    };
+                    lrecords.push(
+                        record
+                    );
+                }
+            });
+        });
+        young_ani_rows.forEach(row => {
+            // Extract dropdowns / text input identifiers from the row
+            const yanimalID = row.querySelector('select[name*="[breed]"]').value;
+            const yspeciesID = row.querySelector('select[name*="[species]"]').value;
+            // alert(yanimalID);
+            // alert(yspeciesID);
+            const yanimalTypeID = "atID02";
+            // Or maps from your logic if applicable
+            // Define your matrix mapping to exact IDs matching your database mapping rules
+            const young_matrices = [
+                { selector: 'u2m_male', age: "ageID06", gender: "g01" },
+                { selector: 'u2m_castrated', age: "ageID06", gender: "g02" },
+                { selector: 'u2m_female', age: "ageID06", gender: "g03" },
+
+                { selector: 'm2_6m_male', age: "ageID05", gender: "g01" },
+                { selector: 'm2_6m_castrated', age: "ageID05", gender: "g02" },
+                { selector: 'm2_6m_female', age: "ageID05", gender: "g03" },
+
+                { selector: 'o6m_male', age: "ageID04", gender: "g01" },
+                { selector: 'o6m_castrated', age: "ageID04", gender: "g02" },
+                { selector: 'o6m_female', age: "ageID04", gender: "g03" }
+            ];
+
+            young_matrices.forEach(item => {
+                // alert("----------"+item.selector);
+                const inputEl = row.querySelector(`input[name*="${item.selector}"]`);
+                //alert(inputEl.value);
+                const dataCount = Number(inputEl?.value) || 0;
+                //alert(dataCount);
+                if (dataCount > 0) {
+                    const record1 = {
+                        formID: String(formID || ""),
+                        animalTypeID: String(yanimalTypeID || ""),
+                        animalID: String(yanimalID || ""),
+                        speciesID: String(yspeciesID || ""),
+                        ageID: String(item.age || ""),
+                        genderID: String(item.gender || ""),
+                        dataCount: parseInt(dataCount, 10) || 0
+                    };
+                    yrecords.push(
+                        record1
+                    );
+                }
+            });
+        });
+        if (lrecords.length > 0) {
+            records.push(lrecords);
+        }
+        if (yrecords.length > 0) {
+            records.push(yrecords);
+        }
+
+        // alert(records);
+        const response = await fetch(
+                    `${SURVEY_PREFIX}/part2/${encodeURIComponent(formID)}`,{ method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify(records)
+
+        }
+                );
+        
+        if (response.ok) {
+            const data = await response.json();
+            window.location.href =data.redirect_url; 
+            //window.location.href = `${data.redirect_url}?form_id=${data.form_id}`;
+
+        }
+
+    }
+
+</script>
+{% endblock %}

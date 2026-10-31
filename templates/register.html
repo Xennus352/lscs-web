@@ -1,0 +1,1241 @@
+<!DOCTYPE html>
+<html lang="my">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Register — အသုံးပြုသူ မှတ်ပုံတင်ခြင်း</title>
+
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+Myanmar:wght@400;500;600;700&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+
+    <style>
+         :root {
+            --brand-900: #052e22;
+            --brand-800: #064e3b;
+            --brand-700: #047857;
+            --brand-600: #059669;
+            --brand-500: #10b981;
+            --brand-100: #d1fae5;
+            --brand-50: #ecfdf5;
+            --ink-900: #0f172a;
+            --ink-700: #334155;
+            --ink-500: #64748b;
+            --ink-300: #cbd5e1;
+            --ink-100: #f1f5f9;
+            --surface: #ffffff;
+            --page-bg: #f8fafc;
+            --radius-lg: 16px;
+            --radius-sm: 9px;
+        }
+        
+        * {
+            -webkit-tap-highlight-color: transparent;
+            box-sizing: border-box;
+        }
+        
+        html,
+        body {
+            height: 100%;
+            margin: 0;
+        }
+        
+        body {
+            font-family: 'Noto Sans Myanmar', 'Inter', 'Pyidaungsu', sans-serif;
+            background: var(--page-bg);
+            color: var(--ink-900);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 1.5rem 1rem;
+            min-height: 100vh;
+        }
+        /* ============ LAYOUT ============ */
+        
+        .auth-shell {
+            width: 100%;
+            max-width: 880px;
+            background: var(--surface);
+            border-radius: var(--radius-lg);
+            box-shadow: 0 1px 2px rgba(15, 23, 42, 0.04), 0 24px 48px -20px rgba(6, 78, 59, 0.18);
+            overflow: hidden;
+            display: grid;
+            grid-template-columns: 280px 1fr;
+            align-items: stretch;
+            margin: auto;
+        }
+        /* ============ BRAND PANEL ============ */
+        
+        .brand-panel {
+            background: radial-gradient(circle at 20% 0%, rgba(16, 185, 129, 0.28), transparent 55%), linear-gradient(160deg, var(--brand-900) 0%, var(--brand-800) 100%);
+            color: #e6f7f1;
+            padding: 1.75rem 1.5rem;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            text-align: center;
+            position: relative;
+            overflow: hidden;
+        }
+        
+        .brand-panel::before {
+            content: "";
+            position: absolute;
+            inset: auto -80px -120px auto;
+            width: 240px;
+            height: 240px;
+            border-radius: 50%;
+            background: radial-gradient(circle, rgba(16, 185, 129, 0.35), transparent 70%);
+            pointer-events: none;
+        }
+        
+        .brand-center {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            text-align: center;
+            width: 100%;
+        }
+        
+        .brand-title {
+            font-size: 1.08rem;
+            font-weight: 700;
+            line-height: 1.55;
+            margin: 0;
+            color: #fff;
+            text-align: center;
+        }
+        
+        .brand-footer {
+            font-size: 0.65rem;
+            color: rgba(230, 247, 241, 0.5);
+            letter-spacing: 0.03em;
+            margin: 0;
+            padding-top: 1rem;
+            text-align: center;
+            width: 100%;
+        }
+        /* ============ FORM PANEL ============ */
+        
+        .form-panel {
+            padding: 1.5rem 1.75rem 1.5rem;
+            display: flex;
+            flex-direction: column;
+        }
+        /* ✅ "မှတ်ပုံတင်ခြင်း" ခေါင်းစဉ် + Logo ဘေးချင်းကပ် */
+        
+        .form-header {
+            display: flex;
+            align-items: center;
+            gap: 0.75rem;
+            margin-bottom: 1rem;
+        }
+        
+        .form-header-logo {
+            width: 44px;
+            height: 44px;
+            flex-shrink: 0;
+            border-radius: 50%;
+            overflow: hidden;
+            border: 2px solid var(--brand-100);
+            box-shadow: 0 4px 12px rgba(4, 120, 87, 0.15);
+            background: #fff;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+        
+        .form-header-logo img {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+            display: block;
+        }
+        
+        .form-header-logo i {
+            font-size: 1.15rem;
+            color: var(--brand-700);
+        }
+        
+        .form-header-text {
+            flex-grow: 1;
+        }
+        
+        .form-header h2 {
+            font-size: 1.15rem;
+            font-weight: 700;
+            color: var(--ink-900);
+            margin: 0 0 0.2rem;
+            letter-spacing: -0.01em;
+        }
+        
+        .form-header p {
+            font-size: 0.75rem;
+            color: var(--ink-500);
+            margin: 0;
+        }
+        /* ============ FORM ELEMENTS ============ */
+        
+        .form-row {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 0.7rem;
+        }
+        
+        .field {
+            margin-bottom: 0.7rem;
+        }
+        
+        .field-label {
+            display: block;
+            font-size: 0.73rem;
+            font-weight: 600;
+            color: var(--ink-700);
+            margin-bottom: 0.3rem;
+        }
+        
+        .field-label .req {
+            color: #ef4444;
+            margin-left: 2px;
+        }
+        
+        .input-wrap {
+            position: relative;
+            display: flex;
+            align-items: center;
+        }
+        
+        .input-wrap>i.lead-icon {
+            position: absolute;
+            left: 11px;
+            color: var(--ink-500);
+            font-size: 0.85rem;
+            pointer-events: none;
+            transition: color 0.18s ease;
+        }
+        
+        .input-wrap:focus-within>i.lead-icon {
+            color: var(--brand-600);
+        }
+        
+        .input-field {
+            width: 100%;
+            padding: 8px 11px 8px 33px;
+            border: 1.5px solid var(--ink-300);
+            border-radius: var(--radius-sm);
+            background: #fff;
+            font-size: 0.83rem;
+            font-family: inherit;
+            font-weight: 500;
+            color: var(--ink-900);
+            transition: border-color 0.18s ease, box-shadow 0.18s ease;
+        }
+        
+        .input-field::placeholder {
+            color: #94a3b8;
+            font-weight: 400;
+            font-size: 0.78rem;
+        }
+        
+        .input-field:hover:not(:focus) {
+            border-color: #94a3b8;
+        }
+        
+        .input-field:focus {
+            outline: none;
+            border-color: var(--brand-600);
+            box-shadow: 0 0 0 3px rgba(16, 185, 129, 0.12);
+        }
+        
+        .input-field:disabled {
+            background: var(--ink-100);
+            cursor: not-allowed;
+            color: var(--ink-500);
+        }
+        
+        .input-field.has-error {
+            border-color: #ef4444;
+            background: #fef2f2;
+        }
+        
+        .input-field.has-error:focus {
+            box-shadow: 0 0 0 3px rgba(239, 68, 68, 0.12);
+        }
+        
+        .input-field.with-action {
+            padding-right: 36px;
+        }
+        
+        select.input-field {
+            appearance: none;
+            -webkit-appearance: none;
+            background-image: url("data:image/svg+xml;charset=UTF-8,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16'%3e%3cpath fill='none' stroke='%2364748b' stroke-linecap='round' stroke-linejoin='round' stroke-width='2' d='m2 5 6 6 6-6'/%3e%3c/svg%3e");
+            background-repeat: no-repeat;
+            background-position: right 10px center;
+            background-size: 11px;
+            padding-right: 30px;
+        }
+        
+        .icon-action {
+            position: absolute;
+            right: 4px;
+            top: 50%;
+            transform: translateY(-50%);
+            width: 28px;
+            height: 28px;
+            border: none;
+            background: transparent;
+            border-radius: 6px;
+            color: var(--ink-500);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            transition: all 0.15s ease;
+        }
+        
+        .icon-action:hover {
+            color: var(--brand-700);
+            background: var(--brand-50);
+        }
+        /* state lock pill */
+        
+        .lock-pill {
+            display: flex;
+            align-items: center;
+            gap: 0.45rem;
+            padding: 8px 11px;
+            background: var(--brand-50);
+            border: 1.5px solid var(--brand-100);
+            border-radius: var(--radius-sm);
+            font-size: 0.75rem;
+            font-weight: 600;
+            color: var(--brand-800);
+        }
+        
+        .lock-pill i {
+            font-size: 0.75rem;
+            color: var(--brand-600);
+        }
+        
+        .lock-pill .lock-tag {
+            margin-left: auto;
+            font-size: 0.58rem;
+            font-weight: 600;
+            letter-spacing: 0.06em;
+            color: var(--brand-600);
+            background: #fff;
+            padding: 1px 6px;
+            border-radius: 999px;
+        }
+        /* field error */
+        
+        .field-error {
+            display: none;
+            font-size: 0.68rem;
+            color: #dc2626;
+            font-weight: 500;
+            margin: 0.25rem 0 0;
+        }
+        
+        .field-error.show {
+            display: block;
+        }
+        /* password strength */
+        
+        .strength-track {
+            height: 3px;
+            background: var(--ink-100);
+            border-radius: 999px;
+            overflow: hidden;
+            margin-top: 0.4rem;
+        }
+        
+        .strength-fill {
+            height: 100%;
+            width: 0%;
+            border-radius: 999px;
+            transition: width 0.3s ease, background-color 0.3s ease;
+        }
+        
+        .strength-label {
+            font-size: 0.65rem;
+            margin: 0.25rem 0 0;
+            color: var(--ink-500);
+            min-height: 1em;
+        }
+        /* checkbox */
+        
+        .terms-row {
+            display: flex;
+            align-items: flex-start;
+            gap: 0.45rem;
+            margin: 0.75rem 0 0.9rem;
+        }
+        
+        .terms-row input[type="checkbox"] {
+            width: 15px;
+            height: 15px;
+            margin-top: 0.1rem;
+            accent-color: var(--brand-700);
+            cursor: pointer;
+            flex-shrink: 0;
+        }
+        
+        .terms-row label {
+            font-size: 0.72rem;
+            color: var(--ink-700);
+            line-height: 1.5;
+            cursor: pointer;
+            user-select: none;
+        }
+        /* submit button */
+        
+        .btn-primary-auth {
+            width: 100%;
+            padding: 9px;
+            border: none;
+            border-radius: var(--radius-sm);
+            background: linear-gradient(135deg, var(--brand-700), var(--brand-600));
+            color: #fff;
+            font-family: inherit;
+            font-size: 0.82rem;
+            font-weight: 700;
+            letter-spacing: 0.01em;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 0.4rem;
+            cursor: pointer;
+            box-shadow: 0 6px 16px -6px rgba(4, 120, 87, 0.45);
+            transition: all 0.18s ease;
+        }
+        
+        .btn-primary-auth:hover:not(:disabled) {
+            transform: translateY(-1px);
+            box-shadow: 0 10px 20px -6px rgba(4, 120, 87, 0.55);
+        }
+        
+        .btn-primary-auth:active:not(:disabled) {
+            transform: scale(0.99);
+        }
+        
+        .btn-primary-auth:disabled {
+            opacity: 0.7;
+            cursor: wait;
+        }
+        /* divider + login */
+        
+        .auth-divider {
+            display: flex;
+            align-items: center;
+            gap: 0.7rem;
+            margin: 0.9rem 0 0.65rem;
+            color: var(--ink-500);
+            font-size: 0.68rem;
+            font-weight: 500;
+        }
+        
+        .auth-divider::before,
+        .auth-divider::after {
+            content: "";
+            flex: 1;
+            height: 1px;
+            background: var(--ink-100);
+        }
+        
+        .login-line {
+            text-align: center;
+            font-size: 0.73rem;
+            color: var(--ink-500);
+            margin: 0;
+        }
+        
+        .login-line a {
+            color: var(--brand-700);
+            font-weight: 700;
+            text-decoration: none;
+            margin-left: 3px;
+        }
+        
+        .login-line a:hover {
+            text-decoration: underline;
+        }
+        /* error banner */
+        
+        .alert-banner {
+            display: none;
+            background: #fef2f2;
+            border: 1px solid #fecaca;
+            border-left: 3px solid #dc2626;
+            border-radius: var(--radius-sm);
+            padding: 8px 11px;
+            margin-bottom: 0.8rem;
+        }
+        
+        .alert-banner.show {
+            display: block;
+        }
+        
+        .alert-banner strong {
+            font-size: 0.72rem;
+            color: #b91c1c;
+            display: block;
+            margin-bottom: 2px;
+        }
+        
+        .alert-banner ul {
+            margin: 0;
+            padding-left: 1rem;
+            font-size: 0.7rem;
+            color: #b91c1c;
+        }
+        /* spinner */
+        
+        .spinner {
+            width: 13px;
+            height: 13px;
+            border: 2px solid rgba(255, 255, 255, 0.4);
+            border-top-color: #fff;
+            border-radius: 50%;
+            animation: spin 0.7s linear infinite;
+        }
+        
+        @keyframes spin {
+            to {
+                transform: rotate(360deg);
+            }
+        }
+        /* shake */
+        
+        .shake {
+            animation: shake 0.4s ease;
+        }
+        
+        @keyframes shake {
+            0%,
+            100% {
+                transform: translateX(0);
+            }
+            25% {
+                transform: translateX(-6px);
+            }
+            75% {
+                transform: translateX(6px);
+            }
+        }
+        /* modal */
+        
+        .modal-content {
+            border: none;
+            border-radius: 11px;
+            overflow: hidden;
+            box-shadow: 0 25px 50px rgba(0, 0, 0, 0.18);
+        }
+        
+        .modal-icon {
+            width: 48px;
+            height: 48px;
+            margin: 0 auto 0.7rem;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1.3rem;
+        }
+        
+        .modal-icon.success {
+            background: var(--brand-100);
+            color: var(--brand-700);
+        }
+        
+        .modal-icon.error {
+            background: #fee2e2;
+            color: #dc2626;
+        }
+        /* ============ RESPONSIVE ============ */
+        
+        @media (max-width: 820px) {
+            .auth-shell {
+                grid-template-columns: 1fr;
+                max-width: 500px;
+            }
+            .brand-panel {
+                padding: 1.25rem 1.25rem 1rem;
+            }
+            .brand-title {
+                font-size: 0.9rem;
+            }
+            .form-panel {
+                padding: 1.25rem 1.25rem 1.25rem;
+            }
+        }
+        
+        @media (max-width: 480px) {
+            body {
+                padding: 0;
+            }
+            .auth-shell {
+                border-radius: 0;
+                max-width: 100%;
+                box-shadow: none;
+                min-height: 100vh;
+            }
+            .brand-panel {
+                padding: 1rem 1rem 0.85rem;
+            }
+            .form-panel {
+                padding: 1rem 1rem 1.25rem;
+            }
+            .form-row {
+                grid-template-columns: 1fr;
+                gap: 0;
+            }
+            .form-header h2 {
+                font-size: 1.05rem;
+            }
+            .form-header-logo {
+                width: 38px;
+                height: 38px;
+            }
+        }
+    </style>
+</head>
+
+<body>
+
+    <!-- RESULT MODAL -->
+    <div class="modal fade" id="resultModal" tabindex="-1" aria-hidden="true">
+        <div class="modal-dialog modal-dialog-centered modal-sm">
+            <div class="modal-content text-center">
+                <div class="modal-body p-4">
+                    <div id="modalIconWrap" class="modal-icon success">
+                        <i id="modalIcon" class="bi bi-check-circle-fill"></i>
+                    </div>
+                    <h6 id="modalTitle" class="fw-bold mb-2">အောင်မြင်ပါသည်</h6>
+                    <p id="modalMessage" class="text-muted small mb-3 lh-base"></p>
+                    <button type="button" class="btn w-100 fw-bold py-2 text-white" data-bs-dismiss="modal" style="background:#047857;border:none;border-radius:8px;font-size:0.82rem;">
+                        OK
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- AUTH SHELL -->
+    <div class="auth-shell" id="registerCard">
+
+        <!-- BRAND PANEL -->
+        <aside class="brand-panel">
+            <div class="brand-center">
+                <h1 class="brand-title">
+                    ပဲခူးတိုင်းဒေသကြီးအစိုးရ<br> မွေးမြူရေးနှင့်ကုသရေးဦးစီးဌာန
+                    <br> တိရစ္ဆာန်ကောင်ရေ စာရင်းကောက်ယူခြင်း
+                </h1>
+            </div>
+            <p class="brand-footer">© မွေးမြူရေးနှင့် ကုသရေးဦးစီးဌာန</p>
+        </aside>
+
+        <!-- FORM PANEL -->
+        <main class="form-panel">
+            <div class="form-header">
+                <div class="form-header-logo">
+                    <img src="/assets/images/logos/bago.jpg" alt="Bago Logo" onerror="this.style.display='none';this.parentNode.innerHTML='<i class=\'bi bi-shield-check\'></i>'">
+                </div>
+                <div class="form-header-text">
+                    <h2>မှတ်ပုံတင်ခြင်း</h2>
+                    <p>အကောင့်အသစ် ဖွင့်ရန် အောက်ပါ အချက်အလက်များ ဖြည့်စွက်ပါ။</p>
+                </div>
+            </div>
+
+            <!-- Global error banner -->
+            <div id="errorAlert" class="alert-banner">
+                <strong><i class="bi bi-exclamation-triangle-fill me-1"></i>သတိပေးချက်</strong>
+                <ul id="errorList"></ul>
+            </div>
+
+            <form id="registerForm" novalidate>
+
+                <!-- Username + Role -->
+                <div class="form-row">
+                    <div class="field">
+                        <label for="username" class="field-label">
+                            အသုံးပြုသူအမည် <span class="req">*</span>
+                        </label>
+                        <div class="input-wrap">
+                            <i class="bi bi-person lead-icon"></i>
+                            <input type="text" id="username" name="username" autocomplete="username" placeholder="Username" class="input-field">
+                        </div>
+                        <p class="field-error" id="usernameError"></p>
+                    </div>
+
+                    <div class="field">
+                        <label for="role" class="field-label">
+                            အသုံးပြုသူ အမျိုးအစား <span class="req">*</span>
+                        </label>
+                        <div class="input-wrap">
+                            <i class="bi bi-shield-check lead-icon"></i>
+                            <select id="role" name="role" class="input-field">
+                                <option value="">ရွေးချယ်ပါ...</option>
+                            </select>
+                        </div>
+                        <p class="field-error" id="roleError"></p>
+                    </div>
+                </div>
+
+                <!-- Location Block -->
+                <div id="locationBlock" class="d-none">
+                    <div class="field">
+                        <label class="field-label">တိုင်းဒေသကြီး / ပြည်နယ်</label>
+                        <div class="lock-pill">
+                            <i class="bi bi-lock-fill"></i>
+                            <span>ပဲခူးတိုင်းဒေသကြီး</span>
+                            <span class="lock-tag">AUTO</span>
+                        </div>
+                        <select id="stateID" class="d-none">
+                            <option value="">-</option>
+                        </select>
+                    </div>
+
+                    <div class="form-row">
+                        <div class="field d-none" id="districtWrap">
+                            <label for="districtID" class="field-label">
+                                ခရိုင် <span class="req">*</span>
+                            </label>
+                            <div class="input-wrap">
+                                <i class="bi bi-geo lead-icon"></i>
+                                <select id="districtID" class="input-field" disabled>
+                                    <option value="">ရွေးချယ်ပါ...</option>
+                                </select>
+                            </div>
+                            <p class="field-error" id="districtIDError"></p>
+                        </div>
+
+                        <div class="field d-none" id="townshipWrap">
+                            <label for="townshipID" class="field-label">
+                                မြို့နယ် <span class="req">*</span>
+                            </label>
+                            <div class="input-wrap">
+                                <i class="bi bi-geo-fill lead-icon"></i>
+                                <select id="townshipID" class="input-field" disabled>
+                                    <option value="">ရွေးချယ်ပါ...</option>
+                                </select>
+                            </div>
+                            <p class="field-error" id="townshipIDError"></p>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Email -->
+                <div class="field">
+                    <label for="email" class="field-label">
+                        အီးမေးလ် <span class="req">*</span>
+                    </label>
+                    <div class="input-wrap">
+                        <i class="bi bi-envelope lead-icon"></i>
+                        <input type="email" id="email" name="email" autocomplete="email" placeholder="example@mail.com" class="input-field">
+                    </div>
+                    <p class="field-error" id="emailError"></p>
+                </div>
+
+                <!-- Password + Confirm -->
+                <div class="form-row">
+                    <div class="field">
+                        <label for="password" class="field-label">
+                            စကားဝှက် <span class="req">*</span>
+                        </label>
+                        <div class="input-wrap">
+                            <i class="bi bi-lock lead-icon"></i>
+                            <input type="password" id="password" name="password" autocomplete="new-password" placeholder="အနည်းဆုံး ၈ လုံး" class="input-field with-action">
+                            <button type="button" onclick="togglePassword('password','eyeIcon1')" class="icon-action" aria-label="Show password">
+                                <i id="eyeIcon1" class="bi bi-eye"></i>
+                            </button>
+                        </div>
+                        <div class="strength-track">
+                            <div id="strengthBar" class="strength-fill"></div>
+                        </div>
+                        <p id="strengthText" class="strength-label"></p>
+                        <p class="field-error" id="passwordError"></p>
+                    </div>
+
+                    <div class="field">
+                        <label for="confirm_password" class="field-label">
+                            စကားဝှက် အတည်ပြုပါ <span class="req">*</span>
+                        </label>
+                        <div class="input-wrap">
+                            <i class="bi bi-lock-fill lead-icon"></i>
+                            <input type="password" id="confirm_password" name="confirm_password" autocomplete="new-password" placeholder="ထပ်မံရိုက်ထည့်ပါ" class="input-field with-action">
+                            <button type="button" onclick="togglePassword('confirm_password','eyeIcon2')" class="icon-action" aria-label="Show password">
+                                <i id="eyeIcon2" class="bi bi-eye"></i>
+                            </button>
+                        </div>
+                        <p class="field-error" id="confirm_passwordError"></p>
+                    </div>
+                </div>
+
+                <!-- Terms -->
+                <div class="terms-row">
+                    <input type="checkbox" id="agree">
+                    <label for="agree">
+                        ကျွန်ုပ်၏ အချက်အလက်များကို သိမ်းဆည်းအသုံးပြုရန် သဘောတူပါသည်။
+                    </label>
+                </div>
+
+                <!-- Submit -->
+                <button type="submit" class="btn-primary-auth" id="btnRegister">
+                    <i class="bi bi-person-plus" id="btnIcon"></i>
+                    <span id="btnText">မှတ်ပုံတင်မည်</span>
+                </button>
+
+                <div class="auth-divider">သို့မဟုတ်</div>
+
+                <p class="login-line">
+                    အကောင့် ရှိပြီးသားလား?
+                    <a href="/">Login ဝင်ရန်</a>
+                </p>
+            </form>
+        </main>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
+
+    <script>
+        /* ============================================================
+                   CONFIG
+                ============================================================ */
+        const FIXED_STATE_ID = "s07";
+        const FIXED_STATE_NAME = "ပဲခူးတိုင်းဒေသကြီး";
+
+        const ROLE_CONFIG = {
+            'admin': {
+                location: false
+            },
+            'state': {
+                location: false
+            },
+            'district': {
+                location: true,
+                needDistrict: true,
+                needTownship: false
+            },
+            'township': {
+                location: true,
+                needDistrict: true,
+                needTownship: true
+            },
+            'enumerator': {
+                location: true,
+                needDistrict: true,
+                needTownship: true
+            }
+        };
+
+        /* ============================================================
+           MODAL
+        ============================================================ */
+        const resultModal = new bootstrap.Modal(document.getElementById('resultModal'));
+
+        function showModal(type, title, message) {
+            const wrap = document.getElementById('modalIconWrap');
+            const icon = document.getElementById('modalIcon');
+            document.getElementById('modalTitle').textContent = title;
+            document.getElementById('modalMessage').textContent = message;
+            wrap.className = 'modal-icon ' + (type === 'error' ? 'error' : 'success');
+            icon.className = 'bi ' + (type === 'error' ?
+                'bi-exclamation-triangle-fill' :
+                'bi-check-circle-fill');
+            resultModal.show();
+        }
+
+        /* ============================================================
+           TOGGLE PASSWORD
+        ============================================================ */
+        function togglePassword(inpId, iconId) {
+            const inp = document.getElementById(inpId);
+            const icon = document.getElementById(iconId);
+            if (inp.type === 'password') {
+                inp.type = 'text';
+                icon.className = 'bi bi-eye-slash';
+            } else {
+                inp.type = 'password';
+                icon.className = 'bi bi-eye';
+            }
+        }
+
+        /* ============================================================
+           PASSWORD STRENGTH
+        ============================================================ */
+        const pwdInput = document.getElementById('password');
+        const strengthBar = document.getElementById('strengthBar');
+        const strengthText = document.getElementById('strengthText');
+
+        pwdInput.addEventListener('input', () => {
+            const v = pwdInput.value;
+            let score = 0;
+            if (v.length >= 8) score++;
+            if (/[A-Z]/.test(v)) score++;
+            if (/[a-z]/.test(v)) score++;
+            if (/\d/.test(v)) score++;
+            if (/[^A-Za-z0-9]/.test(v)) score++;
+
+            strengthBar.style.width = ((score / 5) * 100) + '%';
+
+            if (v.length === 0) {
+                strengthBar.style.width = '0%';
+                strengthText.textContent = '';
+                strengthText.style.color = '';
+            } else if (score <= 2) {
+                strengthBar.style.background = '#ef4444';
+                strengthText.textContent = 'အားနည်းသည်';
+                strengthText.style.color = '#dc2626';
+            } else if (score === 3) {
+                strengthBar.style.background = '#f59e0b';
+                strengthText.textContent = 'အလယ်အလတ်';
+                strengthText.style.color = '#d97706';
+            } else {
+                strengthBar.style.background = '#059669';
+                strengthText.textContent = 'ခိုင်မာသည်';
+                strengthText.style.color = '#059669';
+            }
+        });
+
+        /* ============================================================
+           FIELD HELPERS
+        ============================================================ */
+        function setFieldError(id, msg) {
+            const input = document.getElementById(id);
+            const err = document.getElementById(id + 'Error');
+            if (!input) return;
+            if (msg) {
+                input.classList.add('has-error');
+                if (err) {
+                    err.textContent = msg;
+                    err.classList.add('show');
+                }
+            } else {
+                input.classList.remove('has-error');
+                if (err) {
+                    err.textContent = '';
+                    err.classList.remove('show');
+                }
+            }
+        }
+
+        function clearAllErrors() {
+            ['username', 'role', 'email', 'password', 'confirm_password',
+                'stateID', 'districtID', 'townshipID'
+            ].forEach(id => setFieldError(id, ''));
+            document.getElementById('errorAlert').classList.remove('show');
+            document.getElementById('errorList').innerHTML = '';
+        }
+
+        /* ============================================================
+           API LOADERS
+        ============================================================ */
+        async function loadRoles() {
+            try {
+                const res = await fetch('/api/register/roles');
+                const data = await res.json();
+                const sel = document.getElementById('role');
+                sel.innerHTML = '<option value="">ရွေးချယ်ပါ...</option>';
+                (data.roles || []).forEach(r => {
+                    const o = document.createElement('option');
+                    o.value = r.name;
+                    o.textContent = r.name;
+                    sel.appendChild(o);
+                });
+            } catch (e) {
+                console.error('loadRoles failed', e);
+            }
+        }
+
+        async function loadDistricts(stateID) {
+            const sel = document.getElementById('districtID');
+            sel.innerHTML = '<option value="">ရွေးချယ်ပါ...</option>';
+            sel.disabled = true;
+            if (!stateID) return;
+            try {
+                const res = await fetch(`/fetchDistricts/${encodeURIComponent(stateID)}`);
+                const data = await res.json();
+                const districts = data.districts || [];
+                if (districts.length === 0) {
+                    sel.innerHTML = '<option value="">ခရိုင် မရှိပါ</option>';
+                } else {
+                    districts.forEach(d => {
+                        const o = document.createElement('option');
+                        o.value = d.districtID;
+                        o.textContent = d.districtName;
+                        sel.appendChild(o);
+                    });
+                    sel.disabled = false;
+                }
+            } catch (e) {
+                console.error('loadDistricts failed', e);
+                sel.innerHTML = '<option value="">ခရိုင် များ မရယူနိုင်ပါ</option>';
+            }
+        }
+
+        async function loadTownships(stateID, districtID) {
+            const sel = document.getElementById('townshipID');
+            sel.innerHTML = '<option value="">ရွေးချယ်ပါ...</option>';
+            sel.disabled = true;
+            if (!stateID || !districtID) return;
+            try {
+                const res = await fetch(
+                    `/fetchTownship/${encodeURIComponent(districtID)}/${encodeURIComponent(stateID)}`
+                );
+                const data = await res.json();
+                const townships = data.townships || [];
+                if (townships.length === 0) {
+                    sel.innerHTML = '<option value="">မြို့နယ် မရှိပါ</option>';
+                } else {
+                    townships.forEach(t => {
+                        const o = document.createElement('option');
+                        o.value = t.townshipID;
+                        o.textContent = t.townshipName;
+                        sel.appendChild(o);
+                    });
+                    sel.disabled = false;
+                }
+            } catch (e) {
+                console.error('loadTownships failed', e);
+                sel.innerHTML = '<option value="">မြို့နယ် များ မရယူနိုင်ပါ</option>';
+            }
+        }
+
+        /* ============================================================
+           ROLE → LOCATION BLOCK
+        ============================================================ */
+        let currentRoleConfig = null;
+
+        async function applyRoleConfig() {
+            const roleRaw = document.getElementById('role').value;
+            const role = (roleRaw || '').trim().toLowerCase();
+            const cfg = ROLE_CONFIG[role];
+            currentRoleConfig = cfg || null;
+
+            const block = document.getElementById('locationBlock');
+            const distWrap = document.getElementById('districtWrap');
+            const townWrap = document.getElementById('townshipWrap');
+
+            const stateSel = document.getElementById('stateID');
+            stateSel.innerHTML = `<option value="${FIXED_STATE_ID}" selected>${FIXED_STATE_NAME}</option>`;
+            stateSel.value = FIXED_STATE_ID;
+
+            const dSel = document.getElementById('districtID');
+            const tSel = document.getElementById('townshipID');
+            dSel.innerHTML = '<option value="">ရွေးချယ်ပါ...</option>';
+            dSel.disabled = true;
+            tSel.innerHTML = '<option value="">ရွေးချယ်ပါ...</option>';
+            tSel.disabled = true;
+
+            if (!cfg || !cfg.location) {
+                block.classList.add('d-none');
+                distWrap.classList.add('d-none');
+                townWrap.classList.add('d-none');
+                return;
+            }
+
+            block.classList.remove('d-none');
+            distWrap.classList.toggle('d-none', !cfg.needDistrict);
+            townWrap.classList.toggle('d-none', !cfg.needTownship);
+
+            if (cfg.needDistrict) {
+                await loadDistricts(FIXED_STATE_ID);
+            }
+        }
+
+        /* ============================================================
+           CASCADE EVENTS
+        ============================================================ */
+        document.getElementById('role').addEventListener('change', () => {
+            setFieldError('role', '');
+            applyRoleConfig();
+        });
+
+        document.getElementById('districtID').addEventListener('change', async function() {
+            setFieldError('districtID', '');
+            const tSel = document.getElementById('townshipID');
+            tSel.value = '';
+            tSel.innerHTML = '<option value="">ရွေးချယ်ပါ...</option>';
+            tSel.disabled = true;
+
+            if (!currentRoleConfig || !currentRoleConfig.needTownship) return;
+            if (!this.value) return;
+
+            await loadTownships(FIXED_STATE_ID, this.value);
+        });
+
+        document.getElementById('townshipID').addEventListener('change', function() {
+            setFieldError('townshipID', '');
+        });
+
+        ['username', 'email', 'password', 'confirm_password'].forEach(id => {
+            const el = document.getElementById(id);
+            if (el) el.addEventListener('input', () => setFieldError(id, ''));
+        });
+
+        /* ============================================================
+           SUBMIT
+        ============================================================ */
+        function setLoading(loading) {
+            const btn = document.getElementById('btnRegister');
+            const icon = document.getElementById('btnIcon');
+            const text = document.getElementById('btnText');
+            btn.disabled = loading;
+            if (loading) {
+                icon.outerHTML = '<span class="spinner" id="btnIcon"></span>';
+                text.textContent = 'ပေးပို့နေသည်...';
+            } else {
+                const sp = document.getElementById('btnIcon');
+                if (sp) sp.outerHTML = '<i class="bi bi-person-plus" id="btnIcon"></i>';
+                text.textContent = 'မှတ်ပုံတင်မည်';
+            }
+        }
+
+        document.getElementById('registerForm').addEventListener('submit', async function(e) {
+            e.preventDefault();
+            clearAllErrors();
+
+            const username = document.getElementById('username').value.trim();
+            const role = document.getElementById('role').value;
+            const email = document.getElementById('email').value.trim();
+            const password = document.getElementById('password').value;
+            const confirm = document.getElementById('confirm_password').value;
+            const agree = document.getElementById('agree').checked;
+
+            const cfg = ROLE_CONFIG[(role || '').toLowerCase()];
+            const stateID = (cfg && cfg.location) ? FIXED_STATE_ID : '';
+            const districtID = (cfg && cfg.needDistrict) ? document.getElementById('districtID').value : '';
+            const townshipID = (cfg && cfg.needTownship) ? document.getElementById('townshipID').value : '';
+
+            const errors = [];
+            let firstErrorEl = null;
+
+            if (username.length < 3) {
+                setFieldError('username', 'အနည်းဆုံး ၃ လုံး ရှိရပါမည်။');
+                errors.push('အသုံးပြုသူအမည် အနည်းဆုံး ၃ လုံး ရှိရပါမည်။');
+                if (!firstErrorEl) firstErrorEl = document.getElementById('username');
+            }
+            if (!role) {
+                setFieldError('role', 'User Role ရွေးချယ်ပါ။');
+                errors.push('User Role ရွေးချယ်ပါ။');
+                if (!firstErrorEl) firstErrorEl = document.getElementById('role');
+            }
+            if (!/^[\w\.-]+@[\w\.-]+\.\w+$/.test(email)) {
+                setFieldError('email', 'Email ပုံစံ မှားနေပါသည်။');
+                errors.push('Email ပုံစံ မှားနေပါသည်။');
+                if (!firstErrorEl) firstErrorEl = document.getElementById('email');
+            }
+            if (password.length < 8) {
+                setFieldError('password', 'အနည်းဆုံး ၈ လုံး ရှိရပါမည်။');
+                errors.push('စကားဝှက် အနည်းဆုံး ၈ လုံး ရှိရပါမည်။');
+                if (!firstErrorEl) firstErrorEl = document.getElementById('password');
+            }
+            if (password !== confirm) {
+                setFieldError('confirm_password', 'စကားဝှက် နှစ်ခု မတူညီပါ။');
+                errors.push('စကားဝှက် နှစ်ခု မတူညီပါ။');
+                if (!firstErrorEl) firstErrorEl = document.getElementById('confirm_password');
+            }
+
+            if (cfg && cfg.location) {
+                if (cfg.needDistrict && !districtID) {
+                    setFieldError('districtID', 'ခရိုင် ရွေးပါ။');
+                    errors.push('ခရိုင် ရွေးပါ။');
+                    if (!firstErrorEl) firstErrorEl = document.getElementById('districtID');
+                }
+                if (cfg.needTownship && !townshipID) {
+                    setFieldError('townshipID', 'မြို့နယ် ရွေးပါ။');
+                    errors.push('မြို့နယ် ရွေးပါ။');
+                    if (!firstErrorEl) firstErrorEl = document.getElementById('townshipID');
+                }
+            }
+
+            if (!agree) errors.push('သဘောတူညီချက်ကို အမှန်ခြစ်ပေးပါ။');
+
+            if (errors.length > 0) {
+                const list = document.getElementById('errorList');
+                list.innerHTML = errors.map(err => `<li>${err}</li>`).join('');
+                document.getElementById('errorAlert').classList.add('show');
+
+                const card = document.getElementById('registerCard');
+                card.classList.add('shake');
+                setTimeout(() => card.classList.remove('shake'), 400);
+
+                if (firstErrorEl) setTimeout(() => firstErrorEl.focus(), 300);
+                return;
+            }
+
+            setLoading(true);
+
+            try {
+                const formData = new FormData();
+                formData.append('username', username);
+                formData.append('role', role);
+                formData.append('email', email);
+                formData.append('password', password);
+                formData.append('confirm_password', confirm);
+                if (stateID) formData.append('stateID', stateID);
+                if (districtID) formData.append('districtID', districtID);
+                if (townshipID) formData.append('townshipID', townshipID);
+
+                const res = await fetch('/api/register', {
+                    method: 'POST',
+                    body: formData
+                });
+
+                const data = await res.json().catch(() => ({}));
+
+                if (res.ok && (data.status === 'success' || res.status === 201)) {
+                    /* ✅ အောင်မြင်ပါက login page သို့ redirect */
+                    showModal('success', 'အောင်မြင်ပါသည်',
+                        data.message || 'အကောင့် အောင်မြင်စွာ ဖွင့်ပြီးပါပြီ။ ခဏအကြာ Login စာမျက်နှာသို့ ရောက်သွားပါမည်။');
+                    document.getElementById('registerForm').reset();
+                    strengthBar.style.width = '0%';
+                    strengthText.textContent = '';
+                    document.getElementById('locationBlock').classList.add('d-none');
+                    currentRoleConfig = null;
+
+                    // 2 စက္ကန့်အကြာ login page ကို ပြန်သွား
+                    setTimeout(() => {
+                        window.location.href = '/';
+                    }, 2000);
+                } else {
+                    const msg = data.detail || data.message || 'မှတ်ပုံတင် မအောင်မြင်ပါ။';
+                    showModal('error', 'မှတ်ပုံတင် မအောင်မြင်ပါ', msg);
+                    const list = document.getElementById('errorList');
+                    list.innerHTML = `<li>${msg}</li>`;
+                    document.getElementById('errorAlert').classList.add('show');
+
+                    const card = document.getElementById('registerCard');
+                    card.classList.add('shake');
+                    setTimeout(() => card.classList.remove('shake'), 400);
+                }
+            } catch (err) {
+                console.error(err);
+                showModal('error', 'Server ချိတ်ဆက်မှု အဆင်မပြေ',
+                    'ဆာဗာနှင့် ချိတ်ဆက်၍ မရပါ။ နောက်မှ ပြန်ကြိုးစားပါ။');
+            } finally {
+                setLoading(false);
+            }
+        });
+
+        /* ============================================================
+           INIT
+        ============================================================ */
+        (async function init() {
+            await loadRoles();
+            const stateSel = document.getElementById('stateID');
+            if (stateSel) {
+                stateSel.innerHTML = `<option value="${FIXED_STATE_ID}" selected>${FIXED_STATE_NAME}</option>`;
+                stateSel.value = FIXED_STATE_ID;
+            }
+        })();
+    </script>
+</body>
+
+</html>

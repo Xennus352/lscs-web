@@ -1,0 +1,371 @@
+{% extends "systemAdminBase.html" %}
+
+{% block title %}Dashboard - System Admin{% endblock %}
+
+{% block topbar_title %}<i class="bi bi-speedometer2 me-2"></i>System Admin Dashboard{% endblock %}
+
+{% block extra_css %}
+<style>
+    .dash-wrap {
+        max-width: 1280px;
+        margin: 0 auto;
+    }
+
+    /* ============ HERO (light emerald) ============ */
+    .dash-hero {
+        background: linear-gradient(135deg, #ecfdf5 0%, #d1fae5 100%);
+        border: 1px solid #6ee7b7;
+        border-radius: 18px;
+        padding: 1.4rem 1.6rem;
+        margin-bottom: 1.5rem;
+        position: relative;
+        overflow: hidden;
+    }
+    .dash-hero::before {
+        content: '';
+        position: absolute;
+        top: -60px; right: -60px;
+        width: 200px; height: 200px;
+        background: radial-gradient(circle, rgba(16, 185, 129, 0.18) 0%, transparent 70%);
+        border-radius: 50%;
+        pointer-events: none;
+    }
+    .dash-hero .hero-inner {
+        display: flex;
+        align-items: center;
+        gap: 14px;
+        position: relative;
+        z-index: 1;
+        flex-wrap: wrap;
+    }
+    .dash-hero .hero-badge {
+        width: 50px; height: 50px;
+        border-radius: 14px;
+        background: #ffffff;
+        border: 1px solid #6ee7b7;
+        color: #047857;
+        display: flex; align-items: center; justify-content: center;
+        font-size: 1.4rem;
+        flex-shrink: 0;
+        box-shadow: 0 4px 12px rgba(16, 185, 129, 0.14);
+    }
+    .dash-hero .hero-text h5 {
+        font-size: 1rem;
+        font-weight: 700;
+        color: #064e3b;
+        margin: 0;
+    }
+    .dash-hero .hero-text p {
+        font-size: 0.78rem;
+        color: #047857;
+        margin: 4px 0 0;
+        line-height: 1.5;
+    }
+
+    /* ============ SECTION TITLE ============ */
+    .sec-title {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 10px;
+        margin: 0 0 0.9rem;
+        flex-wrap: wrap;
+    }
+    .sec-title .st-left {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+    }
+    .sec-title .st-icon {
+        width: 32px; height: 32px;
+        border-radius: 9px;
+        background: #ecfdf5;
+        color: #059669;
+        display: flex; align-items: center; justify-content: center;
+        font-size: 0.95rem;
+        border: 1px solid #d1fae5;
+    }
+    .sec-title h6 {
+        margin: 0;
+        font-size: 0.9rem;
+        font-weight: 700;
+        color: #064e3b;
+    }
+    .sec-title .st-count {
+        font-size: 0.7rem;
+        font-weight: 600;
+        color: #047857;
+        background: #ecfdf5;
+        border: 1px solid #d1fae5;
+        padding: 3px 10px;
+        border-radius: 999px;
+    }
+
+    /* ============ COUNT CARD (minimal) ============ */
+    .stat-card {
+        background: #ffffff;
+        border: 1px solid #e5e7eb;
+        border-radius: 14px;
+        padding: 1.1rem 1.15rem;
+        height: 100%;
+        transition: all 0.22s ease;
+    }
+    .stat-card:hover {
+        border-color: #6ee7b7;
+        box-shadow: 0 8px 20px -8px rgba(16, 185, 129, 0.22);
+        transform: translateY(-2px);
+    }
+    .stat-card .sc-icon {
+        width: 36px; height: 36px;
+        border-radius: 10px;
+        background: #ecfdf5;
+        color: #047857;
+        display: flex; align-items: center; justify-content: center;
+        font-size: 1rem;
+        margin-bottom: 0.8rem;
+    }
+    .stat-card .sc-label {
+        font-size: 0.72rem;
+        font-weight: 600;
+        color: #6b7280;
+        margin-bottom: 0.35rem;
+        line-height: 1.3;
+    }
+    .stat-card .sc-value {
+        font-size: 1.85rem;
+        font-weight: 800;
+        line-height: 1;
+        color: #064e3b;
+    }
+    .stat-card .sc-value small {
+        font-size: 0.68rem;
+        font-weight: 600;
+        color: #9ca3af;
+        margin-left: 3px;
+    }
+
+    /* Total card — same white, just a slightly stronger label color */
+    .stat-card.card-total .sc-label { color: #047857; }
+
+    /* ============ QUICK LINK ============ */
+    .ql-card {
+        display: flex;
+        align-items: center;
+        gap: 12px;
+        background: #ffffff;
+        border: 1px solid #e5e7eb;
+        border-radius: 14px;
+        padding: 1rem 1.1rem;
+        text-decoration: none;
+        color: #1f2937;
+        transition: all 0.22s ease;
+        height: 100%;
+    }
+    .ql-card:hover {
+        transform: translateY(-2px);
+        border-color: #6ee7b7;
+        background: #ecfdf5;
+        box-shadow: 0 8px 18px -8px rgba(16, 185, 129, 0.22);
+    }
+    .ql-card .ql-icon {
+        width: 40px; height: 40px;
+        border-radius: 10px;
+        background: #ecfdf5;
+        color: #047857;
+        display: flex; align-items: center; justify-content: center;
+        font-size: 1.1rem;
+        flex-shrink: 0;
+        border: 1px solid #d1fae5;
+        transition: all 0.22s ease;
+    }
+    .ql-card:hover .ql-icon {
+        background: #ffffff;
+        border-color: #6ee7b7;
+    }
+    .ql-card .ql-title {
+        font-size: 0.84rem;
+        font-weight: 700;
+        color: #064e3b;
+        line-height: 1.3;
+    }
+    .ql-card .ql-sub {
+        font-size: 0.7rem;
+        color: #6b7280;
+        margin-top: 2px;
+        line-height: 1.35;
+    }
+    .ql-card .ql-arrow {
+        margin-left: auto;
+        color: #d1d5db;
+        font-size: 1rem;
+        flex-shrink: 0;
+        transition: all 0.22s ease;
+    }
+    .ql-card:hover .ql-arrow {
+        color: #059669;
+        transform: translateX(3px);
+    }
+
+    /* Logout variant */
+    .ql-card.ql-logout:hover {
+        background: #fef2f2;
+        border-color: #fca5a5;
+        box-shadow: 0 8px 18px -8px rgba(220, 38, 38, 0.2);
+    }
+    .ql-card.ql-logout .ql-icon {
+        background: #fef2f2;
+        color: #dc2626;
+        border-color: #fecaca;
+    }
+    .ql-card.ql-logout .ql-title { color: #991b1b; }
+    .ql-card.ql-logout:hover .ql-icon {
+        background: #ffffff;
+        border-color: #fca5a5;
+    }
+    .ql-card.ql-logout:hover .ql-arrow { color: #dc2626; }
+
+    @media (max-width: 575.98px) {
+        .stat-card .sc-value { font-size: 1.5rem; }
+        .stat-card { padding: 0.95rem 1rem; }
+        .dash-hero { padding: 1.1rem 1.2rem; }
+    }
+</style>
+{% endblock %}
+
+{% block page_content %}
+<div class="dash-wrap">
+
+    <!-- HERO -->
+    <div class="dash-hero">
+        <div class="hero-inner">
+            <div class="hero-badge">
+                <i class="bi bi-speedometer2"></i>
+            </div>
+            <div class="hero-text flex-grow-1">
+                <h5>System Admin Dashboard</h5>
+                <p>အကောင့်အရေအတွက်များ နှင့် Quick links များကို ဤနေရာမှ ကြည့်ရှုနိုင်ပါသည်။</p>
+            </div>
+        </div>
+    </div>
+
+    <!-- ACCOUNT COUNTS -->
+    <div class="sec-title">
+        <div class="st-left">
+            <div class="st-icon"><i class="bi bi-people-fill"></i></div>
+            <h6>အကောင့်အရေအတွက်များ</h6>
+        </div>
+        <span class="st-count">{{ total_users }} အကောင့်</span>
+    </div>
+
+    <div class="row g-3">
+
+         <!-- Union (အသစ်) -->
+    <div class="col-6 col-md-4 col-xl">
+        <div class="stat-card">
+            <div class="sc-icon"><i class="bi bi-geo-fill"></i></div>
+            <div class="sc-label">Union</div>
+            <div class="sc-value">{{ role_counts.union }} <small>အကောင့်</small></div>
+        </div>
+    </div>
+    <!-- State -->
+    <div class="col-6 col-md-4 col-xl">
+        <div class="stat-card">
+            <div class="sc-icon"><i class="bi bi-building-fill"></i></div>
+            <div class="sc-label">တိုင်းဒေသကြီး / ပြည်နယ်</div>
+            <div class="sc-value">{{ role_counts.state }} <small>အကောင့်</small></div>
+        </div>
+    </div>
+
+
+    <!-- District -->
+    <div class="col-6 col-md-4 col-xl">
+        <div class="stat-card">
+            <div class="sc-icon"><i class="bi bi-diagram-3-fill"></i></div>
+            <div class="sc-label">ခရိုင်</div>
+            <div class="sc-value">{{ role_counts.district }} <small>အကောင့်</small></div>
+        </div>
+    </div>
+
+    <!-- Township -->
+    <div class="col-6 col-md-4 col-xl">
+        <div class="stat-card">
+            <div class="sc-icon"><i class="bi bi-geo-alt-fill"></i></div>
+            <div class="sc-label">မြို့နယ်</div>
+            <div class="sc-value">{{ role_counts.township }} <small>အကောင့်</small></div>
+        </div>
+    </div>
+
+    <!-- Enumerator -->
+    <div class="col-6 col-md-4 col-xl">
+        <div class="stat-card">
+            <div class="sc-icon"><i class="bi bi-person-badge-fill"></i></div>
+            <div class="sc-label">Enumerator</div>
+            <div class="sc-value">{{ role_counts.enumerator }} <small>အကောင့်</small></div>
+        </div>
+    </div>
+
+    <!-- Total -->
+    <div class="col-12 col-md-4 col-xl">
+        <div class="stat-card card-total">
+            <div class="sc-icon"><i class="bi bi-people-fill"></i></div>
+            <div class="sc-label">စုစုပေါင်း</div>
+            <div class="sc-value">{{ total_users }} <small>အကောင့်</small></div>
+        </div>
+    </div>
+</div>
+    <!-- QUICK LINKS -->
+    <div class="sec-title mt-4">
+        <div class="st-left">
+            <div class="st-icon"><i class="bi bi-lightning-charge-fill"></i></div>
+            <h6>Quick Actions</h6>
+        </div>
+    </div>
+
+    <div class="row g-3">
+        <div class="col-12 col-md-6">
+            <a href="/system/users" class="ql-card">
+                <div class="ql-icon"><i class="bi bi-person-plus-fill"></i></div>
+                <div>
+                    <div class="ql-title">အသုံးပြုသူအသစ် ထည့်ရန်</div>
+                    <div class="ql-sub">အကောင့်အသစ် ဖန်တီးခြင်း</div>
+                </div>
+                <i class="bi bi-chevron-right ql-arrow"></i>
+            </a>
+        </div>
+
+        <div class="col-12 col-md-6">
+            <a href="/system/animals" class="ql-card">
+                <div class="ql-icon"><i class="bi bi-tags-fill"></i></div>
+                <div>
+                    <div class="ql-title">တိရစ္ဆာန်အမျိုးအစား</div>
+                    <div class="ql-sub">အမျိုးအစား / မျိုးစိတ် ထည့်ခြင်း</div>
+                </div>
+                <i class="bi bi-chevron-right ql-arrow"></i>
+            </a>
+        </div>
+
+        <div class="col-12 col-md-6">
+            <a href="/system/settings" class="ql-card">
+                <div class="ql-icon"><i class="bi bi-gear-fill"></i></div>
+                <div>
+                    <div class="ql-title">Settings</div>
+                    <div class="ql-sub">ကိုယ်ရေးအချက်အလက် ပြင်ဆင်ခြင်း</div>
+                </div>
+                <i class="bi bi-chevron-right ql-arrow"></i>
+            </a>
+        </div>
+
+        <div class="col-12 col-md-6">
+            <a href="/logout" class="ql-card ql-logout" onclick="return confirmLogout(event);">
+                <div class="ql-icon"><i class="bi bi-box-arrow-right"></i></div>
+                <div>
+                    <div class="ql-title">Logout</div>
+                    <div class="ql-sub">အကောင့်မှ ထွက်ခွာခြင်း</div>
+                </div>
+                <i class="bi bi-chevron-right ql-arrow"></i>
+            </a>
+        </div>
+    </div>
+
+</div>
+{% endblock %}

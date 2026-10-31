@@ -1,0 +1,351 @@
+{% extends 'formBase.html' %}
+
+{% block form_content %}
+<div id="section3">
+    <div class="section-title-box">
+        <h4>အပိုင်း - (၃) ကြက်၊ ဘဲ၊ ငုံး စာရင်း</h4>
+        <p>ကြက်၊ ဘဲ၊ ငုံး အမျိုးအစားများ၏ အသက်အုပ်စုအလိုက် အရေအတွက်</p>
+    </div>
+
+    <div class="p-4 rounded-3 mb-4" style="background: rgba(16,185,129,0.08); border: 1px solid #a7f3d0;">
+        <label class="form-label fw-bold mb-3" style="color:#065f46;">ကြက်၊ ဘဲ၊ ငုံး မွေးမြူထားရှိခြင်း ရှိပါသလား? <span class="text-danger">*</span></label>
+        <div class="d-flex flex-column flex-sm-row gap-3">
+            <label class="flex-grow-1 bg-white p-3 rounded-3 border d-flex align-items-center gap-2" style="border-color:#a7f3d0 !important; cursor:pointer;">
+                <input type="radio" name="has_poultry" value="yes" required onchange="togglePoultryForms()" style="accent-color:#047857; width:1.1rem; height:1.1rem;">
+                <span class="fw-bold small">မွေးမြူထားသည်</span>
+            </label>
+            <label class="flex-grow-1 bg-white p-3 rounded-3 border d-flex align-items-center gap-2" style="border-color:#a7f3d0 !important; cursor:pointer;">
+                <input type="radio" name="has_poultry" value="no" required onchange="togglePoultryForms()" style="accent-color:#047857; width:1.1rem; height:1.1rem;">
+                <span class="fw-bold small">မမွေးမြူထားပါ</span>
+            </label>
+        </div>
+    </div>
+
+    <div id="poultryForms" class="d-none">
+        <div class="bg-white border rounded-3 overflow-hidden shadow-sm" style="border-color:#a7f3d0 !important;">
+            <div class="px-4 py-3 border-bottom d-flex flex-column flex-sm-row justify-content-between align-items-start align-items-sm-center gap-2" style="background:#d1fae5; border-color:#a7f3d0 !important;">
+                <h5 class="fw-bold mb-0 d-flex align-items-center gap-2 w-100" style="color:#065f46; font-size:1rem;">
+                    <span class="d-inline-block rounded-circle" style="width:10px; height:10px; background:#047857;"></span>
+                    ကြက်၊ ဘဲ၊ ငုံး အချက်အလက်များ
+                </h5>
+                <div class="d-flex flex-wrap gap-2 w-100 w-sm-auto justify-content-end">
+                    <button type="button" onclick="addPoultryRow()" class="btn btn-sm text-white fw-bold d-flex align-items-center gap-1 p-2" style="background:#047857;">
+                        <svg width="16" height="16" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"></path></svg>
+                        ထပ်ထည့်ရန်
+                    </button>
+                </div>
+            </div>
+            <div class="table-responsive custom-scrollbar">
+                 <script>
+                const livestockAnimalData = {{ livestockAni | tojson | safe }};
+                const animalOptions = livestockAnimalData.map(la => `<option value="${la.animalID}">${la.animalName}</option>`).join('');
+                </script>
+                <table class="table-bordered-custom mb-0" id="poultryTable" style="min-width: 900px;">
+                    <thead>
+                        <tr>
+                            <th rowspan="2" class="text-start" style="min-width:150px;">အမျိုးအစား</th>
+                            <th rowspan="2" style="min-width:90px;">မျိုး (Breed)</th>
+                            <th colspan="2">ငယ်</th>
+                            <th colspan="2">လတ်</th>
+                            <th colspan="2">ကြီး</th>
+                            <th rowspan="2" style="min-width:80px;">စုစုပေါင်း</th>
+                            <th rowspan="2" style="width:50px;">ဖယ်ရှား</th>
+                        </tr>
+                        <tr>
+                            <th>အထီး</th><th>အမ</th>
+                            <th>အထီး</th><th>အမ</th>
+                            <th>အထီး</th><th>အမ</th>
+                        </tr>
+                    </thead>
+                    <tbody id="poultryBody"></tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block part_js %}
+<script>
+const SURVEY_PREFIX = {{ survey_prefix|default('/survey')|tojson }};
+</script>
+<script>
+    let poultryRowCount = 0;
+
+    document.addEventListener('DOMContentLoaded', function() {
+        updateProgress(60, 'အပိုင်း (၃) / ၅ - ကြက်၊ ဘဲ၊ ငုံး စာရင်း');
+        document.getElementById('backBtn').classList.remove('d-none');  
+        loadFormData();
+
+        const backButton = document.getElementById('backBtn');
+        if (backButton) {
+            backButton.onclick = function(event) {
+                event.preventDefault();
+                saveFormData();
+                window.location.href = `${SURVEY_PREFIX}/part2/${encodeURIComponent(formID)}`;
+            };
+        }
+
+        const saved = document.querySelector('input[name="has_poultry"]:checked');
+        if (saved && saved.value === 'yes') {
+            document.getElementById('poultryForms').classList.remove('d-none');
+            if (document.getElementById('poultryBody').children.length === 0) addPoultryRow();
+        }
+
+       /* document.getElementById('backBtn').addEventListener('click', function() {
+            saveFormData();
+            window.location.href = `${SURVEY_PREFIX}/part2`;
+        });
+        /*document.getElementById('nextPageBtn').addEventListener('click', function() {
+            if (validateSection3()) {
+                saveFormData();
+                window.location.href = `${SURVEY_PREFIX}/part5`;
+            }
+        });
+        */
+    });
+
+    function validateSection3() {
+        const hp = document.querySelector('input[name="has_poultry"]:checked');
+        if (!hp) {
+            showModal('error', 'သတိပေးချက်', 'ကျေးဇူးပြု၍ "ကြက်၊ ဘဲ၊ ငုံး မွေးမြူထားရှိခြင်း ရှိပါသလား?" ကို အရင်ရွေးချယ်ပေးပါ။');
+            return false;
+        }
+        if (hp.value === 'yes') {
+            let hasData = false;
+            document.querySelectorAll('#poultryBody tr').forEach(row => {
+                const sel = row.querySelector('.poultry-type-select');
+                const inp = row.querySelector('input[type="text"]:not(.count-input)');
+                if ((sel && sel.value) || (inp && inp.value.trim())) hasData = true;
+            });
+            if (!hasData) {
+                showModal('error', 'သတိပေးချက်', 'ကြက်၊ ဘဲ၊ ငုံး အနည်းဆုံးတစ်မျိုး ဖြည့်သွင်းပေးပါ။');
+                return false;
+            }
+        }
+        return true;
+    }
+
+    window.togglePoultryForms = function() {
+        const pf = document.getElementById('poultryForms');
+        const hp = document.querySelector('input[name="has_poultry"]:checked');
+        if (hp && hp.value === 'yes') {
+            pf.classList.remove('d-none');
+            if (document.getElementById('poultryBody').children.length === 0) addPoultryRow();
+        } else {
+            pf.classList.add('d-none');
+        }
+    };
+
+    window.addPoultryRow = function() {
+        poultryRowCount++;
+        const tbody = document.getElementById('poultryBody');
+        const tr = document.createElement('tr');
+        tr.id = 'poultryRow_' + poultryRowCount;
+        tr.innerHTML = `
+            <td>
+        <select name="poultry[${poultryRowCount}][breed]" 
+                class="form-select form-select-sm" 
+                id="poultryId_${poultryRowCount}" 
+                onchange="loadLiveStockSpecies('poultryId_${poultryRowCount}','poultrySpeciesId_${poultryRowCount}')">
+            <option value="">ရွေးချယ်ပါ...</option>
+            ${animalOptions}
+        </select>
+    </td>
+    <td>
+        <select name="poultry[${poultryRowCount}][species]" 
+                class="form-select form-select-sm"
+                id="poultrySpeciesId_${poultryRowCount}">
+             <!-- Species options go here -->
+        </select></td>
+            <td><input type="number" name="poultry[${poultryRowCount}][young_male]" class="form-control form-control-sm count-input" placeholder="0" min="0"></td>
+            <td><input type="number" name="poultry[${poultryRowCount}][young_female]" class="form-control form-control-sm count-input" placeholder="0" min="0"></td>
+            <td><input type="number" name="poultry[${poultryRowCount}][medium_male]" class="form-control form-control-sm count-input" placeholder="0" min="0"></td>
+            <td><input type="number" name="poultry[${poultryRowCount}][medium_female]" class="form-control form-control-sm count-input" placeholder="0" min="0"></td>
+            <td><input type="number" name="poultry[${poultryRowCount}][adult_male]" class="form-control form-control-sm count-input" placeholder="0" min="0"></td>
+            <td><input type="number" name="poultry[${poultryRowCount}][adult_female]" class="form-control form-control-sm count-input" placeholder="0" min="0"></td>
+            <td><input type="number" name="poultry[${poultryRowCount}][total]" class="form-control form-control-sm text-center fw-bold total-input" placeholder="0" readonly style="background:#f3f4f6;"></td>
+            <td class="text-center"><button type="button" onclick="removeRow('poultryRow_${poultryRowCount}')" class="btn btn-sm text-danger"><i class="bi bi-trash"></i></button></td>
+        `;
+        tbody.appendChild(tr);
+        tr.querySelectorAll('.count-input').forEach(input => input.addEventListener('input', () => calculateRowTotal(tr)));
+    };
+
+    window.addOtherPoultryRow = function() {
+        poultryRowCount++;
+        const tbody = document.getElementById('poultryBody');
+        const tr = document.createElement('tr');
+        tr.id = 'poultryOtherRow_' + poultryRowCount;
+        tr.innerHTML = `
+            <td><input type="text" name="poultry[${poultryRowCount}][breed]" class="form-control form-control-sm" placeholder="အမျိုးအစား"></td>
+            <td><input type="text" name="poultry[${poultryRowCount}][species]" class="form-control form-control-sm" placeholder="မျိုး"></td>
+            <td><input type="number" name="poultry[${poultryRowCount}][young_male]" class="form-control form-control-sm count-input" placeholder="0" min="0"></td>
+            <td><input type="number" name="poultry[${poultryRowCount}][young_female]" class="form-control form-control-sm count-input" placeholder="0" min="0"></td>
+            <td><input type="number" name="poultry[${poultryRowCount}][medium_male]" class="form-control form-control-sm count-input" placeholder="0" min="0"></td>
+            <td><input type="number" name="poultry[${poultryRowCount}][medium_female]" class="form-control form-control-sm count-input" placeholder="0" min="0"></td>
+            <td><input type="number" name="poultry[${poultryRowCount}][adult_male]" class="form-control form-control-sm count-input" placeholder="0" min="0"></td>
+            <td><input type="number" name="poultry[${poultryRowCount}][adult_female]" class="form-control form-control-sm count-input" placeholder="0" min="0"></td>
+            <td><input type="number" name="poultry[${poultryRowCount}][total]" class="form-control form-control-sm text-center fw-bold total-input" placeholder="0" readonly style="background:#f3f4f6;"></td>
+            <td class="text-center"><button type="button" onclick="removeRow('poultryOtherRow_${poultryRowCount}')" class="btn btn-sm text-danger"><i class="bi bi-trash"></i></button></td>
+        `;
+        tbody.appendChild(tr);
+        tr.querySelectorAll('.count-input').forEach(input => input.addEventListener('input', () => calculateRowTotal(tr)));
+    };
+
+    window.togglePoultryAgeColumns = function(sel) {
+        const type = sel.value;
+        const row = sel.closest('tr');
+        const total = row.querySelector('.total-input');
+        const inputs = row.querySelectorAll('.count-input');
+        
+        inputs.forEach(i => { i.disabled = false; i.style.background = ''; i.value = ''; });
+        total.readOnly = true;
+        total.style.background = '#f3f4f6';
+        total.value = '';
+        
+        if (type === 'အသားစားကြက်' || type === 'အသားစားဘဲ') {
+            inputs.forEach(i => { i.disabled = true; i.style.background = '#e5e7eb'; i.value = ''; });
+            total.readOnly = false;
+            total.style.background = '#fff';
+        }
+        
+        if (type === 'ဒေသကြက်' || type === 'ဒေသဘဲ') {
+            for (let i = 0; i < 4; i++) {
+                if (inputs[i]) { inputs[i].disabled = true; inputs[i].style.background = '#e5e7eb'; inputs[i].value = ''; }
+            }
+        }
+    };
+
+    function calculateRowTotal(row) {
+        const total = row.querySelector('.total-input');
+        if (total.readOnly) {
+            let sum = 0;
+            row.querySelectorAll('.count-input').forEach(i => { if (!i.disabled) sum += Number(i.value) || 0; });
+            total.value = sum;
+        }
+    }
+
+    window.removeRow = function(rowId) {
+        const r = document.getElementById(rowId);
+        if (r) r.remove();
+    };
+    const formID = {{ form_id | tojson | safe }};
+    document.getElementById("nextPageBtn").addEventListener("click",function(event){
+        //alert("formID from formpart3:"+formID);
+    //const formID={{form_id}};
+    submitDataTable(formID);
+    //window.location.href = "/survey/part5"; 
+});
+
+async function submitDataTable(formID) {
+    const records = [];
+    const ani_rows = document.querySelectorAll("#poultryBody tr"); // Adjust selector to your table rows
+    
+    ani_rows.forEach(row => {
+        // Extract dropdowns / text input identifiers from the row
+        const animalID = row.querySelector('select[name*="[breed]"]').value; 
+        const speciesID = row.querySelector('select[name*="[species]"]').value; 
+        const animalTypeID = "atID03"; 
+        
+        // Or maps from your logic if applicable
+        // Define your matrix mapping to exact IDs matching your database mapping rules
+       const matrices = [
+    { selector: 'young_male', age: "ageID07", gender: "g01" },
+    { selector: 'young_female', age: "ageID07", gender: "g03" },
+    
+    { selector: 'medium_male', age: "ageID08", gender: "g01" },
+    { selector: 'medium_female', age: "ageID08", gender: "g03" },
+    
+    { selector: 'adult_male', age: "ageID09", gender: "g01" },
+    { selector: 'adult_female', age: "ageID09", gender: "g03" }
+    ];
+   
+    matrices.forEach(item => {
+           // alert("----------"+item.selector);
+            const inputEl = row.querySelector(`input[name*="${item.selector}"]`);
+            //alert(inputEl.value);
+            const dataCount = Number(inputEl?.value) || 0;
+            //alert(dataCount);
+            if (dataCount > 0) {
+                const record = {
+    formID: String(formID || ""),
+    animalTypeID: String(animalTypeID || ""),
+    animalID: String(animalID || ""),
+    speciesID: String(speciesID || ""),
+    
+    // Ensure these fall back to an empty string if item properties are undefined
+    ageID: String(item.age || ""),
+    genderID: String(item.gender || ""),
+    
+    // CRUCIAL: Parse into a number. Fall back to 0 if empty or invalid (NaN)
+    dataCount: parseInt(dataCount, 10) || 0 
+};
+                    records.push(
+                        record
+                    );
+                }
+            });
+        });
+   
+         const response = await fetch(
+                    `${SURVEY_PREFIX}/part4/${encodeURIComponent(formID)}`,{ method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify(records)
+
+        }
+                );
+
+     if (response.ok) {
+        const data = await response.json();
+        window.location.href = data.redirect_url; 
+        }
+
+}
+
+async function loadLiveStockSpecies(
+    
+        livestockId,
+		livestockSpeciesId,
+		selectedLivestock = ""
+	) {
+        
+		const liveStockSelect = document.getElementById(livestockId);
+		const livestockSpeciesSelect = document.getElementById(livestockSpeciesId);
+		const liveStockValue = liveStockSelect.value;
+		
+        //alert(liveStockValue);
+		
+		if (!liveStockValue ) {
+			return;
+		}
+       //alert(districtValue);
+       //alert(townshipValue)
+       livestockSpeciesSelect.innerHTML=""
+		try {
+			const response = await fetch(
+				`/fetchLiveStockSpecies/${encodeURIComponent(liveStockValue)}`
+			);
+			const data = await response.json();
+           // alert(data.liveStockSpecies.length);
+			data.liveStockSpecies.forEach(qv => {
+				const option = document.createElement("option");
+				option.value = qv.speciesID;
+				option.textContent = qv.speciesName;
+				if (qv.speciesName=== selectedLivestock) {
+					option.selected = true;
+				}
+				livestockSpeciesSelect.appendChild(option);
+			});
+			livestockSpeciesSelect.disabled = false;
+		}
+		catch (error) {
+			console.error(
+				"QV load error:",
+				error
+			);
+		}
+        
+	}
+	
+</script>
+{% endblock %}

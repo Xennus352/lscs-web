@@ -46,8 +46,7 @@ services:
       JWT_SECRET_KEY: ${JWT_SECRET_KEY:?set JWT_SECRET_KEY in .env.prod}
       SESSION_MAX_AGE_HOURS: ${SESSION_MAX_AGE_HOURS:-8}
       COOKIE_HTTPS_ONLY: "true"
-    # Bypass the embedded-MariaDB entrypoint (DATABASE_URL is set) and let
-    # uvicorn trust Caddy's X-Forwarded-* headers.
+    # Use a fixed internal port and trust Caddy's X-Forwarded-* headers.
     command:
       - uvicorn
       - app.main:app

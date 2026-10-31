@@ -44,18 +44,29 @@ Drop APKs into `assets/apk/` (or set `APK_DIR` to another folder). Filenames
 must contain a version, for example `lbvd-1.2.3.apk`; the highest version wins.
 These routes are intentionally public so the app can update before login.
 
-## Container deployment (all-in-one demo)
+## Deploy FastAPI on Render
 
-The `Dockerfile` can run the web app and a MariaDB database in one container:
+The `Dockerfile` runs only FastAPI with Uvicorn. The database runs separately.
 
-- `DATABASE_URL` **unset** → an embedded MariaDB starts and is seeded once from
-  `deploy/seed.sql`.
-- `DATABASE_URL` **set** → the embedded database is skipped and that external
-  database is used instead (this is how `docker-compose.yml` runs it).
+1. Create a Render **Web Service** from this repository and select **Docker**
+   as the runtime. Use the repository root as the build context and `./Dockerfile`
+   as the Dockerfile path. Leave the Docker command unset to use the image default.
+2. Set these environment variables in Render:
 
-Demo login: `admin` / `LBVDdemo#2026` — change it after first login.
+   ```text
+   DATABASE_URL=mysql+pymysql://USER:PASSWORD@DB_HOST:3306/lbvd?charset=utf8mb4
+   SESSION_SECRET=<a long random secret>
+   JWT_SECRET_KEY=<a different long random secret>
+   COOKIE_HTTPS_ONLY=true
+   DEBUG=false
+   ```
 
-`deploy/seed.sql` holds the schema, administrative reference data and synthetic
-enumerator records only; it contains no real survey rows, names or phone
-numbers. Embedded data is lost on every redeploy/restart, so use the external
-database mode for real survey data.
+   URL-encode special characters in database credentials. The database must be
+   reachable from Render and have the LBVD schema imported before startup
+   (including `personcv`). The container does not start or seed a database.
+3. Deploy. Uvicorn binds to `0.0.0.0` and Render's `PORT` environment variable.
+   Locally, the default port remains `5000` for Docker Compose.
+
+The image includes the templates and static assets used by the FastAPI routes.
+For APK uploads that must survive redeploys, attach a persistent disk and set
+`APK_DIR` to a directory on that disk.

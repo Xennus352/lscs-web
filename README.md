@@ -29,6 +29,21 @@ checks authenticated `/api/locations` and discovers the submission contract from
 the server's own HTML forms. A 404 from the documentation URL alone does not mean
 the backend is offline.
 
+## APK updates
+
+The mobile app can check for a newer APK without logging in:
+
+- `GET /api/check-update?current_version=1.0.0` — returns the latest version,
+  size, SHA-256 and a `download_url`. It returns `update_available: false`
+  when the installed version is current, and `304` when the client's `ETag`
+  still matches.
+- `GET /api/download-latest` — `302` redirect to the newest APK.
+- `GET /apks/<file>.apk` — serves the APK files themselves.
+
+Drop APKs into `assets/apk/` (or set `APK_DIR` to another folder). Filenames
+must contain a version, for example `lbvd-1.2.3.apk`; the highest version wins.
+These routes are intentionally public so the app can update before login.
+
 ## Container deployment (all-in-one demo)
 
 The `Dockerfile` can run the web app and a MariaDB database in one container:

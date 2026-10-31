@@ -1,3 +1,14 @@
+import os
+from pathlib import Path
+
+# Project root (the directory that contains app/ and assets/)
+BASE_DIR = Path(__file__).resolve().parent.parent
+
+# Folder that serves the mobile APKs.
+# Override with APK_DIR when the files live somewhere else (e.g. a mounted volume).
+APK_DIR = Path(os.getenv("APK_DIR", str(BASE_DIR / "assets" / "apk")))
+
+
 ANIMAL_TYPES = {
     "atID01": {"table": "largeanimals",  "label": "large"},
     "atID02": {"table": "younganimals",  "label": "small"},

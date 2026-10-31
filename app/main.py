@@ -12,11 +12,12 @@ from sqlalchemy.exc import SQLAlchemyError
 from app.config import (
     APP_NAME, APP_VERSION, COOKIE_HTTPS_ONLY, DEBUG, SESSION_SECRET,
 )
+from app.constants import APK_DIR
 from app.database import engine
 from app.extensions import limiter
 from app.routers import (
     auth, dashboard, enumerator, exports, households, locations,
-    reports, settings, survey, system_admin,
+    reports, settings, survey, system_admin, update,
 )
 from fastapi.responses import JSONResponse
 
@@ -103,11 +104,23 @@ app.include_router(households.router)
 app.include_router(settings.router)
 app.include_router(system_admin.router)
 app.include_router(exports.router)
+app.include_router(update.router)   # public: /api/check-update, /api/download-latest
 
 # ---------- Static ----------
 _current_dir = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 _assets_dir = os.path.join(_current_dir, "assets")
 app.mount("/assets", StaticFiles(directory=_assets_dir), name="assets")
+
+# APK downloads (public, referenced by /api/check-update)
+try:
+    APK_DIR.mkdir(parents=True, exist_ok=True)
+except OSError as exc:
+    logger.warning("Cannot create APK directory %s: %s", APK_DIR, exc)
+app.mount(
+    "/apks",
+    StaticFiles(directory=str(APK_DIR), check_dir=False),
+    name="apks",
+)
 
 
 if __name__ == "__main__":

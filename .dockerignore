@@ -9,3 +9,5 @@ __pycache__
 .env
 docker-compose.yml
 *.md
+deploy/lbvd-reference-data.sql
+deploy/lbvd-accounts.sql

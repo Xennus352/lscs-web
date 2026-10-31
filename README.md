@@ -28,3 +28,19 @@ drafts and pending uploads.
 checks authenticated `/api/locations` and discovers the submission contract from
 the server's own HTML forms. A 404 from the documentation URL alone does not mean
 the backend is offline.
+
+## Container deployment (all-in-one demo)
+
+The `Dockerfile` can run the web app and a MariaDB database in one container:
+
+- `DATABASE_URL` **unset** → an embedded MariaDB starts and is seeded once from
+  `deploy/seed.sql`.
+- `DATABASE_URL` **set** → the embedded database is skipped and that external
+  database is used instead (this is how `docker-compose.yml` runs it).
+
+Demo login: `admin` / `LBVDdemo#2026` — change it after first login.
+
+`deploy/seed.sql` holds the schema, administrative reference data and synthetic
+enumerator records only; it contains no real survey rows, names or phone
+numbers. Embedded data is lost on every redeploy/restart, so use the external
+database mode for real survey data.

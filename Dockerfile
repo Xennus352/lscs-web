@@ -20,7 +20,6 @@ RUN pip install --no-cache-dir slowapi uvicorn pyjwt openpyxl
 COPY app ./app
 COPY assets ./assets
 COPY templates ./templates
-COPY .env .env
 COPY run.sh ./run.sh
 
 # Make run.sh executable

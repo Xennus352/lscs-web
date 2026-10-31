@@ -4,5 +4,5 @@ set -euo pipefail
 cd "$(dirname "$0")"
 
 exec uvicorn app.main:app \
-  --host "${HOST:-127.0.0.1}" \
+  --host "${HOST:-0.0.0.0}" \
   --port "${PORT:-5000}"

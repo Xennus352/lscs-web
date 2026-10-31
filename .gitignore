@@ -1,0 +1,9 @@
+# Never commit database dumps containing personal data
+deploy/*-data.sql
+deploy/lbvd-accounts.sql
+*.dump
+
+# Python
+__pycache__/
+*.pyc
+.venv/

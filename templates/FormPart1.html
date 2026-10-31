@@ -264,6 +264,20 @@
 const SURVEY_PREFIX = {{ survey_prefix|default('/survey')|tojson }};
 const IS_ENUMERATOR = {{ (role == 'enumerator')|tojson }};
 
+/* ============================================================
+ * မြန်မာဂဏန်း -> အာရဗီဂဏန်း ပြောင်းလဲပေးသော helper
+ * (DB ထဲ ရိုက်တဲ့အတိုင်း ဝင်စေချင်တာမို့ submit မှာ မခေါ်တော့ပါ)
+ * ဖုန်းနံပါတ်/အသက် စစ်ဆေးရာမှာသာ သုံးမည်
+ * ============================================================ */
+const MM_TO_AR = { '၀':'0','၁':'1','၂':'2','၃':'3','၄':'4',
+                   '၅':'5','၆':'6','၇':'7','၈':'8','၉':'9' };
+function toArabicDigits(str) {
+    return String(str ?? '').replace(/[၀-၉]/g, ch => MM_TO_AR[ch] ?? ch);
+}
+function stripNonDigits(value) {
+    return String(value ?? '').replace(/[^0-9၀-၉]/g, '');
+}
+
 function setupRespondentHeadSync(form) {
     const pairs = [
         ['name', 'headName'], ['age', 'headAge'],
@@ -300,7 +314,9 @@ function setupRespondentHeadSync(form) {
     }
     form.querySelectorAll('[name="respondent_is_head"]').forEach(radio => radio.addEventListener('change', sync));
     pairs.forEach(([respondent]) => field(respondent).addEventListener('input', () => {
-        if (respondent === 'age') field(respondent).value = field(respondent).value.replace(/[^0-9]/g, '');
+        if (respondent === 'age') {
+            field(respondent).value = stripNonDigits(field(respondent).value);
+        }
         if (isSame()) sync();
     }));
     form.querySelectorAll('[name="gender"]').forEach(radio => radio.addEventListener('change', sync));
@@ -340,8 +356,6 @@ async function loadLocationOptions() {
             fillSelect(districtEl, [data.district], 'districtID', 'districtName', data.district.districtID);
             fillSelect(townshipEl, [data.township], 'townshipID', 'townshipName', data.township.townshipID);
             fillSelect(qvEl, data.qvs || [], 'QVID', 'QVName');
-            // Keep assigned selects enabled so their values are included in the POST.
-            // Pointer blocking is UI-only; the backend independently validates the assignment.
             districtEl.disabled = false;
             townshipEl.disabled = false;
             districtEl.style.pointerEvents = 'none';
@@ -399,7 +413,6 @@ document.addEventListener('DOMContentLoaded', async function () {
     if (submitBtn) submitBtn.classList.add('d-none');
     loadFormData();
     const syncHouseholdHead = setupRespondentHeadSync(form);
-    // A new visit starts today in the user's local timezone; the date remains editable.
     const today = new Date();
     document.getElementById('interviewDate').value =
         today.getFullYear() + '-' + String(today.getMonth() + 1).padStart(2, '0') + '-' + String(today.getDate()).padStart(2, '0');
@@ -432,11 +445,35 @@ document.addEventListener('DOMContentLoaded', async function () {
     if (townshipEl) townshipEl.addEventListener('change', loadQVOptions);
     await loadLocationOptions();
 
+    // အသက် field နှစ်ခုလုံးအတွက် မြန်မာဂဏန်း + အာရဗီဂဏန်း ခွင့်ပြု
     ['respondentAge', 'headAge'].forEach(id => {
         const el = document.getElementById(id);
         if (!el) return;
-        el.addEventListener('input', function () { this.value = this.value.replace(/[^0-9]/g, ''); });
+        el.addEventListener('input', function () {
+            this.value = stripNonDigits(this.value);
+        });
     });
+
+    // ဖုန်းနံပါတ် field နှစ်ခုလုံးအတွက် မြန်မာဂဏန်း + အာရဗီဂဏန်း ခွင့်ပြု
+    ['respondentPhone', 'headPhone'].forEach(id => {
+        const el = document.getElementById(id);
+        if (!el) return;
+        el.addEventListener('input', function () {
+            this.value = stripNonDigits(this.value);
+        });
+    });
+
+    /* ============================================================
+     * DB ထဲ ရိုက်တဲ့အတိုင်း ဝင်စေချင်တာမို့ submit မတိုင်မီ
+     * ဂဏန်းများကို အာရဗီသို့ မပြောင်းတော့ပါ။
+     * ရိုက်ထည့်ထားတဲ့ အတိုင်း (မြန်မာဖြစ်စေ၊ အာရဗီဖြစ်စေ) ပို့မည်။
+     * ============================================================ */
+    function normalizeNumericFieldsForSubmit() {
+        ['respondentAge', 'headAge', 'respondentPhone', 'headPhone'].forEach(id => {
+            const el = document.getElementById(id);
+            if (el) el.value = el.value.trim();
+        });
+    }
 
     function validateSection1() {
         syncHouseholdHead();
@@ -461,11 +498,17 @@ document.addEventListener('DOMContentLoaded', async function () {
             }
             const phone = document.getElementById(phoneId);
             const phoneError = document.getElementById(phoneErrorId);
-            if (phone && phone.value.trim() && !phoneRegex.test(phone.value.trim())) {
-                valid = false; phone.classList.add('error-input');
-                if (phoneError) phoneError.classList.remove('d-none');
-                if (!firstError) firstError = phone;
-            } else if (phoneError) phoneError.classList.add('d-none');
+            if (phone) {
+                // စစ်ဆေးရန် အာရဗီဂဏန်းသို့ ပြောင်း (တန်ဖိုးကို မပြောင်း၊ စစ်ဆေးရန်သာ)
+                const phoneArabic = toArabicDigits(phone.value.trim());
+                if (phoneArabic && !phoneRegex.test(phoneArabic)) {
+                    valid = false; phone.classList.add('error-input');
+                    if (phoneError) phoneError.classList.remove('d-none');
+                    if (!firstError) firstError = phone;
+                } else if (phoneError) {
+                    phoneError.classList.add('d-none');
+                }
+            }
         });
         if (IS_ENUMERATOR) {
             if (!districtEl.value || !townshipEl.value || !document.getElementById('villageTract').value) valid = false;
@@ -479,9 +522,15 @@ document.addEventListener('DOMContentLoaded', async function () {
         return valid;
     }
 
-    if (nextBtn) nextBtn.addEventListener('click', function () { if (validateSection1()) form.requestSubmit(); });
+    if (nextBtn) nextBtn.addEventListener('click', function () {
+        if (validateSection1()) {
+            normalizeNumericFieldsForSubmit();
+            form.requestSubmit();
+        }
+    });
     if (form) form.addEventListener('submit', async function (event) {
         if (!validateSection1()) { event.preventDefault(); return; }
+        normalizeNumericFieldsForSubmit();
         if (isCollecting()) { saveFormData(); return; }
         event.preventDefault();
         if (nextBtn.disabled) return;
@@ -495,7 +544,7 @@ document.addEventListener('DOMContentLoaded', async function () {
                 throw new Error(typeof result.detail === 'string' ? result.detail : 'သိမ်းဆည်းမှု မအောင်မြင်ပါ။');
             }
             clearFormData();
-            showModal('success', 'သိမ်းဆည်းပြီးပါပြီ', 'အချက်အလက် မကောက်ယူသည့် အိမ်ထောင်စုကို သိမ်းဆည်းပြီးပါပြီ။', function () {
+                       showModal('success', 'သိမ်းဆည်းပြီးပါပြီ', 'အချက်အလက် မကောက်ယူသည့် အိမ်ထောင်စုကို သိမ်းဆည်းပြီးပါပြီ။', function () {
                 window.location.href = '/enumerator/part1';
             });
         } catch (error) {

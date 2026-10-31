@@ -92,7 +92,7 @@
         document.getElementById('backBtn').classList.remove('d-none');
         loadFormData();
 
-        const backButton = document.getElementById('backBtn');
+                const backButton = document.getElementById('backBtn');
 
         if (backButton) {
             backButton.classList.remove('d-none');
@@ -101,7 +101,6 @@
                 event.preventDefault();
                 event.stopImmediatePropagation();
 
-                // formID အမှန်ကို ယူသုံးခြင်း
                 const currentFormID = typeof formID !== 'undefined' ? formID : '';
 
                 if (!currentFormID) {
@@ -109,7 +108,6 @@
                     return;
                 }
 
-                // Survey prefix အပေါ်မူတည်၍ မှန်ကန်သော URL သို့ ပို့ပေးခြင်း
                 const targetUrl = (SURVEY_PREFIX === '/enumerator')
                     ? `/enumerator/part2/${encodeURIComponent(currentFormID)}`
                     : `/survey/part2/${encodeURIComponent(currentFormID)}`;
@@ -123,18 +121,6 @@
             document.getElementById('poultryForms').classList.remove('d-none');
             if (document.getElementById('poultryBody').children.length === 0) addPoultryRow();
         }
-
-        /* document.getElementById('backBtn').addEventListener('click', function() {
-             saveFormData();
-             window.location.href = `${SURVEY_PREFIX}/part2`;
-         });
-         /*document.getElementById('nextPageBtn').addEventListener('click', function() {
-             if (validateSection3()) {
-                 saveFormData();
-                 window.location.href = `${SURVEY_PREFIX}/part5`;
-             }
-         });
-         */
     });
 
     function validateSection3() {
@@ -177,7 +163,7 @@
         tr.innerHTML = `
             <td>
         <select name="poultry[${poultryRowCount}][breed]" 
-                class="form-select form-select-sm" 
+                class="form-select form-select-sm poultry-type-select" 
                 id="poultryId_${poultryRowCount}" 
                 onchange="loadLiveStockSpecies('poultryId_${poultryRowCount}','poultrySpeciesId_${poultryRowCount}')">
             <option value="">ရွေးချယ်ပါ...</option>
@@ -190,12 +176,12 @@
                 id="poultrySpeciesId_${poultryRowCount}">
              <!-- Species options go here -->
         </select></td>
-            <td class="age-cell"><input type="number" name="poultry[${poultryRowCount}][young_male]" class="form-control form-control-sm count-input" placeholder="0" min="0"></td>
-            <td class="age-cell"><input type="number" name="poultry[${poultryRowCount}][young_female]" class="form-control form-control-sm count-input" placeholder="0" min="0"></td>
-            <td class="age-cell"><input type="number" name="poultry[${poultryRowCount}][medium_male]" class="form-control form-control-sm count-input" placeholder="0" min="0"></td>
-            <td class="age-cell"><input type="number" name="poultry[${poultryRowCount}][medium_female]" class="form-control form-control-sm count-input" placeholder="0" min="0"></td>
-            <td class="age-cell"><input type="number" name="poultry[${poultryRowCount}][adult_male]" class="form-control form-control-sm count-input" placeholder="0" min="0"></td>
-            <td class="age-cell"><input type="number" name="poultry[${poultryRowCount}][adult_female]" class="form-control form-control-sm count-input" placeholder="0" min="0"></td>
+            <td><input type="number" name="poultry[${poultryRowCount}][young_male]" class="form-control form-control-sm count-input" placeholder="0" min="0"></td>
+            <td><input type="number" name="poultry[${poultryRowCount}][young_female]" class="form-control form-control-sm count-input" placeholder="0" min="0"></td>
+            <td><input type="number" name="poultry[${poultryRowCount}][medium_male]" class="form-control form-control-sm count-input" placeholder="0" min="0"></td>
+            <td><input type="number" name="poultry[${poultryRowCount}][medium_female]" class="form-control form-control-sm count-input" placeholder="0" min="0"></td>
+            <td><input type="number" name="poultry[${poultryRowCount}][adult_male]" class="form-control form-control-sm count-input" placeholder="0" min="0"></td>
+            <td><input type="number" name="poultry[${poultryRowCount}][adult_female]" class="form-control form-control-sm count-input" placeholder="0" min="0"></td>
             <td><input type="number" name="poultry[${poultryRowCount}][total]" class="form-control form-control-sm text-center fw-bold total-input" placeholder="0" readonly style="background:#f3f4f6;"></td>
             <td class="text-center"><button type="button" onclick="removeRow('poultryRow_${poultryRowCount}')" class="btn btn-sm text-danger"><i class="bi bi-trash"></i></button></td>
         `;
@@ -203,53 +189,11 @@
         tr.querySelectorAll('.count-input').forEach(input => input.addEventListener('input', () => calculateRowTotal(tr)));
     };
 
-    window.addOtherPoultryRow = function () {
-        poultryRowCount++;
-        const tbody = document.getElementById('poultryBody');
-        const tr = document.createElement('tr');
-        tr.id = 'poultryOtherRow_' + poultryRowCount;
-        tr.innerHTML = `
-            <td><input type="text" name="poultry[${poultryRowCount}][breed]" class="form-control form-control-sm" placeholder="အမျိုးအစား"></td>
-            <td><input type="text" name="poultry[${poultryRowCount}][species]" class="form-control form-control-sm" placeholder="မျိုး"></td>
-            <td class="age-cell"><input type="number" name="poultry[${poultryRowCount}][young_male]" class="form-control form-control-sm count-input" placeholder="0" min="0"></td>
-            <td class="age-cell"><input type="number" name="poultry[${poultryRowCount}][young_female]" class="form-control form-control-sm count-input" placeholder="0" min="0"></td>
-            <td class="age-cell"><input type="number" name="poultry[${poultryRowCount}][medium_male]" class="form-control form-control-sm count-input" placeholder="0" min="0"></td>
-            <td class="age-cell"><input type="number" name="poultry[${poultryRowCount}][medium_female]" class="form-control form-control-sm count-input" placeholder="0" min="0"></td>
-            <td class="age-cell"><input type="number" name="poultry[${poultryRowCount}][adult_male]" class="form-control form-control-sm count-input" placeholder="0" min="0"></td>
-            <td class="age-cell"><input type="number" name="poultry[${poultryRowCount}][adult_female]" class="form-control form-control-sm count-input" placeholder="0" min="0"></td>
-            <td><input type="number" name="poultry[${poultryRowCount}][total]" class="form-control form-control-sm text-center fw-bold total-input" placeholder="0" readonly style="background:#f3f4f6;"></td>
-            <td class="text-center"><button type="button" onclick="removeRow('poultryOtherRow_${poultryRowCount}')" class="btn btn-sm text-danger"><i class="bi bi-trash"></i></button></td>
-        `;
-        tbody.appendChild(tr);
-        tr.querySelectorAll('.count-input').forEach(input => input.addEventListener('input', () => calculateRowTotal(tr)));
-    };
-
     window.togglePoultryAgeColumns = function (sel) {
         const type = sel.value;
-        //alert(sel.value);
         const row = sel.closest('tr');
         const total = row.querySelector('.total-input');
         const inputs = row.querySelectorAll('.count-input');
-       // const cells = row.querySelectorAll('td');
-
-        // Restore the original 8 age columns before changing the layout.
-    const cells = Array.from(row.querySelectorAll('.age-cell'));
-
-    // If previously merged, restore the hidden cells.
-    cells.forEach(cell => {
-        cell.style.display = '';
-        cell.removeAttribute('colspan');
-
-        const input = cell.querySelector('input');
-        if (input) {
-            input.disabled = false;
-            input.value = '';
-            input.style.background = '';
-        }
-    });
-
-    // Remove any previously created merged input.
-    row.querySelector('.merged-age-cell')?.remove();
 
         inputs.forEach(i => { i.disabled = false; i.style.background = ''; i.value = ''; });
         total.readOnly = true;
@@ -257,36 +201,15 @@
         total.value = '';
 
         if (type === 'lsID02' || type === 'lsID05') {
-            // alert(type);
             inputs.forEach(i => { i.disabled = true; i.style.background = '#e5e7eb'; i.value = ''; });
             total.readOnly = false;
             total.style.background = '#fff';
         }
 
         if (type === 'lsID03') {
-            
-            const firstCell = cells[0];
-            firstCell.colSpan = 4;
-            firstCell.innerHTML= `
-            <input type="number"
-                id=
-                name="poultry[${row.id.split('_').pop()}][count]"
-                class="form-control form-control-sm merged-count-input count-input"
-                min="0">
-        `;
-        row.querySelectorAll('.count-input').forEach(input => input.addEventListener('input', () => calculateRowTotal(row)));
-
-        // Hide age columns 4–6; preserve columns 7–8.
-        cells.slice(1, 4).forEach(cell => {
-            cell.style.display = 'none';
-        });
-
-
-            /*for (let i = 0; i < 4; i++) {
-
+            for (let i = 0; i < 4; i++) {
                 if (inputs[i]) { inputs[i].disabled = true; inputs[i].style.background = '#e5e7eb'; inputs[i].value = ''; }
             }
-                */
         }
     };
 
@@ -297,33 +220,68 @@
             row.querySelectorAll('.count-input').forEach(i => { if (!i.disabled) sum += Number(i.value) || 0; });
             total.value = sum;
         }
-
     }
 
     window.removeRow = function (rowId) {
         const r = document.getElementById(rowId);
         if (r) r.remove();
     };
+    
     const formID = {{ form_id | tojson | safe }};
+    
+    // ⭐ နောက်စာမျက်နှာသို့ သွားရန် ခလုတ်တွင် Validate စစ်ဆေးမှု ထည့်သွင်းခြင်း
     document.getElementById("nextPageBtn").addEventListener("click", function (event) {
-        //alert("formID from formpart3:"+formID);
-        //const formID={{form_id}};
+        event.preventDefault();
+        if (!validateSection3()) {
+            return; // မရွေးထားရင် နောက်စာမျက်နှာ မကူးပါစေနဲ့
+        }
         submitDataTable(formID);
-        //window.location.href = "/survey/part5"; 
     });
 
     async function submitDataTable(formID) {
+        const hasPoultry = document.querySelector('input[name="has_poultry"]:checked');
+        
+        // ⭐ မမွေးမြူထားဘူးဆိုရင် Data မပို့ပဲ တိုက်ရိုက် ကျော်သွားမယ် (part5 ကို သွားမယ်)
+        if (hasPoultry && hasPoultry.value === 'no') {
+            window.location.href = `${SURVEY_PREFIX}/part5/${encodeURIComponent(formID)}`;
+            return;
+        }
+
         const records = [];
-        const ani_rows = document.querySelectorAll("#poultryBody tr"); // Adjust selector to your table rows
+        const ani_rows = document.querySelectorAll("#poultryBody tr");
 
         ani_rows.forEach(row => {
-            // Extract dropdowns / text input identifiers from the row
             const animalID = row.querySelector('select[name*="[breed]"]').value;
             const speciesID = row.querySelector('select[name*="[species]"]').value;
             const animalTypeID = "atID03";
 
-            // Or maps from your logic if applicable
-        if (animalID === "lsID02" || animalID === "lsID05") {
+            const matrices = [
+                { selector: 'young_male', age: "ageID07", gender: "g01" },
+                { selector: 'young_female', age: "ageID07", gender: "g03" },
+                { selector: 'medium_male', age: "ageID08", gender: "g01" },
+                { selector: 'medium_female', age: "ageID08", gender: "g03" },
+                { selector: 'adult_male', age: "ageID09", gender: "g01" },
+                { selector: 'adult_female', age: "ageID09", gender: "g03" }
+            ];
+
+            matrices.forEach(item => {
+                const inputEl = row.querySelector(`input[name*="${item.selector}"]`);
+                const dataCount = Number(inputEl?.value) || 0;
+                if (dataCount > 0) {
+                    const record = {
+                        formID: String(formID || ""),
+                        animalTypeID: String(animalTypeID || ""),
+                        animalID: String(animalID || ""),
+                        speciesID: String(speciesID || ""),
+                        ageID: String(item.age || ""),
+                        genderID: String(item.gender || ""),
+                        dataCount: parseInt(dataCount, 10) || 0
+                    };
+                    records.push(record);
+                }
+            });
+
+            if (animalID === "lsID02" || animalID === "lsID05") {
                 const totalInput = row.querySelector(".total-input");
                 const dataCount1 = Number(totalInput?.value) || 0;
                 if (dataCount1 > 0) {
@@ -337,137 +295,39 @@
                         dataCount: parseInt(dataCount1, 10) || 0
                     };
                     records.push(record1);
-
                 }
-                
-            }
-           
-        else if (animalID === "lsID03") {
-                
-                const activeInputs = Array.from(row.querySelectorAll('.count-input')).filter(input => input.style.display != 'none');
-            
-            activeInputs.forEach((inputEl, index) => {
-                //alert("index: "+index);
-                //alert("inputEl: "+inputEl.value);
-                const dataCount2 = parseInt(inputEl.value, 10) || 0;
-                if (dataCount2 > 0) {
-                    let age = "";
-                    let gender = "";
-                    if (index === 0) {
-                        age = "ageID10";  
-                        gender = "";    
-                    } 
-                    else if (index === 4) {
-                        age = "ageID11";
-                        gender = "g01";
-                    }
-                    else if (index === 5) {
-                        age = "ageID11";
-                        gender = "g03";
-                    }
-                
-                    const record2 = {
-                        formID: String(formID || ""),
-                        animalTypeID: String(animalTypeID || ""),
-                        animalID: String(animalID || ""),
-                        speciesID: String(speciesID || ""),
-                        ageID: age,
-                        genderID: gender,
-                        dataCount: parseInt(dataCount2, 10) || 0
-                    };
-                    records.push(record2);
-
-                }
-                
-            });
-        }
-        else{
-                  
-            const matrices = [
-                { selector: 'young_male', age: "ageID07", gender: "g01" },
-                { selector: 'young_female', age: "ageID07", gender: "g03" },
-
-                { selector: 'medium_male', age: "ageID08", gender: "g01" },
-                { selector: 'medium_female', age: "ageID08", gender: "g03" },
-
-                { selector: 'adult_male', age: "ageID09", gender: "g01" },
-                { selector: 'adult_female', age: "ageID09", gender: "g03" }
-            ];
-
-            matrices.forEach(item => {
-                // alert("----------"+item.selector);
-                const inputEl = row.querySelector(`input[name*="${item.selector}"]`);
-                
-                //alert(inputEl.value);
-                const dataCount = Number(inputEl?.value) || 0;
-                //alert(dataCount);
-                if (dataCount > 0) {
-                    const record = {
-                        formID: String(formID || ""),
-                        animalTypeID: String(animalTypeID || ""),
-                        animalID: String(animalID || ""),
-                        speciesID: String(speciesID || ""),
-
-                        // Ensure these fall back to an empty string if item properties are undefined
-                        ageID: String(item.age || ""),
-                        genderID: String(item.gender || ""),
-
-                        // CRUCIAL: Parse into a number. Fall back to 0 if empty or invalid (NaN)
-                        dataCount: parseInt(dataCount, 10) || 0
-                    };
-
-                    records.push(
-                        record
-                    );
-                }
-            });
-
-          
             }
         });
 
         const response = await fetch(
             `${SURVEY_PREFIX}/part4/${encodeURIComponent(formID)}`, {
                 method: "POST",
-            headers: { "Content-Type": "application/json" },
-            body: JSON.stringify(records)
-
-        }
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify(records)
+            }
         );
 
         if (response.ok) {
             const data = await response.json();
             window.location.href = data.redirect_url;
         }
-
     }
 
-
-    async function loadLiveStockSpecies(
-
-        livestockId,
-        livestockSpeciesId,
-        selectedLivestock = ""
-    ) {
-
+    async function loadLiveStockSpecies(livestockId, livestockSpeciesId, selectedLivestock = "") {
         const liveStockSelect = document.getElementById(livestockId);
         const livestockSpeciesSelect = document.getElementById(livestockSpeciesId);
         const liveStockValue = liveStockSelect.value;
 
-        //alert(liveStockValue);
-
         if (!liveStockValue) {
             return;
         }
-        //alert(districtValue);
-        //alert(townshipValue)
+        
         livestockSpeciesSelect.innerHTML = ""
         try {
             const response = await fetch(
                 `/fetchLiveStockSpecies/${encodeURIComponent(liveStockValue)}`
             );
             const data = await response.json();
-            // alert(data.liveStockSpecies.length);
             data.liveStockSpecies.forEach(qv => {
                 const option = document.createElement("option");
                 option.value = qv.speciesID;
@@ -480,13 +340,9 @@
             livestockSpeciesSelect.disabled = false;
         }
         catch (error) {
-            console.error(
-                "QV load error:",
-                error
-            );
+            console.error("QV load error:", error);
         }
         togglePoultryAgeColumns(liveStockSelect);
     }
-
 </script>
 {% endblock %}

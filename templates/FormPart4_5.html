@@ -24,14 +24,14 @@
                         {% for ani in breedingStockAni %}
                         <tr>
                             <td class="text-start fw-semibold">{{ani.animalName}}</td>
-                            <td><input type="number"
+                            <td><input type="text" inputmode="numeric"
                                     name="breeding[{{ani.animalID}}][male]"
                                     class="form-control form-control-sm text-center breeding-male"
-                                    data-animal-id="{{ani.animalID}}" placeholder="0" min="0"></td>
-                            <td><input type="number"
+                                    data-animal-id="{{ani.animalID}}" placeholder="0"></td>
+                            <td><input type="text" inputmode="numeric"
                                     name="breeding[{{ani.animalID}}][female]"
                                     class="form-control form-control-sm text-center breeding-female"
-                                    data-animal-id="{{ani.animalID}}" placeholder="0" min="0"></td>
+                                    data-animal-id="{{ani.animalID}}" placeholder="0"></td>
                         </tr>
                         {% endfor %}
                         {% endif %}
@@ -69,6 +69,18 @@
     const SURVEY_PREFIX = {{ survey_prefix|default('/survey')|tojson }};
     const FORM_ID = {{ form_id|default('')|tojson }};
 
+    // ============================================================
+    // မြန်မာဂဏန်း <-> အာရဗီဂဏန်း helper
+    // ============================================================
+    const MM_TO_AR = { '၀':'0','၁':'1','၂':'2','၃':'3','၄':'4',
+                       '၅':'5','၆':'6','၇':'7','၈':'8','၉':'9' };
+    function toArabicDigits(str) {
+        return String(str ?? '').replace(/[၀-၉]/g, ch => MM_TO_AR[ch] ?? ch);
+    }
+    function stripNonDigits(value) {
+        return String(value ?? '').replace(/[^0-9၀-၉]/g, '');
+    }
+
     document.addEventListener('DOMContentLoaded', function () {
         // ⭐ Progress ကို 100% မှ စ (page-based)
         updateProgress(100, 'အပိုင်း (၄) နှင့် (၅) / ၅ - မျိုးတိရစ္ဆာန်နှင့် မေးမြန်းသူအချက်အလက်');
@@ -94,6 +106,20 @@
 
         loadFormData();
 
+        // ⭐ အရေအတွက် (male/female) နှင့် ဖုန်းနံပါတ်များအတွက် မြန်မာဂဏန်း ခွင့်ပြု
+        document.querySelectorAll('.breeding-male, .breeding-female').forEach(input => {
+            input.addEventListener('input', function () {
+                this.value = stripNonDigits(this.value);
+            });
+        });
+
+        const phoneInput = document.getElementById('interviewerPhone');
+        if (phoneInput) {
+            phoneInput.addEventListener('input', function () {
+                this.value = stripNonDigits(this.value);
+            });
+        }
+
         if (submitBtn) {
             submitBtn.addEventListener('click', async function(e) {
                 e.preventDefault();
@@ -104,7 +130,10 @@
                     showModal('error', 'သတိပေးချက်', 'ကျေးဇူးပြု၍ မေးမြန်းသူအမည် ဖြည့်စွက်ပေးပါ။');
                     return;
                 }
-                if (!phone || !phoneRegex.test(phone)) {
+
+                // ⭐ ဖုန်းနံပါတ်ကို စစ်ဆေးရန် အာရဗီဂဏန်းသို့ ပြောင်း
+                const phoneArabic = toArabicDigits(phone);
+                if (!phoneArabic || !phoneRegex.test(phoneArabic)) {
                     showModal('error', 'သတိပေးချက်', 'ကျေးဇူးပြု၍ မေးမြန်းသူ၏ ဖုန်းနံပါတ်ကို မှန်ကန်စွာ ဖြည့်စွက်ပေးပါ။');
                     return;
                 }
@@ -122,11 +151,11 @@
                     });
                     if (!res4.ok) throw new Error('Breeding save failed');
 
-                    // 2) Interviewer info
+                    // 2) Interviewer info (ဖုန်းနံပါတ်ကို အာရဗီဂဏန်းအဖြစ် ပို့)
                     const res5 = await fetch(`${SURVEY_PREFIX}/sendForm5Data/${encodeURIComponent(FORM_ID)}`, {
                         method: 'POST',
                         headers: { 'Content-Type': 'application/json' },
-                        body: JSON.stringify({ name, phone })
+                        body: JSON.stringify({ name, phone: phoneArabic })
                     });
                     if (!res5.ok) throw new Error('Interviewer save failed');
 
@@ -157,9 +186,13 @@
             const maleInput   = row.querySelector('input.breeding-male');
             const femaleInput = row.querySelector('input.breeding-female');
             if (!maleInput) return;
-            const animalID    = maleInput.dataset.animalId || '';
-            const maleCount   = parseInt(maleInput.value, 10) || 0;
-            const femaleCount = parseInt(femaleInput?.value, 10) || 0;
+            
+            const animalID = maleInput.dataset.animalId || '';
+            
+            // ⭐ မြန်မာဂဏန်းကို အာရဗီဂဏန်းသို့ ပြောင်းပြီး parseInt လုပ်
+            const maleCount   = parseInt(toArabicDigits(maleInput.value), 10) || 0;
+            const femaleCount = parseInt(toArabicDigits(femaleInput?.value), 10) || 0;
+            
             if (maleCount > 0) records.push({
                 formID, animalTypeID: 'atID04', animalID,
                 speciesID: '', ageID: '', genderID: 'g01', dataCount: maleCount

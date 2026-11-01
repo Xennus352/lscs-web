@@ -745,12 +745,24 @@
                 {% for row in poultry_rows %}
                 <tr>
                     <td class="animal-name">{{ row.animalName }}</td>
+                    {% if row.animalID in ['lsID02', 'lsID05'] %}
+                    <td colspan="6">{{ row.total }}</td>
+                    {% elif row.animalID == 'lsID03' %}
+                    <td colspan="4">{{ [
+                        row.young_combined|default(0), row.young_male|default(0), row.young_female|default(0),
+                        row.medium_combined|default(0), row.medium_male|default(0), row.medium_female|default(0),
+                        row.young_medium_combined|default(0), row.young_medium_male|default(0), row.young_medium_female|default(0)
+                    ]|sum }}</td>
+                    <td>{{ row.adult_male if row.adult_male else '' }}</td>
+                    <td>{{ row.adult_female if row.adult_female else '' }}</td>
+                    {% else %}
                     <td>{{ row.young_male }}</td>
                     <td>{{ row.young_female }}</td>
                     <td>{{ row.medium_male }}</td>
                     <td>{{ row.medium_female }}</td>
                     <td>{{ row.adult_male }}</td>
                     <td>{{ row.adult_female }}</td>
+                    {% endif %}
                     <td class="total-col">{{ row.total }}</td>
                 </tr>
                 {% else %}
@@ -1431,6 +1443,7 @@ function buildSheetContent(typeLabel, filterTitle, rows) {
     }
 
     var dataRows = [];
+    var poultryRowIds = [];
     rows.forEach(function(r) {
         if (typeLabel === 'large') {
             dataRows.push([
@@ -1449,13 +1462,24 @@ function buildSheetContent(typeLabel, filterTitle, rows) {
                 r.total || 0
             ]);
         } else if (typeLabel === 'poultry') {
-            dataRows.push([
-                r.animalName || '',
+            var animalId = String(r.animalID);
+            poultryRowIds.push(animalId);
+            var combinedYoung = [
+                r.young_combined, r.young_male, r.young_female,
+                r.medium_combined, r.medium_male, r.medium_female,
+                r.young_medium_combined, r.young_medium_male, r.young_medium_female
+            ].reduce(function(sum, value) { return sum + (Number(value) || 0); }, 0);
+            var counts = [
                 r.young_male || 0, r.young_female || 0,
                 r.medium_male || 0, r.medium_female || 0,
-                r.adult_male || 0, r.adult_female || 0,
-                r.total || 0
-            ]);
+                r.adult_male || 0, r.adult_female || 0
+            ];
+            if (animalId === 'lsID02' || animalId === 'lsID05') {
+                counts = [r.total || 0, '', '', '', '', ''];
+            } else if (animalId === 'lsID03') {
+                counts = [combinedYoung, '', '', '', r.adult_male || '', r.adult_female || ''];
+            }
+            dataRows.push([r.animalName || ''].concat(counts, [r.total || 0]));
         } else if (typeLabel === 'breeding') {
             dataRows.push([
                 r.animalName || '',
@@ -1509,6 +1533,17 @@ function buildSheetContent(typeLabel, filterTitle, rows) {
     var dataStart = aoa.length;
     dataRows.forEach(function(dr) { aoa.push(dr); });
     var dataEnd = aoa.length - 1;
+
+    if (typeLabel === 'poultry') {
+        poultryRowIds.forEach(function(animalId, index) {
+            var rowIndex = dataStart + index;
+            if (animalId === 'lsID02' || animalId === 'lsID05') {
+                merges.push({ s:{r:rowIndex,c:1}, e:{r:rowIndex,c:6} });
+            } else if (animalId === 'lsID03') {
+                merges.push({ s:{r:rowIndex,c:1}, e:{r:rowIndex,c:4} });
+            }
+        });
+    }
 
     return {
         aoa: aoa, merges: merges, lastCol: lastCol,

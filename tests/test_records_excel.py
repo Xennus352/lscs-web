@@ -42,8 +42,9 @@ class WorkbookTests(unittest.TestCase):
             animal("atID04", "bsID07", "", "", "g01", 6),
             animal("atID04", "bsID10", "", "", "g03", 8),
         ]
-        workbook = load_workbook(build_records_workbook([household], details))
+        workbook = load_workbook(build_records_workbook([household, {"formID": "form2"}], details))
         sheet = workbook.active
+        self.assertEqual([sheet.cell(row, 1).value for row in range(6, 9)], [1, 2, 3])
         template = load_workbook(TEMPLATE).active
         self.assertEqual(sheet.max_column, 255)
         self.assertEqual(set(map(str, sheet.merged_cells)), set(map(str, template.merged_cells)))

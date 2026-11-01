@@ -108,7 +108,7 @@ def build_records_workbook(households, details):
 
     border = Border(**{edge: Side(style="thin", color="000000") for edge in ("left", "right", "top", "bottom")})
     row_number = 6
-    for number, household in enumerate(households, 1):
+    for household in households:
         animals = defaultdict(dict)
         breeding = defaultdict(int)
         form_details = by_form[household["formID"]]
@@ -137,7 +137,7 @@ def build_records_workbook(households, details):
 
         height = max([1] + [len(breeds) for breeds in animals.values()])
         base = [
-            number, household["formID"], household.get("state_name") or "",
+            household["formID"], household.get("state_name") or "",
             household.get("district_name") or "", household.get("township_name") or "",
             household.get("qv_name") or "", household.get("WardName") or "",
             household.get("householdNo") or "", _date(household.get("interviewDate")),
@@ -156,7 +156,8 @@ def build_records_workbook(households, details):
                 cell.font = Font(name="Pyidaungsu", size=11)
                 cell.alignment = Alignment(horizontal="center", vertical="center", wrap_text=True)
                 cell.border = copy(border)
-            for col, value in enumerate(base, 1):
+            _put(sheet, row, 1, row - 5)
+            for col, value in enumerate(base, 2):
                 _put(sheet, row, col, value)
             sheet.cell(row, 9).number_format = "yyyy-mm-dd"
             _put(sheet, row, 254, household.get("Interviewer") or "")

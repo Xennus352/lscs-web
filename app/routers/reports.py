@@ -42,7 +42,7 @@ def _query_report1_one_type(cursor, animal_type_id, role, user,
 
     conds = ["cd.animalTypeID = %s"]
     params = [animal_type_id]
-
+    # (role / state / district / township / qv / date filter — မပြောင်းပါ)
     if role == "state":
         conds.append("loc.stateID = %s"); params.append(user["stateID"])
     elif role == "district":
@@ -51,7 +51,6 @@ def _query_report1_one_type(cursor, animal_type_id, role, user,
     elif role == "township":
         conds.extend(["loc.stateID = %s", "loc.districtID = %s", "loc.townshipID = %s"])
         params.extend([user["stateID"], user["districtID"], user["townshipID"]])
-
     if role in ("admin", "union") and state and state.strip():
         conds.append("loc.stateID = %s"); params.append(state.strip())
     if role in ("admin", "union", "state") and district and district.strip():
@@ -82,33 +81,85 @@ def _query_report1_one_type(cursor, animal_type_id, role, user,
     age_map = AGE_KEY_MAP.get(animal_type_id, {})
     rows = {}
 
+    # ⭐️ ကြိုတင် initialize — ဖြစ်နိုင်တဲ့ key အားလုံး ထည့်
     for a in animal_names:
         aid = a["animalID"]
-        row = {"animalID": aid, "animalName": a["animalName"], "total": 0}
+        row = {
+            "animalID":   aid,
+            "animalName": a["animalName"],
+            "total":      0,
+            "combined":   0,   # ⭐️ age မပါ gender မပါ (lsID02, lsID05)
+        }
         if age_map:
             for age_key in age_map.values():
-                row[f"{age_key}_male"] = 0
+                row[f"{age_key}_male"]     = 0
                 row[f"{age_key}_castrated"] = 0
-                row[f"{age_key}_female"] = 0
+                row[f"{age_key}_female"]   = 0
+                row[f"{age_key}_combined"] = 0  # ⭐️ age ပါ gender မပါ (ageID10)
         else:
             row["male"] = 0; row["castrated"] = 0; row["female"] = 0
         rows[aid] = row
 
     for item in raw:
-        aid = str(item.get("animal_id") or "").strip()
+        aid    = str(item.get("animal_id") or "").strip()
         age_id = str(item.get("age_id") or "").strip()
-        gid = str(item.get("gender_id") or "").strip()
-        cnt = int(item.get("total_count") or 0)
+        gid    = str(item.get("gender_id") or "").strip()
+        cnt    = int(item.get("total_count") or 0)
         if aid not in rows:
             continue
-        gkey = GENDER_KEY_MAP.get(gid)
-        if gkey is None:
+
+        akey = age_map.get(age_id) if age_id else None
+        # In report 1, lsID03 ageID10 (under 20 weeks) belongs in the
+        # first visible poultry age band. Its actual age label remains intact
+        # in report 2, which displays source age groups directly.
+        if (animal_type_id == "atID03" and aid == "lsID03"
+                and age_id == "ageID10"):
+            akey = "young"
+        gkey = GENDER_KEY_MAP.get(gid) if gid else None
+
+        # Case A — age + gender ပါ
+        if akey and gkey:
+            col = f"{akey}_{gkey}"
+            if col in rows[aid]:
+                rows[aid][col] += cnt
+                rows[aid]["total"] += cnt
             continue
-        akey = age_map.get(age_id)
-        key = f"{akey}_{gkey}" if akey else gkey
-        if key in rows[aid]:
-            rows[aid][key] += cnt
+
+        # Case B — age ပါ၊ gender မပါ
+        # ဥပမာ lsID03 + ageID10
+        if akey and not gkey:
+            # Keep age-specific counts without gender in a separate bucket.
+            col = f"{akey}_combined"
+
+            if col in rows[aid]:
+                rows[aid][col] += cnt
+                rows[aid]["total"] += cnt
+            continue
+
+        # Case C — age မပါ၊ gender မပါ
+        # ဥပမာ lsID02, lsID05
+        if not akey and not gkey:
+            # ပထမဆုံး age group's ပထမဆုံး column မှာ ထည့်
+            first_age_key = next(iter(age_map.values()), None)
+
+            if first_age_key:
+                col = f"{first_age_key}_combined"
+
+                if col in rows[aid]:
+                    rows[aid][col] += cnt
+                    rows[aid]["total"] += cnt
+            else:
+                rows[aid]["combined"] += cnt
+                rows[aid]["total"] += cnt
+
+            continue
+
+        # Case D — age မပါ၊ gender ပါ
+        if not akey and gkey:
+            rows[aid][gkey] = rows[aid].get(gkey, 0) + cnt
             rows[aid]["total"] += cnt
+            continue
+
 
     return list(rows.values())
 

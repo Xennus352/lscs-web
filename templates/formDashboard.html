@@ -12,26 +12,35 @@
 
 {% block extra_css %}
 <style>
-    /* ⭐ ဒီနေရာမှာ formBase က Header နဲ့ Top Accent ကို ဖျောက်ထားပါတယ် */
+    /* ⭐ formBase က Header နဲ့ Top Accent ကို ဖျောက်ခြင်း */
     .top-accent { display: none !important; }
     .header-section { display: none !important; }
     
-    /* Header မရှိလို့ အပေါ်ကနေ ကပ်မနေအောင် နည်းနည်းအကွာအဝေး ချိန်ညှိခြင်း */
+    /* Header မရှိလို့ အပေါ်ကနေ ကပ်မနေအောင် အကွာအဝေး ချိန်ညှိခြင်း */
     .form-body { padding-top: 2rem !important; }
 
     /* ================= STAT CARDS ================= */
     .stat-card {
-        display: flex; align-items: center; gap: 1rem;
-        padding: 1.5rem 1.25rem; border-radius: 1rem;
-        background: #fff; border: 1px solid #e5e7eb;
+        display: flex; 
+        align-items: center; 
+        gap: 1.25rem;
+        padding: 1.25rem 1.5rem; 
+        border-radius: 1rem;
+        background: #fff; 
+        border: 1px solid #e5e7eb;
         box-shadow: 0 4px 12px -4px rgba(0, 0, 0, 0.08);
         transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
-        position: relative; overflow: hidden; height: 100%;
+        position: relative; 
+        overflow: hidden; 
+        min-height: 100px; /* အမြင့်အားလုံး ညီစေရန် */
+        height: 100%;
     }
+    
     .stat-card::before {
         content: ''; position: absolute; top: 0; left: 0;
         width: 5px; height: 100%; border-radius: 0 4px 4px 0;
     }
+    
     .stat-card-green::before   { background: linear-gradient(180deg, #059669, #10b981); }
     .stat-card-teal::before    { background: linear-gradient(180deg, #0d9488, #14b8a6); }
     .stat-card-emerald::before { background: linear-gradient(180deg, #047857, #059669); }
@@ -43,17 +52,38 @@
     }
 
     .stat-icon {
-        width: 56px; height: 56px; border-radius: 14px;
+        width: 54px; height: 54px; border-radius: 12px;
         display: flex; align-items: center; justify-content: center;
-        flex-shrink: 0; font-size: 1.6rem; color: #fff;
+        flex-shrink: 0; font-size: 1.5rem; color: #fff;
     }
+    
     .stat-card-green .stat-icon { background: linear-gradient(135deg, #059669, #10b981); box-shadow: 0 6px 16px -4px rgba(5, 150, 105, 0.45); }
     .stat-card-teal .stat-icon { background: linear-gradient(135deg, #0d9488, #14b8a6); box-shadow: 0 6px 16px -4px rgba(13, 148, 136, 0.45); }
     .stat-card-emerald .stat-icon { background: linear-gradient(135deg, #047857, #059669); box-shadow: 0 6px 16px -4px rgba(4, 120, 87, 0.45); }
 
-    .stat-body { flex: 1; min-width: 0; }
-    .stat-value { font-size: 2rem; font-weight: 700; color: #065f46; line-height: 1.1; margin-bottom: 0.25rem; }
-    .stat-label { font-size: 0.78rem; color: #6b7280; font-weight: 600; line-height: 1.4; }
+    .stat-body { 
+        flex: 1; 
+        min-width: 0; 
+        display: flex; 
+        flex-direction: column; 
+        justify-content: center;
+    }
+    
+    .stat-value { 
+        font-size: 2rem; 
+        font-weight: 700; 
+        color: #065f46; 
+        line-height: 1.1; 
+        margin-bottom: 0.25rem; 
+    }
+    
+    .stat-label { 
+        font-size: 0.85rem; 
+        color: #6b7280; 
+        font-weight: 600; 
+        line-height: 1.3; 
+        word-break: break-word;
+    }
 
     /* ================= QUICK ACTION CARDS ================= */
     .quick-action-card {
@@ -69,6 +99,7 @@
         box-shadow: 0 10px 20px -8px rgba(5, 150, 105, 0.25);
         text-decoration: none; color: inherit;
     }
+    
     .quick-action-icon {
         width: 52px; height: 52px; border-radius: 12px;
         background: linear-gradient(135deg, #ecfdf5, #d1fae5);
@@ -80,13 +111,32 @@
         background: linear-gradient(135deg, #059669, #10b981);
         color: #fff; transform: scale(1.05);
     }
+    
+    /* Edit Card (အပြာရောင်) */
+    .quick-action-icon-edit {
+        background: linear-gradient(135deg, #eff6ff, #dbeafe);
+        color: #2563eb;
+    }
+    .quick-action-edit:hover {
+        border-color: #bfdbfe;
+        box-shadow: 0 10px 20px -8px rgba(37, 99, 235, 0.25);
+    }
+    .quick-action-edit:hover .quick-action-icon-edit {
+        background: linear-gradient(135deg, #2563eb, #3b82f6);
+        color: #fff;
+    }
+    .quick-action-edit:hover .quick-action-arrow {
+        color: #2563eb;
+    }
+
+    /* Danger Card (အနီရောင်) */
     .quick-action-icon-danger { background: linear-gradient(135deg, #fef2f2, #fee2e2); color: #dc2626; }
     .quick-action-danger:hover { border-color: #fca5a5; box-shadow: 0 10px 20px -8px rgba(220, 38, 38, 0.25); }
     .quick-action-danger:hover .quick-action-icon-danger { background: linear-gradient(135deg, #dc2626, #ef4444); color: #fff; }
 
     .quick-action-body { flex: 1; min-width: 0; }
-    .quick-action-body h6 { font-size: 0.9rem; font-weight: 700; color: #065f46; margin: 0 0 0.2rem 0; }
-    .quick-action-body p { font-size: 0.75rem; color: #6b7280; margin: 0; line-height: 1.4; }
+    .quick-action-body h6 { font-size: 0.95rem; font-weight: 700; color: #065f46; margin: 0 0 0.2rem 0; }
+    .quick-action-body p { font-size: 0.78rem; color: #6b7280; margin: 0; line-height: 1.4; }
     
     .quick-action-arrow { color: #d1d5db; font-size: 1.1rem; flex-shrink: 0; transition: all 0.25s ease; }
     .quick-action-card:hover .quick-action-arrow { color: #059669; transform: translateX(4px); }
@@ -99,12 +149,16 @@
         padding: 1rem 1.25rem;
     }
 
+    /* ================= RESPONSIVE ================= */
     @media (max-width: 575.98px) {
+        .stat-card { padding: 1rem; gap: 1rem; }
         .stat-value { font-size: 1.6rem; }
         .stat-icon { width: 48px; height: 48px; font-size: 1.35rem; }
+        .stat-label { font-size: 0.78rem; }
+        
         .quick-action-icon { width: 44px; height: 44px; font-size: 1.25rem; }
-        .quick-action-body h6 { font-size: 0.85rem; }
-        .quick-action-body p { font-size: 0.72rem; }
+        .quick-action-body h6 { font-size: 0.88rem; }
+        .quick-action-body p { font-size: 0.75rem; }
     }
 </style>
 {% endblock %}
@@ -118,7 +172,7 @@
 <!-- ============ STAT CARDS ============ -->
 <div class="row g-3 mb-4">
     <!-- Total Forms -->
-    <div class="col-md-4">
+    <div class="col-md-6 col-lg-4">
         <div class="stat-card stat-card-green">
             <div class="stat-icon">
                 <i class="bi bi-file-earmark-text"></i>
@@ -131,7 +185,7 @@
     </div>
 
     <!-- Total Villages -->
-    <div class="col-md-4">
+    <div class="col-md-6 col-lg-4">
         <div class="stat-card stat-card-teal">
             <div class="stat-icon">
                 <i class="bi bi-geo-alt"></i>
@@ -144,7 +198,7 @@
     </div>
 
     <!-- Total Households -->
-    <div class="col-md-4">
+    <div class="col-md-6 col-lg-4">
         <div class="stat-card stat-card-emerald">
             <div class="stat-icon">
                 <i class="bi bi-people"></i>
@@ -155,9 +209,9 @@
             </div>
         </div>
     </div>
-</div>
-<div class="row g-3 mb-4">
-    <div class="col-md-6">
+
+    <!-- Pending Households -->
+    <div class="col-md-6 col-lg-6">
         <div class="stat-card stat-card-teal">
             <div class="stat-icon"><i class="bi bi-clock-fill"></i></div>
             <div class="stat-body">
@@ -166,7 +220,9 @@
             </div>
         </div>
     </div>
-    <div class="col-md-6">
+
+    <!-- Collected Households -->
+    <div class="col-md-6 col-lg-6">
         <div class="stat-card stat-card-emerald">
             <div class="stat-icon"><i class="bi bi-check-circle-fill"></i></div>
             <div class="stat-body">
@@ -176,6 +232,7 @@
         </div>
     </div>
 </div>
+
 <!-- ============ QUICK ACTIONS ============ -->
 <div class="section-title-box mt-2">
     <h4><i class="bi bi-lightning-charge me-1"></i> အမြန် လုပ်ဆောင်ချက်များ</h4>
@@ -183,7 +240,8 @@
 </div>
 
 <div class="row g-3">
-    <div class="col-md-6">
+    <!-- 1. ဒေတာအသစ် စတင်ကောက်ယူမည် -->
+    <div class="col-md-6 col-lg-4">
         <a href="/survey/part1" class="quick-action-card">
             <div class="quick-action-icon">
                 <i class="bi bi-pencil-square"></i>
@@ -198,7 +256,24 @@
         </a>
     </div>
 
-    <div class="col-md-6">
+    <!-- ⭐ 2. အချက်အလက်များ ပြင်ဆင်ရန် -->
+    <div class="col-md-6 col-lg-4">
+        <a href="/enumerator/edit-form" class="quick-action-card quick-action-edit">
+            <div class="quick-action-icon quick-action-icon-edit">
+                <i class="bi bi-pencil-fill"></i>
+            </div>
+            <div class="quick-action-body">
+                <h6>အချက်အလက်များ ပြင်ဆင်ရန်</h6>
+                <p>ကောက်ယူထားသော ဒေတာများကို ကြည့်ရှု၊ ပြင်ဆင်၊ ဖျက်နိုင်ပါသည်</p>
+            </div>
+            <div class="quick-action-arrow">
+                <i class="bi bi-arrow-right"></i>
+            </div>
+        </a>
+    </div>
+
+    <!-- 3. အကောင့်မှ ထွက်မည် -->
+    <div class="col-md-6 col-lg-4">
         <a href="/logout" class="quick-action-card quick-action-danger"
            onclick="return confirmLogout(event);">
             <div class="quick-action-icon quick-action-icon-danger">

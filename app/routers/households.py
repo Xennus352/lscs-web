@@ -1,13 +1,15 @@
 import logging
+from datetime import datetime
 
-from fastapi import APIRouter, HTTPException, Query, Request
-from fastapi.responses import HTMLResponse, RedirectResponse
+from fastapi import APIRouter, Body, HTTPException, Query, Request
+from fastapi.responses import HTMLResponse, RedirectResponse, StreamingResponse
 from sqlalchemy.exc import SQLAlchemyError
 
 from app.constants import AGE_TO_KEY
 from app.database import get_db_connection
 from app.dependencies import get_signed_in_user
 from app.lookups import _get_user_state_name
+from app.records_excel import build_records_workbook
 from app.templating import templates
 from app.utils import _resolve_date_range
 
@@ -18,9 +20,15 @@ router = APIRouter(tags=["households"])
 def _query_household_records(cursor, role, user, state="", district="",
                              township="", qv="", search="", form_id="",
                              household_no="", head_name="", limit=None,
-                             offset=0, start_date="", end_date=""):
+                             offset=0, start_date="", end_date="", form_ids=None):
     conds = ["1=1"]
     params = []
+
+    if form_ids is not None:
+        if not form_ids:
+            return []
+        conds.append("pc.formID IN (" + ", ".join(["%s"] * len(form_ids)) + ")")
+        params.extend(form_ids)
 
     if role == "state":
         conds.append("pc.stateID = %s"); params.append(user["stateID"])
@@ -106,9 +114,15 @@ def _query_household_records(cursor, role, user, state="", district="",
 
 
 def _query_household_detail(cursor, form_id):
+    return _query_household_details(cursor, [form_id])
+
+
+def _query_household_details(cursor, form_ids):
+    if not form_ids:
+        return []
     sql = """
         SELECT
-            cd.animalTypeID, cd.animalID, cd.speciesID, cd.ageID, cd.genderID,
+            cd.formID, cd.animalTypeID, cd.animalID, cd.speciesID, cd.ageID, cd.genderID,
             CAST(cd.dataCount AS UNSIGNED) AS data_count,
             COALESCE(la.animalName, ya.animalName, lv.animalName, bs.animalName, cd.animalID) AS animal_name,
             COALESCE(ls.speciesName, ys.speciesName, lss.speciesName, cd.speciesID) AS species_name,
@@ -127,10 +141,10 @@ def _query_household_detail(cursor, form_id):
             AND atg.animalTypeID = cd.animalTypeID
             AND (atg.animalID IS NULL OR atg.animalID = '' OR atg.animalID = cd.animalID)
         LEFT JOIN gender           AS g   ON g.genderID = cd.genderID
-        WHERE cd.formID = %s
-        ORDER BY cd.animalTypeID, cd.animalID, cd.ageID, cd.genderID
+        WHERE cd.formID IN ({placeholders})
+        ORDER BY cd.formID, cd.animalTypeID, cd.animalID, cd.speciesID, cd.ageID, cd.genderID
     """
-    cursor.execute(sql, (form_id,))
+    cursor.execute(sql.format(placeholders=", ".join(["%s"] * len(form_ids))), tuple(form_ids))
     return cursor.fetchall()
 
 
@@ -430,6 +444,46 @@ async def api_admin_records(
         raise HTTPException(500, "Database error ဖြစ်နေပါသည်။")
     finally:
         cur.close(); conn.close()
+
+@router.post("/api/admin/records/export")
+def export_admin_records(request: Request, form_ids: list[str] = Body(...)):
+    user = get_signed_in_user(request)
+    role = user["role"]
+    if role not in ("admin", "union", "state", "district", "township"):
+        raise HTTPException(403, "ကြည့်ခွင့်မရှိပါ။")
+    form_ids = list(dict.fromkeys(form_ids))
+    if not form_ids:
+        raise HTTPException(400, "Export လုပ်ရန် မှတ်တမ်း မရှိပါ။")
+
+    conn = get_db_connection()
+    cur = conn.cursor(dictionary=True)
+    try:
+        # Reapply the signed-in user's area restrictions to the requested IDs.
+        rows, details = [], []
+        for offset in range(0, len(form_ids), 500):
+            batch = _query_household_records(
+                cur, role, user, form_ids=form_ids[offset:offset + 500],
+            )
+            rows.extend(batch)
+            details.extend(_query_household_details(cur, [r["formID"] for r in batch]))
+        if not rows:
+            raise HTTPException(404, "Export လုပ်ရန် မှတ်တမ်း မရှိပါ။")
+        order = {form_id: index for index, form_id in enumerate(form_ids)}
+        rows.sort(key=lambda row: order[row["formID"]])
+        output = build_records_workbook(rows, details)
+    except SQLAlchemyError:
+        logger.exception("export_admin_records DB error")
+        raise HTTPException(500, "Database error ဖြစ်နေပါသည်။")
+    finally:
+        cur.close()
+        conn.close()
+    filename = "LBVD_Records_" + datetime.now().strftime("%Y%m%d_%H%M%S") + ".xlsx"
+    return StreamingResponse(
+        output,
+        media_type="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+        headers={"Content-Disposition": f'attachment; filename="{filename}"'},
+    )
+
 
 # ============================================================
 # 🏘️ ADMIN HOUSEHOLD SUMMARY

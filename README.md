@@ -29,6 +29,20 @@ checks authenticated `/api/locations` and discovers the submission contract from
 the server's own HTML forms. A 404 from the documentation URL alone does not mean
 the backend is offline.
 
+## Records Excel export
+
+On `/admin/records`, apply the filters and click **Excel ထုတ်ယူရန်**. The
+export includes all matching rows across all pages and respects the signed-in
+user's location permissions. `openpyxl` fills the 255-column sample layout in
+`app/excel_templates/records.xlsx`, preserving its Burmese headers and formatting.
+Multiple breeds use additional rows; household breeding counts appear once.
+
+The **Animal details** sheet contains every source animal record with lookup
+names and IDs, including categories absent from the sample. Large and small
+animals outside its named categories use the sample's **Other** columns.
+
+Run export tests with `python -m unittest discover -s tests -v`.
+
 ## APK updates
 
 The mobile app can check for a newer APK without logging in:

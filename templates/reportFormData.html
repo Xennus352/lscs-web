@@ -679,7 +679,6 @@
 </div>
 
 {% endblock %} {% block extra_js %}
-<script src="https://cdn.jsdelivr.net/npm/xlsx-js-style@1.2.0/dist/xlsx.bundle.js"></script>
 <script>
     // ==================================================
     // 1. DATA — Jinja မှ real records
@@ -759,49 +758,12 @@
     // ==================================================
     // 4. EXCEL EXPORT ENGINE
     // ==================================================
-    var TITLE_LINES = [
-        'စိုက်ပျိုးရေး၊ မွေးမြူရေးနှင့် ဆည်မြောင်းဝန်ကြီးဌာန',
-        'မွေးမြူရေးနှင့် ကုသရေးဦးစီးဌာန',
-        ''
-    ];
-    var TITLE_ROW_COUNT = TITLE_LINES.length;
-    var FILTER_ROW = TITLE_ROW_COUNT;
-    var BLANK_ROW = TITLE_ROW_COUNT + 1;
-    var SECTION_START = TITLE_ROW_COUNT + 2;
-
     const BREED_LABELS = {
         bsID01: 'ဒေသနွား', bsID02: 'ဒေသကျွဲ', bsID03: 'နို့စားကျွဲ',
         bsID04: 'ဝက်', bsID05: 'ဆိတ်', bsID06: 'သိုး',
         local_cattle: 'ဒေသနွား', local_buffalo: 'ဒေသကျွဲ', dairy_buffalo: 'နို့စားကျွဲ',
         pig: 'ဝက်', goat: 'ဆိတ်', sheep: 'သိုး'
     };
-
-    function getFilterTitle() {
-        var parts = [];
-
-        function addText(sel) {
-            if (!sel || !sel.value) return;
-            if (sel.selectedIndex < 0) return;
-            var txt = sel.options[sel.selectedIndex].text || '';
-            if (txt.indexOf('အားလုံး') !== -1) return;
-            if (txt.indexOf('ရွေးပါ') !== -1) return;
-            parts.push(txt);
-        }
-        addText(selState);
-        addText(selDistrict);
-        addText(selTownship);
-        addText(selVillage);
-        detailSearchFilters.forEach(({ input }) => {
-            if (input.value.trim()) parts.push(input.value.trim());
-        });
-
-        var locPart = (parts.length === 0)
-            ? 'တိုင်းဒေသကြီး/ပြည်နယ်အားလုံးအတွင်း'
-            : (parts.join('၊ ') + ' အတွင်း');
-
-        var datePart = getDateRangeLabel();
-        return locPart + ' တိရစ္ဆာန်ကောင်ရေစာရင်း' + (datePart ? ' (' + datePart + ')' : '');
-    }
 
     function buildFilename() {
         var stamp = new Date();
@@ -835,355 +797,29 @@
         return 'တိရစ္ဆာန်မှတ်တမ်း_' + prefix + dateTag + '_' + ds + '.xlsx';
     }
 
-    function allBorders() {
-        var b = { style: 'thin', color: { rgb: '000000' } };
-        return { top: b, bottom: b, left: b, right: b };
-    }
-    function titleStyle() {
-        return {
-            font: { name: 'Pyidaungsu', sz: 14, bold: true, color: { rgb: '000000' } },
-            alignment: { horizontal: 'center', vertical: 'center' }
-        };
-    }
-    function filterTitleStyle() {
-        return {
-            font: { name: 'Pyidaungsu', sz: 12, bold: true, color: { rgb: '000000' } },
-            alignment: { horizontal: 'center', vertical: 'center', wrapText: true }
-        };
-    }
-    function subTitleStyle() {
-        return {
-            font: { name: 'Pyidaungsu', sz: 12, bold: true, color: { rgb: '000000' } },
-            alignment: { horizontal: 'left', vertical: 'center', wrapText: true },
-            border: allBorders()
-        };
-    }
-    function headerStyle() {
-        return {
-            font: { name: 'Pyidaungsu', sz: 11, bold: true, color: { rgb: '000000' } },
-            alignment: { horizontal: 'center', vertical: 'center', wrapText: true },
-            border: allBorders()
-        };
-    }
-    function cellStyle() {
-        return {
-            font: { name: 'Pyidaungsu', sz: 10, color: { rgb: '000000' } },
-            alignment: { horizontal: 'center', vertical: 'center', wrapText: true },
-            border: allBorders()
-        };
-    }
-    function nameCellStyle() {
-        var s = cellStyle();
-        s.font.bold = true;
-        s.font.sz = 11;
-        s.alignment.horizontal = 'left';
-        return s;
-    }
-    function totalCellStyle() {
-        var s = cellStyle();
-        s.font.bold = true;
-        return s;
-    }
-
-    function applyStyles(ws, merges, sections) {
-        var range = XLSX.utils.decode_range(ws['!ref']);
-        for (var R = range.s.r; R <= range.e.r; R++) {
-            for (var C = range.s.c; C <= range.e.c; C++) {
-                var addr = XLSX.utils.encode_cell({ r: R, c: C });
-                if (!ws[addr]) continue;
-                ws[addr].s = cellStyle();
-            }
-        }
-        for (var tr = 0; tr < TITLE_ROW_COUNT; tr++) {
-            for (var Ct = range.s.c; Ct <= range.e.c; Ct++) {
-                var at = XLSX.utils.encode_cell({ r: tr, c: Ct });
-                if (ws[at]) ws[at].s = titleStyle();
-            }
-        }
-        for (var Cf = range.s.c; Cf <= range.e.c; Cf++) {
-            var af = XLSX.utils.encode_cell({ r: FILTER_ROW, c: Cf });
-            if (ws[af]) ws[af].s = filterTitleStyle();
-        }
-        sections.forEach(function(sec) {
-            for (var C3 = range.s.c; C3 <= range.e.c; C3++) {
-                var a3 = XLSX.utils.encode_cell({ r: sec.titleRow, c: C3 });
-                if (ws[a3]) ws[a3].s = subTitleStyle();
-            }
-            sec.headerRows.forEach(function(hr) {
-                for (var C4 = range.s.c; C4 <= range.e.c; C4++) {
-                    var a4 = XLSX.utils.encode_cell({ r: hr, c: C4 });
-                    if (ws[a4]) ws[a4].s = headerStyle();
-                }
-            });
-            for (var R2 = sec.dataStart; R2 <= sec.dataEnd; R2++) {
-                var nameAddr = XLSX.utils.encode_cell({ r: R2, c: 0 });
-                if (ws[nameAddr]) ws[nameAddr].s = nameCellStyle();
-                var totalAddr = XLSX.utils.encode_cell({ r: R2, c: sec.lastCol });
-                if (ws[totalAddr]) ws[totalAddr].s = totalCellStyle();
-            }
+    async function exportRecordsExcel() {
+        const list = state.filtered || [];
+        if (!list.length) throw new Error('Export လုပ်ရန် မှတ်တမ်း မရှိပါ။');
+        const response = await fetch('/api/admin/records/export', {
+            method: 'POST',
+            credentials: 'same-origin',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(list.map(record => record.id))
         });
-        ws['!merges'] = merges;
-    }
-
-    function setRowHeights(ws, aoa, sections) {
-        var rows = [];
-        rows[0] = { hpt: 22 };
-        rows[1] = { hpt: 22 };
-        rows[2] = { hpt: 22 };
-        rows[FILTER_ROW] = { hpt: 22 };
-        rows[BLANK_ROW] = { hpt: 6 };
-        sections.forEach(function(sec) {
-            rows[sec.titleRow] = { hpt: 22 };
-            sec.headerRows.forEach(function(hr) { rows[hr] = { hpt: 28 }; });
-        });
-        var out = new Array(aoa.length);
-        for (var i = 0; i < aoa.length; i++) {
-            out[i] = rows[i] || { hpt: 35 };
+        if (!response.ok) {
+            const error = await response.json().catch(() => ({}));
+            throw new Error(error.detail || 'Excel ထုတ်ယူရာတွင် အမှားဖြစ်နေပါသည်။');
         }
-        ws['!rows'] = out;
-    }
-
-    function autoWidth(ws, aoa) {
-        var widths = [];
-        aoa.forEach(function(row) {
-            (row || []).forEach(function(cell, i) {
-                var len = String(cell == null ? '' : cell).length;
-                if (!widths[i] || widths[i] < len) widths[i] = len;
-            });
-        });
-        ws['!cols'] = widths.map(function(w) {
-            return { wch: Math.min(Math.max((w || 10) + 2, 12), 35) };
-        });
-    }
-
-    function buildSheetContent(records, filterTitle) {
-        var lastCol = 16;
-        var sectionTitle = 'ဖြည့်သွင်းထားသည့် မှတ်တမ်းများ စာရင်း';
-
-        var headerRows = [
-            ['စဉ်', 'အိမ်ထောင်စုအမှတ်', 'မေးမြန်းသည့်နေ့', 'တိုင်း/ခရိုင်/မြို့နယ်/ကျေးရွာအုပ်စု/ကျေးရွာ',
-             'အိမ်ထောင်ဦးစီး', 'အသက်/ပညာအရည်အချင်း/ဖုန်း', 'ဖြေဆိုသူ', 'အသက်/ပညာအရည်အချင်း/ဖုန်း',
-             'တိရစ္ဆာန်အမျိုးအစား', 'မျိုးစိတ်', 'အသက်အပိုင်းအခြား', 'အထီး', 'သင်းကွပ်', 'အမ', 'စုစုပေါင်း',
-             'မေးမြန်းသူအမည်', 'ဖုန်းနံပါတ်']
-        ];
-
-        var dataRows = [];
-        var merges = [];
-        var currentExcelRow = SECTION_START + 2;
-
-        records.forEach(function(r, i) {
-            let startRow = currentExcelRow;
-            let rowCount = 0;
-
-            let baseInfo = {
-                no: i + 1,
-                hhNo: r.householdNo || '',
-                date: r.interview_date || '',
-                location: (r.state || '') + '၊' + (r.district || '') + '၊' + (r.township || '') + '၊' + (r.village_tract || '') + '၊' + (r.ward_village || ''),
-                headName: (r.household_head && r.household_head.name) || '',
-                headInfo: `${r.household_head?.age || ''}နှစ်/${r.household_head?.education || ''}/${r.household_head?.phone || ''}`,
-                respName: (r.respondent && r.respondent.name) || '',
-                respInfo: `${r.respondent?.age || ''}နှစ်/${r.respondent?.education || ''}/${r.respondent?.phone || ''}`,
-                interviewer: (r.interviewer && r.interviewer.name) || '',
-                intvPhone: (r.interviewer && r.interviewer.phone) || ''
-            };
-
-            function getGenderCounts(animal, type) {
-                let m = 0, c = 0, f = 0;
-                if (type === 'atID01') {
-                    m = (animal.u1_male || 0) + (animal.y1_3_male || 0) + (animal.o3_male || 0);
-                    c = (animal.u1_castrated || 0) + (animal.y1_3_castrated || 0) + (animal.o3_castrated || 0);
-                    f = (animal.u1_female || 0) + (animal.y1_3_female || 0) + (animal.o3_female || 0);
-                } else if (type === 'atID02') {
-                    m = (animal.u2m_male || 0) + (animal.m2_6m_male || 0) + (animal.o6m_male || 0);
-                    c = (animal.u2m_castrated || 0) + (animal.m2_6m_castrated || 0) + (animal.o6m_castrated || 0);
-                    f = (animal.u2m_female || 0) + (animal.m2_6m_female || 0) + (animal.o6m_female || 0);
-                } else if (type === 'atID03') {
-                    m = (animal.young_male || 0) + (animal.medium_male || 0) + (animal.adult_male || 0);
-                    f = (animal.young_female || 0) + (animal.medium_female || 0) + (animal.adult_female || 0);
-                }
-                return { m, c, f };
-            }
-
-            (r.large_animals || []).forEach(function(a) {
-                let counts = getGenderCounts(a, 'atID01');
-                dataRows.push([
-                    (rowCount === 0) ? baseInfo.no : '',
-                    (rowCount === 0) ? baseInfo.hhNo : '',
-                    (rowCount === 0) ? baseInfo.date : '',
-                    (rowCount === 0) ? baseInfo.location : '',
-                    (rowCount === 0) ? baseInfo.headName : '',
-                    (rowCount === 0) ? baseInfo.headInfo : '',
-                    (rowCount === 0) ? baseInfo.respName : '',
-                    (rowCount === 0) ? baseInfo.respInfo : '',
-                    'တိရစ္ဆာန်ကြီး', a.species + (a.breed ? ` (${a.breed})` : ''),
-                    a.age_name || '-',
-                    counts.m, counts.c, counts.f, a.total || 0,
-                    (rowCount === 0) ? baseInfo.interviewer : '',
-                    (rowCount === 0) ? baseInfo.intvPhone : ''
-                ]);
-                rowCount++; currentExcelRow++;
-            });
-
-            (r.small_animals || []).forEach(function(a) {
-                let counts = getGenderCounts(a, 'atID02');
-                dataRows.push([
-                    (rowCount === 0) ? baseInfo.no : '',
-                    (rowCount === 0) ? baseInfo.hhNo : '',
-                    (rowCount === 0) ? baseInfo.date : '',
-                    (rowCount === 0) ? baseInfo.location : '',
-                    (rowCount === 0) ? baseInfo.headName : '',
-                    (rowCount === 0) ? baseInfo.headInfo : '',
-                    (rowCount === 0) ? baseInfo.respName : '',
-                    (rowCount === 0) ? baseInfo.respInfo : '',
-                    'တိရစ္ဆာန်ငယ်', a.species + (a.breed ? ` (${a.breed})` : ''),
-                    a.age_name || '-',
-                    counts.m, counts.c, counts.f, a.total || 0,
-                    (rowCount === 0) ? baseInfo.interviewer : '',
-                    (rowCount === 0) ? baseInfo.intvPhone : ''
-                ]);
-                rowCount++; currentExcelRow++;
-            });
-
-            (r.poultry || []).forEach(function(p) {
-                let counts = getGenderCounts(p, 'atID03');
-                dataRows.push([
-                    (rowCount === 0) ? baseInfo.no : '',
-                    (rowCount === 0) ? baseInfo.hhNo : '',
-                    (rowCount === 0) ? baseInfo.date : '',
-                    (rowCount === 0) ? baseInfo.location : '',
-                    (rowCount === 0) ? baseInfo.headName : '',
-                    (rowCount === 0) ? baseInfo.headInfo : '',
-                    (rowCount === 0) ? baseInfo.respName : '',
-                    (rowCount === 0) ? baseInfo.respInfo : '',
-                    'ကြက်/ဘဲ/ငုံး', p.species + (p.breed ? ` (${p.breed})` : ''),
-                    p.age_name || '-',
-                    counts.m, 0, counts.f, p.total || 0,
-                    (rowCount === 0) ? baseInfo.interviewer : '',
-                    (rowCount === 0) ? baseInfo.intvPhone : ''
-                ]);
-                rowCount++; currentExcelRow++;
-            });
-
-            Object.entries(r.breeding || {}).forEach(function([k, v]) {
-                dataRows.push([
-                    (rowCount === 0) ? baseInfo.no : '',
-                    (rowCount === 0) ? baseInfo.hhNo : '',
-                    (rowCount === 0) ? baseInfo.date : '',
-                    (rowCount === 0) ? baseInfo.location : '',
-                    (rowCount === 0) ? baseInfo.headName : '',
-                    (rowCount === 0) ? baseInfo.headInfo : '',
-                    (rowCount === 0) ? baseInfo.respName : '',
-                    (rowCount === 0) ? baseInfo.respInfo : '',
-                    'မျိုးတိရစ္ဆာန်', BREED_LABELS[k] || v.species || k,
-                    '-',
-                    v.male || 0, 0, v.female || 0, (v.male || 0) + (v.female || 0),
-                    (rowCount === 0) ? baseInfo.interviewer : '',
-                    (rowCount === 0) ? baseInfo.intvPhone : ''
-                ]);
-                rowCount++; currentExcelRow++;
-            });
-
-            if (rowCount > 1) {
-                let endRow = startRow + rowCount - 1;
-                let mergeCols = [0, 1, 2, 3, 4, 5, 6, 7, 15, 16];
-                mergeCols.forEach(c => {
-                    merges.push({ s: { r: startRow, c: c }, e: { r: endRow, c: c } });
-                });
-            }
-        });
-
-        var aoa = [];
-        var titleMerges = [];
-
-        var dynamicTitle = 'တိရစ္ဆာန်ကောင်ရေစာရင်း ကောက်ယူခြင်း';
-        if (filterTitle && !filterTitle.includes('အားလုံး')) {
-            dynamicTitle = filterTitle.replace('အတွင်း တိရစ္ဆာန်ကောင်ရေစာရင်း', '').trim();
-            dynamicTitle = `${dynamicTitle} အတွင်းရှိ အိမ်ထောင်စုအလိုက် တိရစ္ဆာန်ကောင်ရေ အသေးစိတ်စာရင်း`;
-        }
-
-        for (var ti = 0; ti < TITLE_LINES.length; ti++) {
-            if (ti === 2) {
-                aoa.push([dynamicTitle]);
-            } else {
-                aoa.push([TITLE_LINES[ti]]);
-            }
-            titleMerges.push({ s: { r: ti, c: 0 }, e: { r: ti, c: lastCol } });
-        }
-
-        aoa.push([filterTitle || '']);
-        titleMerges.push({ s: { r: FILTER_ROW, c: 0 }, e: { r: FILTER_ROW, c: lastCol } });
-
-        aoa.push([]);
-
-        aoa.push([sectionTitle]);
-        titleMerges.push({ s: { r: SECTION_START, c: 0 }, e: { r: SECTION_START, c: lastCol } });
-        var titleRow = SECTION_START;
-
-        var hrIndexes = [];
-        headerRows.forEach(function(hr) {
-            var rowArr = [];
-            for (var i = 0; i <= lastCol; i++) rowArr.push(hr[i] || '');
-            aoa.push(rowArr);
-            hrIndexes.push(aoa.length - 1);
-        });
-
-        var dataStart = aoa.length;
-        dataRows.forEach(function(dr) { aoa.push(dr); });
-        var dataEnd = aoa.length - 1;
-
-        aoa.push([]);
-        var footerRow = aoa.length - 1;
-        let today = new Date();
-        let dateStr = `${today.getFullYear()}-${String(today.getMonth()+1).padStart(2,'0')}-${String(today.getDate()).padStart(2,'0')} ${String(today.getHours()).padStart(2,'0')}:${String(today.getMinutes()).padStart(2,'0')}`;
-
-        var footerArr = new Array(lastCol + 1).fill('');
-        footerArr[0] = `ထုတ်ယူသည့်ရက်စွဲ - ${dateStr}`;
-        footerArr[lastCol] = 'စာမျက်နှာ - 1';
-        aoa.push(footerArr);
-
-        titleMerges.push({ s: { r: footerRow + 1, c: 0 }, e: { r: footerRow + 1, c: 7 } });
-        titleMerges.push({ s: { r: footerRow + 1, c: 16 }, e: { r: footerRow + 1, c: 16 } });
-
-        return {
-            aoa: aoa,
-            merges: titleMerges.concat(merges),
-            lastCol: lastCol,
-            sections: [{
-                titleRow: titleRow, headerRows: hrIndexes,
-                dataStart: dataStart, dataEnd: dataEnd, lastCol: lastCol
-            }]
-        };
-    }
-
-    function exportRecordsExcel() {
-        try {
-            var list = state.filtered;
-            if (list.length === 0) {
-                alert('Export လုပ်ရန် မှတ်တမ်း မရှိပါ။');
-                return false;
-            }
-
-            var filterTitle = getFilterTitle();
-            var wb = XLSX.utils.book_new();
-
-            var content = buildSheetContent(list, filterTitle);
-            var ws = XLSX.utils.aoa_to_sheet(content.aoa);
-            applyStyles(ws, content.merges, content.sections);
-            setRowHeights(ws, content.aoa, content.sections);
-            autoWidth(ws, content.aoa);
-            XLSX.utils.book_append_sheet(wb, ws, 'မှတ်တမ်းများ');
-
-            var fname = buildFilename();
-            XLSX.writeFile(wb, fname, {
-                bookType: 'xlsx',
-                type: 'binary'
-            });
-            return true;
-        } catch (e) {
-            console.error('Excel export error:', e);
-            return false;
-        }
+        const blob = await response.blob();
+        const url = URL.createObjectURL(blob);
+        const link = document.createElement('a');
+        link.href = url;
+        link.download = buildFilename();
+        document.body.appendChild(link);
+        link.click();
+        link.remove();
+        setTimeout(() => URL.revokeObjectURL(url), 10000);
+        return true;
     }
 
     // ==================================================
@@ -2015,7 +1651,7 @@
         confirmModal.show();
     });
 
-    document.getElementById('btnConfirmExport').addEventListener('click', function() {
+    document.getElementById('btnConfirmExport').addEventListener('click', async function() {
         const btn = this;
         const originalHTML = btn.innerHTML;
 
@@ -2023,13 +1659,13 @@
         btn.innerHTML = '<i class="bi bi-hourglass-split"></i> ပြင်ဆင်နေသည်...';
 
         try {
-            const ok = exportRecordsExcel();
+            const ok = await exportRecordsExcel();
             if (ok && confirmModal) {
                 confirmModal.hide();
             }
         } catch (error) {
             console.error('Confirm export error:', error);
-            alert('Excel ထုတ်ယူရာတွင် အမှားဖြစ်နေပါသည်။');
+            alert(error.message || 'Excel ထုတ်ယူရာတွင် အမှားဖြစ်နေပါသည်။');
         } finally {
             btn.disabled = false;
             btn.innerHTML = originalHTML;

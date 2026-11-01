@@ -1,0 +1,295 @@
+#!/usr/bin/env bash
+#
+# lbvd — unified CLI for the LBVD FastAPI project
+#
+# Usage:
+#   ./lbvd <command> [args...]
+#
+# Commands:
+#   up              Start MySQL (lbvd-mysql) then run the FastAPI app (uvicorn, port 5000)
+#   dev             Run the FastAPI app locally with uvicorn (port 5000). MySQL must be up.
+#   db              Start only the MySQL database container (lbvd-mysql)
+#   down            Stop the MySQL database container
+#   restart         Stop then start MySQL + app
+#   status          Show MySQL container, app port, and Python deps
+#   install         Create a venv and install Python requirements
+#   seed            Import init-db.sql into the running lbvd-mysql container
+#   cf dev          Run the Cloudflare Worker locally (wrangler dev)
+#   cf deploy       Deploy the Cloudflare Worker (wrangler deploy)
+#   help            Show this help
+#
+# The Flutter app (separate repo) expects the backend at http://localhost:5000
+# and is started with:  flutter run -d linux --dart-define=API_BASE_URL=http://localhost:5000
+set -euo pipefail
+
+REPO_ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+cd "$REPO_ROOT"
+
+# ---- optional .env (tolerant of CRLF) ----
+if [ -f .env ]; then
+  ENV_TMP="$(mktemp)"
+  tr -d '\r' < .env > "$ENV_TMP"
+  # shellcheck disable=SC1090,SC2046
+  set -a; . "$ENV_TMP"; set +a
+  rm -f "$ENV_TMP"
+fi
+
+HOST="${HOST:-0.0.0.0}"
+PORT="${PORT:-5000}"
+MYSQL_CONTAINER="${MYSQL_CONTAINER:-lbvd-mysql}"
+MYSQL_IMAGE="${MYSQL_IMAGE:-mysql:8.0}"
+MYSQL_DB="${MYSQL_DATABASE:-lbvd}"
+
+# ---- colours ----
+if [ -t 1 ]; then
+  C_RESET="\033[0m"
+  C_BOLD="\033[1m"
+  C_GREEN="\033[32m"
+  C_YELLOW="\033[33m"
+  C_RED="\033[31m"
+  C_CYAN="\033[36m"
+else
+  C_RESET="" C_BOLD="" C_GREEN="" C_YELLOW="" C_RED="" C_CYAN=""
+fi
+
+info()  { printf "${C_CYAN}==>${C_RESET} %s\n" "$*"; }
+ok()    { printf "${C_GREEN}ok:${C_RESET}   %s\n" "$*"; }
+warn()  { printf "${C_YELLOW}warn:${C_RESET} %s\n" "$*" >&2; }
+err()   { printf "${C_RED}error:${C_RESET} %s\n" "$*" >&2; }
+
+require_cmd() {
+  if ! command -v "$1" >/dev/null 2>&1; then
+    err "required command not found: $1"
+    exit 127
+  fi
+}
+
+# true if the named docker container exists (any state)
+container_exists() {
+  docker ps -a --format '{{.Names}}' 2>/dev/null | grep -qx "$1"
+}
+
+# true if the named docker container is running
+container_running() {
+  docker ps --format '{{.Names}}' 2>/dev/null | grep -qx "$1"
+}
+
+# ---------------------------------------------------------------- db
+cmd_db() {
+  require_cmd docker
+  if container_running "$MYSQL_CONTAINER"; then
+    ok "$MYSQL_CONTAINER already running"
+    return 0
+  fi
+  if container_exists "$MYSQL_CONTAINER"; then
+    info "starting existing $MYSQL_CONTAINER container ..."
+    docker start "$MYSQL_CONTAINER" >/dev/null
+  else
+    info "creating $MYSQL_CONTAINER container from $MYSQL_IMAGE ..."
+    docker run -d \
+      --name "$MYSQL_CONTAINER" \
+      --restart unless-stopped \
+      -e MYSQL_ROOT_PASSWORD='' \
+      -e MYSQL_DATABASE="$MYSQL_DB" \
+      -e MYSQL_USER=root \
+      -e MYSQL_PASSWORD='' \
+      -p "3306:3306" \
+      -v "${REPO_ROOT}/init-db.sql:/docker-entrypoint-initdb.d/init.sql:ro" \
+      "$MYSQL_IMAGE" >/dev/null
+  fi
+  # wait for mysql to accept connections
+  info "waiting for MySQL to be ready ..."
+  for _ in $(seq 1 60); do
+    if docker exec "$MYSQL_CONTAINER" mysqladmin ping -h localhost >/dev/null 2>&1; then
+      ok "MySQL ready on localhost:3306 (database: $MYSQL_DB)"
+      return 0
+    fi
+    sleep 1
+  done
+  err "MySQL did not become ready. Check: docker logs $MYSQL_CONTAINER"
+  exit 1
+}
+
+# ---------------------------------------------------------------- dev
+cmd_dev() {
+  require_cmd docker
+  require_cmd python3
+
+  # ensure database is available
+  if ! container_running "$MYSQL_CONTAINER"; then
+    warn "$MYSQL_CONTAINER is not running; starting it..."
+    cmd_db >/dev/null 2>&1 || {
+      err "could not start $MYSQL_CONTAINER. Run: ./lbvd db"
+      exit 1
+    }
+  fi
+
+  # pick python interpreter (project venv > system python)
+  local PY="python3"
+  if [ -x ".venv/bin/python" ]; then
+    PY=".venv/bin/python"
+  fi
+
+  if ! "$PY" -c "import uvicorn, fastapi, pymysql" 2>/dev/null; then
+    warn "Python deps missing. Run: ./lbvd install"
+    exit 1
+  fi
+
+  info "starting uvicorn on ${HOST}:${PORT} (DATABASE_URL=${DATABASE_URL:-<unset>})"
+  info "Ctrl+C to stop. Flutter: flutter run -d linux --dart-define=API_BASE_URL=http://localhost:5000"
+  exec "$PY" -m uvicorn app.main:app \
+    --host "$HOST" \
+    --port "$PORT"
+}
+
+# ---------------------------------------------------------------- up
+cmd_up() {
+  cmd_db >/dev/null
+  cmd_dev "$@"
+}
+
+# ---------------------------------------------------------------- down
+cmd_down() {
+  require_cmd docker
+  if container_running "$MYSQL_CONTAINER"; then
+    info "stopping $MYSQL_CONTAINER ..."
+    docker stop "$MYSQL_CONTAINER" >/dev/null
+    ok "stopped $MYSQL_CONTAINER"
+  else
+    warn "$MYSQL_CONTAINER is not running"
+  fi
+}
+
+# ---------------------------------------------------------------- restart
+cmd_restart() {
+  cmd_down
+  cmd_up "$@"
+}
+
+# ---------------------------------------------------------------- status
+cmd_status() {
+  echo
+  echo "${C_BOLD}MySQL container ($MYSQL_CONTAINER):${C_RESET}"
+  if command -v docker >/dev/null 2>&1; then
+    if container_running "$MYSQL_CONTAINER"; then
+      ok "running"
+    elif container_exists "$MYSQL_CONTAINER"; then
+      warn "exists but stopped (start with: ./lbvd db)"
+    else
+      warn "not created (start with: ./lbvd db)"
+    fi
+  else
+    warn "docker not installed"
+  fi
+  echo
+  echo "${C_BOLD}App port ${PORT}:${C_RESET}"
+  if command -v ss >/dev/null 2>&1; then
+    if ss -ltn 2>/dev/null | grep -qE ":( ${PORT})\b|:${PORT} "; then
+      ok "listening on :${PORT}"
+    else
+      warn "nothing listening on :${PORT}"
+    fi
+  elif command -v netstat >/dev/null 2>&1; then
+    if netstat -ltn 2>/dev/null | grep -q ":${PORT}"; then
+      ok "listening on :${PORT}"
+    else
+      warn "nothing listening on :${PORT}"
+    fi
+  else
+    warn "neither ss nor netstat available"
+  fi
+  echo
+  echo "${C_BOLD}Python deps:${C_RESET}"
+  if python3 -c "import uvicorn, fastapi, pymysql" 2>/dev/null; then
+    ok "uvicorn, fastapi, pymysql available in system python3"
+  else
+    warn "missing python deps — run ./lbvd install"
+  fi
+  echo
+}
+
+# ---------------------------------------------------------------- install
+cmd_install() {
+  require_cmd python3
+  info "creating virtualenv in .venv ..."
+  python3 -m venv .venv
+  info "installing requirements (this may take a minute) ..."
+  .venv/bin/python -m pip install --upgrade pip
+  .venv/bin/python -m pip install -r requirements.txt
+  ok "virtualenv ready. Activate with: source .venv/bin/activate"
+}
+
+# ---------------------------------------------------------------- seed
+cmd_seed() {
+  require_cmd docker
+  if [ ! -f init-db.sql ]; then
+    err "init-db.sql not found in $REPO_ROOT"
+    exit 1
+  fi
+  if ! container_running "$MYSQL_CONTAINER"; then
+    err "$MYSQL_CONTAINER is not running. Start it with: ./lbvd db"
+    exit 1
+  fi
+  info "loading seed data (idempotent; existing rows are skipped) ..."
+  # Extract multi-line INSERT statements from init-db.sql, convert to INSERT IGNORE,
+  # and skip CREATE TABLE / other DDL so the load is safe to re-run.
+  awk '
+    /^[[:space:]]*INSERT INTO/ {
+      buf=$0
+      if (/;[[:space:]]*$/) { sub(/INSERT INTO/,"INSERT IGNORE INTO"); print buf; buf=""; cap=0 }
+      else { cap=1 }
+      next
+    }
+    cap {
+      buf = buf "\n" $0
+      if (/;[[:space:]]*$/) { sub(/INSERT INTO/,"INSERT IGNORE INTO"); print buf; buf=""; cap=0 }
+    }
+  ' init-db.sql | docker exec -i "$MYSQL_CONTAINER" mysql --force -uroot "$MYSQL_DB"
+  ok "seed loaded (existing rows were skipped; rows too long for a column were truncated)"
+}
+
+# ---------------------------------------------------------------- cf dev
+cmd_cf_dev() {
+  require_cmd wrangler
+  info "starting Cloudflare Worker dev server ..."
+  wrangler dev
+}
+
+# ---------------------------------------------------------------- cf deploy
+cmd_cf_deploy() {
+  require_cmd wrangler
+  info "deploying Cloudflare Worker ..."
+  wrangler deploy
+}
+
+# ---------------------------------------------------------------- help
+cmd_help() {
+  awk '
+    NR==1 && /^#!/{next}    # skip shebang
+    /^#/{print; next}       # print leading comment block
+    {exit}
+  ' "$0"
+}
+
+# ---------------------------------------------------------------- dispatch
+CMD="${1:-help}"
+shift || true
+
+case "$CMD" in
+  up)        cmd_up "$@" ;;
+  dev)       cmd_dev "$@" ;;
+  db)        cmd_db "$@" ;;
+  down)      cmd_down "$@" ;;
+  restart)   cmd_restart "$@" ;;
+  status)    cmd_status "$@" ;;
+  install)   cmd_install "$@" ;;
+  seed)      cmd_seed "$@" ;;
+  cf)        sub="${1:-help}"; shift || true;
+             case "$sub" in
+               dev)   cmd_cf_dev "$@" ;;
+               deploy) cmd_cf_deploy "$@" ;;
+               *)     err "unknown cf subcommand: $sub"; cmd_help; exit 1 ;;
+             esac ;;
+  help|--help|-h) cmd_help ;;
+  *) err "unknown command: $CMD"; cmd_help; exit 1 ;;
+esac

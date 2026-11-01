@@ -173,28 +173,8 @@
     <p class="text-muted mb-0">ကောက်ယူထားသော နှင့် မကောက်ယူထားသော အိမ်ထောင်စုစာရင်းများကို တစ်နေရာတည်းတွင် ကြည့်ရှုနိုင်ပါသည်။</p>
 </div>
 
-<div class="row g-2 g-md-3 mb-3">
-    <div class="col-6 col-md-3">
-        <div class="stat-mini d-flex align-items-center gap-2">
-            <div class="sm-icon" style="background:#d1fae5; color:#047857;"><i class="bi bi-check2-circle"></i></div>
-            <div>
-                <div class="sm-label">ကောက်ယူပြီး</div>
-                <div class="sm-value" style="color:#047857;">{{ collected|length }}</div>
-            </div>
-        </div>
-    </div>
-    <div class="col-6 col-md-3">
-        <div class="stat-mini d-flex align-items-center gap-2">
-            <div class="sm-icon" style="background:#fef3c7; color:#b45309;"><i class="bi bi-hourglass-split"></i></div>
-            <div>
-                <div class="sm-label">မကောက်ယူရသေး</div>
-                <div class="sm-value" style="color:#b45309;">{{ not_collected|length }}</div>
-            </div>
-        </div>
-    </div>
-</div>
 
-<ul class="nav household-tabs mb-3" id="householdTabs" role="tablist" aria-label="အိမ်ထောင်စု ကောက်ယူမှုအခြေအနေ">
+ <ul class="nav household-tabs mb-3" id="householdTabs" role="tablist" aria-label="အိမ်ထောင်စု ကောက်ယူမှုအခြေအနေ">
     <li class="nav-item" role="presentation">
         <button class="nav-link active" id="collectedTab" data-bs-toggle="tab" data-bs-target="#collectedPanel"
                 type="button" role="tab" aria-controls="collectedPanel" aria-selected="true">
@@ -211,7 +191,9 @@
             <span class="tab-count">{{ not_collected|length }}</span>
         </button>
     </li>
-</ul>
+</ul> 
+
+
 
 <div class="tab-content" id="householdTabContent">
 <section class="tab-pane fade show active household-panel" id="collectedPanel"

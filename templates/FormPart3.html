@@ -165,7 +165,7 @@
         <select name="poultry[${poultryRowCount}][breed]" 
                 class="form-select form-select-sm poultry-type-select" 
                 id="poultryId_${poultryRowCount}" 
-                onchange="loadLiveStockSpecies('poultryId_${poultryRowCount}','poultrySpeciesId_${poultryRowCount}')">
+                onchange="togglePoultryAgeColumns(this); loadLiveStockSpecies('poultryId_${poultryRowCount}','poultrySpeciesId_${poultryRowCount}')">
             <option value="">ရွေးချယ်ပါ...</option>
             ${animalOptions}
         </select>
@@ -176,41 +176,62 @@
                 id="poultrySpeciesId_${poultryRowCount}">
              <!-- Species options go here -->
         </select></td>
-            <td><input type="number" name="poultry[${poultryRowCount}][young_male]" class="form-control form-control-sm count-input" placeholder="0" min="0"></td>
-            <td><input type="number" name="poultry[${poultryRowCount}][young_female]" class="form-control form-control-sm count-input" placeholder="0" min="0"></td>
-            <td><input type="number" name="poultry[${poultryRowCount}][medium_male]" class="form-control form-control-sm count-input" placeholder="0" min="0"></td>
-            <td><input type="number" name="poultry[${poultryRowCount}][medium_female]" class="form-control form-control-sm count-input" placeholder="0" min="0"></td>
-            <td><input type="number" name="poultry[${poultryRowCount}][adult_male]" class="form-control form-control-sm count-input" placeholder="0" min="0"></td>
-            <td><input type="number" name="poultry[${poultryRowCount}][adult_female]" class="form-control form-control-sm count-input" placeholder="0" min="0"></td>
             <td><input type="number" name="poultry[${poultryRowCount}][total]" class="form-control form-control-sm text-center fw-bold total-input" placeholder="0" readonly style="background:#f3f4f6;"></td>
             <td class="text-center"><button type="button" onclick="removeRow('poultryRow_${poultryRowCount}')" class="btn btn-sm text-danger"><i class="bi bi-trash"></i></button></td>
         `;
         tbody.appendChild(tr);
-        tr.querySelectorAll('.count-input').forEach(input => input.addEventListener('input', () => calculateRowTotal(tr)));
+        togglePoultryAgeColumns(tr.querySelector('.poultry-type-select'));
     };
 
+    function poultryAgeFields(animalID) {
+        if (animalID === 'lsID02' || animalID === 'lsID05') {
+            return [{ name: 'combined', span: 6, age: '', gender: '', label: 'ကောင်ရေ' }];
+        }
+        if (animalID === 'lsID03') {
+            return [
+                { name: 'young_combined', span: 4, age: 'ageID10', gender: '', label: 'ငယ် / လတ် စုစုပေါင်း' },
+                { name: 'adult_male', span: 1, age: 'ageID11', gender: 'g01', label: 'ကြီး အထီး' },
+                { name: 'adult_female', span: 1, age: 'ageID11', gender: 'g03', label: 'ကြီး အမ' }
+            ];
+        }
+        const ages = animalID === 'lsID04'
+            ? ['ageID12', 'ageID13', 'ageID14']
+            : animalID === 'lsID07'
+                ? ['ageID15', 'ageID16', 'ageID17']
+                : ['ageID07', 'ageID08', 'ageID09'];
+        return ['young', 'medium', 'adult'].flatMap((age, index) => [
+            { name: `${age}_male`, span: 1, age: ages[index], gender: 'g01', label: `${age} အထီး` },
+            { name: `${age}_female`, span: 1, age: ages[index], gender: 'g03', label: `${age} အမ` }
+        ]);
+    }
+
     window.togglePoultryAgeColumns = function (sel) {
-        const type = sel.value;
         const row = sel.closest('tr');
+        // Repeated species loads must not erase counts for the selected animal.
+        if (row.dataset.ageAnimal === sel.value) return;
+        row.dataset.ageAnimal = sel.value;
+        row.querySelectorAll('.poultry-age-cell').forEach(cell => cell.remove());
         const total = row.querySelector('.total-input');
-        const inputs = row.querySelectorAll('.count-input');
-
-        inputs.forEach(i => { i.disabled = false; i.style.background = ''; i.value = ''; });
-        total.readOnly = true;
-        total.style.background = '#f3f4f6';
-        total.value = '';
-
-        if (type === 'lsID02' || type === 'lsID05') {
-            inputs.forEach(i => { i.disabled = true; i.style.background = '#e5e7eb'; i.value = ''; });
-            total.readOnly = false;
-            total.style.background = '#fff';
-        }
-
-        if (type === 'lsID03') {
-            for (let i = 0; i < 4; i++) {
-                if (inputs[i]) { inputs[i].disabled = true; inputs[i].style.background = '#e5e7eb'; inputs[i].value = ''; }
-            }
-        }
+        const namePrefix = sel.name.replace(/\[breed\]$/, '');
+        poultryAgeFields(sel.value).forEach(field => {
+            const cell = document.createElement('td');
+            cell.className = 'poultry-age-cell';
+            cell.colSpan = field.span;
+            const input = document.createElement('input');
+            input.type = 'number';
+            input.name = `${namePrefix}[${field.name}]`;
+            input.className = 'form-control form-control-sm count-input';
+            input.placeholder = '0';
+            input.min = '0';
+            input.step = '1';
+            input.dataset.ageId = field.age;
+            input.dataset.genderId = field.gender;
+            input.setAttribute('aria-label', field.label);
+            input.addEventListener('input', () => calculateRowTotal(row));
+            cell.appendChild(input);
+            row.insertBefore(cell, total.closest('td'));
+        });
+        calculateRowTotal(row);
     };
 
     function calculateRowTotal(row) {
@@ -255,48 +276,20 @@
             const speciesID = row.querySelector('select[name*="[species]"]').value;
             const animalTypeID = "atID03";
 
-            const matrices = [
-                { selector: 'young_male', age: "ageID07", gender: "g01" },
-                { selector: 'young_female', age: "ageID07", gender: "g03" },
-                { selector: 'medium_male', age: "ageID08", gender: "g01" },
-                { selector: 'medium_female', age: "ageID08", gender: "g03" },
-                { selector: 'adult_male', age: "ageID09", gender: "g01" },
-                { selector: 'adult_female', age: "ageID09", gender: "g03" }
-            ];
-
-            matrices.forEach(item => {
-                const inputEl = row.querySelector(`input[name*="${item.selector}"]`);
-                const dataCount = Number(inputEl?.value) || 0;
-                if (dataCount > 0) {
-                    const record = {
-                        formID: String(formID || ""),
-                        animalTypeID: String(animalTypeID || ""),
-                        animalID: String(animalID || ""),
-                        speciesID: String(speciesID || ""),
-                        ageID: String(item.age || ""),
-                        genderID: String(item.gender || ""),
+            row.querySelectorAll('.count-input').forEach(input => {
+                const dataCount = Number(input.value) || 0;
+                if (animalID && !input.disabled && dataCount > 0) {
+                    records.push({
+                        formID: String(formID || ''),
+                        animalTypeID,
+                        animalID,
+                        speciesID,
+                        ageID: input.dataset.ageId,
+                        genderID: input.dataset.genderId,
                         dataCount: parseInt(dataCount, 10) || 0
-                    };
-                    records.push(record);
+                    });
                 }
             });
-
-            if (animalID === "lsID02" || animalID === "lsID05") {
-                const totalInput = row.querySelector(".total-input");
-                const dataCount1 = Number(totalInput?.value) || 0;
-                if (dataCount1 > 0) {
-                    const record1 = {
-                        formID: String(formID || ""),
-                        animalTypeID: String(animalTypeID || ""),
-                        animalID: String(animalID || ""),
-                        speciesID: String(speciesID || ""),
-                        ageID: "",
-                        genderID: "",
-                        dataCount: parseInt(dataCount1, 10) || 0
-                    };
-                    records.push(record1);
-                }
-            }
         });
 
         const response = await fetch(
@@ -342,7 +335,6 @@
         catch (error) {
             console.error("QV load error:", error);
         }
-        togglePoultryAgeColumns(liveStockSelect);
     }
 </script>
 {% endblock %}

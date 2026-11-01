@@ -4,85 +4,277 @@
 
 {% block extra_css %}
 <style>
-    #householdTabContent table {
-        font-size: 0.875rem;
+    .page-head h5 { font-size: 1.05rem; }
+    .page-head p  { font-size: 0.78rem; }
+
+    /* ================= STAT MINI ================= */
+    .stat-mini {
+        border: 1px solid #e6ebe8; border-radius: 14px;
+        box-shadow: 0 4px 16px rgba(2, 44, 34, 0.05);
+        padding: 12px 14px; height: 100%; background: #ffffff;
     }
-    #householdTabContent th,
-    #householdTabContent td,
-    #householdTabContent td div {
-        font-size: inherit;
+    .stat-mini .sm-icon {
+        width: 42px; height: 42px; border-radius: 12px;
+        display: flex; align-items: center; justify-content: center;
+        font-size: 1.15rem; flex-shrink: 0; line-height: 1;
+    }
+    .stat-mini .sm-label { font-size: 0.7rem; color: #64748b; font-weight: 600; margin-bottom: 2px; }
+    .stat-mini .sm-value { font-size: 1.2rem; font-weight: 800; line-height: 1.15; }
+
+    /* ================= TABS ================= */
+    .household-tabs {
+        display: inline-flex; flex-wrap: wrap; gap: 6px;
+        padding: 5px; border: 1px solid #e6ebe8; border-radius: 14px;
+        background: #f1f5f3;
+    }
+    .household-tabs .nav-link {
+        border: 1px solid transparent; border-radius: 10px;
+        color: #64748b; font-size: 0.78rem; font-weight: 700;
+        padding: 8px 16px; display: inline-flex; align-items: center; gap: 8px;
+        background: transparent; transition: all 0.16s ease;
+    }
+    .household-tabs .nav-link i { font-size: 0.9rem; }
+    .household-tabs .nav-link:hover { color: #047857; background: #ffffff; }
+    .household-tabs .nav-link.active {
+        background: #ffffff; color: #047857; border-color: #d7efe4;
+        box-shadow: 0 4px 12px rgba(5, 150, 105, 0.12);
+    }
+    .household-tabs .tab-count {
+        font-size: 0.66rem; font-weight: 800; line-height: 1;
+        background: #e2e8f0; color: #475569;
+        border-radius: 999px; padding: 4px 9px;
+        transition: all 0.16s ease;
+    }
+    .household-tabs .nav-link.active .tab-count { background: #d1fae5; color: #047857; }
+
+    /* ================= PANEL ================= */
+    .household-panel {
+        border: 1px solid #e6ebe8; border-radius: 16px; background: #ffffff;
+        overflow: hidden;
+        box-shadow: 0 10px 30px rgba(2, 44, 34, 0.06), 0 1px 2px rgba(2, 44, 34, 0.04);
+    }
+    .household-panel-head {
+        display: flex; align-items: center; gap: 12px;
+        padding: 14px 18px;
+        background: linear-gradient(180deg, #f8fdfb 0%, #ffffff 100%);
+        border-bottom: 1px solid #eef2f0;
+    }
+    .household-panel-icon {
+        width: 38px; height: 38px; border-radius: 11px; flex-shrink: 0;
+        display: inline-flex; align-items: center; justify-content: center;
+        background: #d1fae5; color: #047857; font-size: 1rem;
+    }
+    .household-panel-title { font-size: 0.86rem; font-weight: 800; color: #064e3b; line-height: 1.35; }
+    .household-panel-sub { font-size: 0.7rem; color: #64748b; margin-top: 2px; }
+    .household-panel-count {
+        margin-left: auto; flex-shrink: 0; white-space: nowrap;
+        font-size: 0.72rem; font-weight: 800; color: #047857;
+        background: #ecfdf5; border: 1px solid #a7f3d0;
+        border-radius: 999px; padding: 4px 12px;
+    }
+
+    /* ================= TABLE ================= */
+    .household-table { margin: 0; font-size: 0.8rem; min-width: 680px; }
+    .household-table thead th {
+        background: #f8fafc; color: #64748b;
+        font-size: 0.68rem; font-weight: 800; letter-spacing: 0.01em;
+        padding: 10px 16px; border-bottom: 1px solid #e8eeeb;
+        border-top: 0; white-space: nowrap;
+    }
+    .household-table tbody td {
+        padding: 11px 16px; color: #0f172a; vertical-align: middle;
+        border-color: #f1f5f3; border-left: 0; border-right: 0;
+    }
+    .household-table tbody tr:hover { background: #f6fdfa; }
+    .household-table tbody tr:last-child td { border-bottom: 0; }
+    .household-table .cell-strong { font-weight: 700; color: #047857; }
+    .household-table .cell-muted { color: #94a3b8; font-size: 0.74rem; }
+    .household-table .cell-num { text-align: right; font-weight: 800; color: #047857; }
+    .household-table .cell-index { color: #94a3b8; font-weight: 700; width: 56px; }
+    .household-table .cell-date { white-space: nowrap; color: #475569; }
+
+    .empty-state { padding: 42px 16px; text-align: center; color: #94a3b8; }
+    .empty-state i { display: block; font-size: 1.7rem; line-height: 1; margin-bottom: 10px; color: #cbd5e1; }
+    .empty-state p { margin: 0; font-size: 0.8rem; }
+
+    /* ================= PAGINATION ================= */
+    .pagination-bar {
+        display: flex; align-items: center; justify-content: space-between;
+        gap: 10px 14px; flex-wrap: wrap;
+        padding: 12px 18px; border-top: 1px solid #eef2f0;
+        background: #fbfdfc;
+    }
+    .pagination-bar:empty { display: none; }
+    .page-summary { font-size: 0.72rem; color: #64748b; }
+    .page-summary strong { color: #047857; font-weight: 800; }
+    .page-controls { display: flex; align-items: center; gap: 4px; flex-wrap: wrap; }
+    .page-btn {
+        min-width: 32px; height: 32px; padding: 0 8px; cursor: pointer;
+        display: inline-flex; align-items: center; justify-content: center;
+        border: 1px solid #e2e8f0; border-radius: 8px;
+        background: #ffffff; color: #475569;
+        font-size: 0.74rem; font-weight: 700; line-height: 1;
+        transition: all 0.15s ease;
+    }
+    .page-btn i { font-size: 0.7rem; }
+    .page-btn:hover:not(:disabled):not(.active) {
+        border-color: #a7f3d0; background: #f0fdf4; color: #047857;
+    }
+    .page-btn.active {
+        background: linear-gradient(135deg, #059669, #10b981);
+        border-color: #059669; color: #ffffff; cursor: default;
+        box-shadow: 0 4px 10px rgba(5, 150, 105, 0.28);
+    }
+    .page-btn:disabled { opacity: 0.45; cursor: not-allowed; }
+    .page-ellipsis { padding: 0 2px; color: #94a3b8; font-size: 0.74rem; font-weight: 700; }
+    .page-size { display: flex; align-items: center; gap: 6px; font-size: 0.7rem; color: #64748b; }
+    .page-size-select {
+        width: auto; min-width: 66px; font-size: 0.72rem; font-weight: 700;
+        color: #475569; border: 1px solid #e2e8f0; border-radius: 8px;
+        padding: 4px 26px 4px 9px; background-color: #ffffff;
+    }
+    .page-size-select:focus { border-color: #10b981; box-shadow: 0 0 0 3px rgba(16, 185, 129, 0.12); }
+
+    @media (max-width: 575.98px) {
+        .household-tabs { display: flex; width: 100%; }
+        .household-tabs .nav-item { flex: 1 1 auto; }
+        .household-tabs .nav-link { width: 100%; justify-content: center; font-size: 0.72rem; padding: 8px 10px; }
+        .household-panel-head { padding: 12px 14px; }
+        .household-panel-sub { display: none; }
+        .household-table thead th,
+        .household-table tbody td { padding-left: 12px; padding-right: 12px; }
+        .pagination-bar { justify-content: center; padding: 12px 14px; }
+        .page-summary { width: 100%; text-align: center; }
     }
 </style>
 {% endblock %}
 
 {% macro household_identity(row) %}
-<div class="fw-bold text-primary">{{ row.formID }}</div>
-<div class="text-muted">အမှတ်: {{ row.householdNo or '-' }}</div>
+<div class="cell-strong">{{ row.formID }}</div>
+<div class="cell-muted">အမှတ်: {{ row.householdNo or '-' }}</div>
 {% endmacro %}
 {% macro location(row) %}
 <div>{{ row.township_name or '-' }}</div>
-<div class="text-muted">{{ row.qv_name or '-' }}</div>
+<div class="cell-muted">{{ row.qv_name or '-' }}</div>
 {% endmacro %}
 
 {% block page_content %}
 {% if error %}
-<div class="alert alert-danger" role="alert">
-    <p>{{ error }}</p>
-    <a href="/admin/households" class="btn btn-outline-danger btn-sm">ပြန်လည်ကြိုးစားမည်</a>
+<div class="alert alert-danger d-flex align-items-start gap-2 border-0 shadow-sm" role="alert">
+    <i class="bi bi-exclamation-triangle-fill mt-1"></i>
+    <div>
+        <p class="mb-2">{{ error }}</p>
+        <a href="/admin/households" class="btn btn-outline-danger btn-sm">ပြန်လည်ကြိုးစားမည်</a>
+    </div>
 </div>
 {% else %}
-<ul class="nav nav-tabs mb-3" id="householdTabs" role="tablist" aria-label="အိမ်ထောင်စု ကောက်ယူမှုအခြေအနေ">
+<div class="page-head mb-3">
+    <h5 class="fw-bold text-success mb-1">အိမ်ထောင်စုစာရင်းအလိုက်</h5>
+    <p class="text-muted mb-0">ကောက်ယူထားသော နှင့် မကောက်ယူထားသော အိမ်ထောင်စုစာရင်းများကို တစ်နေရာတည်းတွင် ကြည့်ရှုနိုင်ပါသည်။</p>
+</div>
+
+<div class="row g-2 g-md-3 mb-3">
+    <div class="col-6 col-md-3">
+        <div class="stat-mini d-flex align-items-center gap-2">
+            <div class="sm-icon" style="background:#d1fae5; color:#047857;"><i class="bi bi-check2-circle"></i></div>
+            <div>
+                <div class="sm-label">ကောက်ယူပြီး</div>
+                <div class="sm-value" style="color:#047857;">{{ collected|length }}</div>
+            </div>
+        </div>
+    </div>
+    <div class="col-6 col-md-3">
+        <div class="stat-mini d-flex align-items-center gap-2">
+            <div class="sm-icon" style="background:#fef3c7; color:#b45309;"><i class="bi bi-hourglass-split"></i></div>
+            <div>
+                <div class="sm-label">မကောက်ယူရသေး</div>
+                <div class="sm-value" style="color:#b45309;">{{ not_collected|length }}</div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<ul class="nav household-tabs mb-3" id="householdTabs" role="tablist" aria-label="အိမ်ထောင်စု ကောက်ယူမှုအခြေအနေ">
     <li class="nav-item" role="presentation">
         <button class="nav-link active" id="collectedTab" data-bs-toggle="tab" data-bs-target="#collectedPanel"
                 type="button" role="tab" aria-controls="collectedPanel" aria-selected="true">
-            ကောက်ယူထားသော အိမ်ထောင်စုစာရင်း <span class="badge bg-success ms-2">{{ collected|length }}</span>
+            <i class="bi bi-check2-circle"></i>
+            ကောက်ယူထားသော အိမ်ထောင်စုစာရင်း
+            <span class="tab-count">{{ collected|length }}</span>
         </button>
     </li>
     <li class="nav-item" role="presentation">
         <button class="nav-link" id="notCollectedTab" data-bs-toggle="tab" data-bs-target="#notCollectedPanel"
                 type="button" role="tab" aria-controls="notCollectedPanel" aria-selected="false" tabindex="-1">
-            မကောက်ယူထားသော အိမ်ထောင်စုစာရင်း <span class="badge bg-secondary ms-2">{{ not_collected|length }}</span>
+            <i class="bi bi-hourglass-split"></i>
+            မကောက်ယူထားသော အိမ်ထောင်စုစာရင်း
+            <span class="tab-count">{{ not_collected|length }}</span>
         </button>
     </li>
 </ul>
+
 <div class="tab-content" id="householdTabContent">
-<section class="tab-pane fade show active card border-0 shadow-sm" id="collectedPanel"
+<section class="tab-pane fade show active household-panel" id="collectedPanel"
          role="tabpanel" aria-labelledby="collectedTab" tabindex="0">
+    <div class="household-panel-head">
+        <div class="household-panel-icon"><i class="bi bi-check2-square"></i></div>
+        <div>
+            <div class="household-panel-title">ကောက်ယူထားသော အိမ်ထောင်စုစာရင်း</div>
+            <div class="household-panel-sub">FormID၊ အိမ်ထောင်ဦးစီးနှင့် တည်နေရာအလိုက် အသေးစိတ်စာရင်း</div>
+        </div>
+        <span class="household-panel-count">{{ collected|length }} စု</span>
+    </div>
     <div class="table-responsive">
-        <table class="table table-bordered table-hover align-middle mb-0" id="collectedHouseholds">
-            <thead class="table-light">
+        <table class="table household-table mb-0" id="collectedHouseholds">
+            <thead>
                 <tr>
                     <th scope="col">စဉ်</th>
                     <th scope="col">FormID / အိမ်ထောင်စု</th>
                     <th scope="col">အိမ်ထောင်ဦးစီး / ဖြေဆိုသူ</th>
                     <th scope="col">တည်နေရာ (မြို့နယ်/ကျေးရွာအုပ်စု)</th>
-                    <th scope="col">တိရစ္ဆာန်အရေအတွက်</th>
+                    <th scope="col" class="text-end">တိရစ္ဆာန်အရေအတွက်</th>
                     <th scope="col">မေးမြန်းသည့်နေ့</th>
                 </tr>
             </thead>
             <tbody>
                 {% for row in collected %}
                 <tr>
-                    <td>{{ loop.index }}</td>
+                    <td class="cell-index">{{ loop.index }}</td>
                     <td>{{ household_identity(row) }}</td>
-                    <td><div>{{ row.headName or '-' }}</div><div class="text-muted">{{ row.name or '-' }}</div></td>
+                    <td><div>{{ row.headName or '-' }}</div><div class="cell-muted">{{ row.name or '-' }}</div></td>
                     <td>{{ location(row) }}</td>
-                    <td class="text-end">{{ row.animal_total|int }}</td>
-                    <td class="text-nowrap">{{ row.interviewDate or '-' }}</td>
+                    <td class="cell-num">{{ row.animal_total|int }}</td>
+                    <td class="cell-date">{{ row.interviewDate or '-' }}</td>
                 </tr>
                 {% else %}
-                <tr><td colspan="6" class="text-center text-muted py-4">ကောက်ယူထားသော အိမ်ထောင်စုစာရင်း မရှိသေးပါ။</td></tr>
+                <tr>
+                    <td colspan="6" class="p-0">
+                        <div class="empty-state">
+                            <i class="bi bi-inbox"></i>
+                            <p>ကောက်ယူထားသော အိမ်ထောင်စုစာရင်း မရှိသေးပါ။</p>
+                        </div>
+                    </td>
+                </tr>
                 {% endfor %}
             </tbody>
         </table>
     </div>
+    <div class="pagination-bar" id="collectedPagination"></div>
 </section>
 
-<section class="tab-pane fade card border-0 shadow-sm" id="notCollectedPanel"
+<section class="tab-pane fade household-panel" id="notCollectedPanel"
          role="tabpanel" aria-labelledby="notCollectedTab" tabindex="0">
+    <div class="household-panel-head">
+        <div class="household-panel-icon" style="background:#fef3c7; color:#b45309;"><i class="bi bi-hourglass-split"></i></div>
+        <div>
+            <div class="household-panel-title">မကောက်ယူထားသော အိမ်ထောင်စုစာရင်း</div>
+            <div class="household-panel-sub">ကောက်ယူရန် ကျန်ရှိနေသော အိမ်ထောင်စုများ</div>
+        </div>
+        <span class="household-panel-count" style="background:#fffbeb; border-color:#fde68a; color:#b45309;">{{ not_collected|length }} စု</span>
+    </div>
     <div class="table-responsive">
-        <table class="table table-bordered table-hover align-middle mb-0" id="notCollectedHouseholds">
-            <thead class="table-light">
+        <table class="table household-table mb-0" id="notCollectedHouseholds">
+            <thead>
                 <tr>
                     <th scope="col">စဉ်</th>
                     <th scope="col">FormID / အိမ်ထောင်စု</th>
@@ -93,18 +285,132 @@
             <tbody>
                 {% for row in not_collected %}
                 <tr>
-                    <td>{{ loop.index }}</td>
+                    <td class="cell-index">{{ loop.index }}</td>
                     <td>{{ household_identity(row) }}</td>
                     <td>{{ location(row) }}</td>
-                    <td class="text-nowrap">{{ row.interviewDate or '-' }}</td>
+                    <td class="cell-date">{{ row.interviewDate or '-' }}</td>
                 </tr>
                 {% else %}
-                <tr><td colspan="4" class="text-center text-muted py-4">မကောက်ယူထားသော အိမ်ထောင်စုစာရင်း မရှိသေးပါ။</td></tr>
+                <tr>
+                    <td colspan="4" class="p-0">
+                        <div class="empty-state">
+                            <i class="bi bi-inbox"></i>
+                            <p>မကောက်ယူထားသော အိမ်ထောင်စုစာရင်း မရှိသေးပါ။</p>
+                        </div>
+                    </td>
+                </tr>
                 {% endfor %}
             </tbody>
         </table>
     </div>
+    <div class="pagination-bar" id="notCollectedPagination"></div>
 </section>
 </div>
 {% endif %}
+{% endblock %}
+
+{% block extra_js %}
+<script>
+(function () {
+    var TABLES = [
+        { tableId: 'collectedHouseholds', mountId: 'collectedPagination' },
+        { tableId: 'notCollectedHouseholds', mountId: 'notCollectedPagination' }
+    ];
+    var PAGE_SIZES = [10, 25, 50];
+
+    function pageNumbers(current, total) {
+        var set = new Set([1, total, current, current - 1, current + 1]);
+        if (current <= 3) { [2, 3, 4].forEach(function (n) { if (n <= total) set.add(n); }); }
+        if (current >= total - 2) { [total - 1, total - 2, total - 3].forEach(function (n) { if (n >= 1) set.add(n); }); }
+        var nums = Array.from(set).filter(function (n) { return n >= 1 && n <= total; }).sort(function (a, b) { return a - b; });
+        var out = [];
+        var prev = 0;
+        nums.forEach(function (n) {
+            if (prev && n - prev > 1) out.push('...');
+            out.push(n);
+            prev = n;
+        });
+        return out;
+    }
+
+    function setupPagination(cfg) {
+        var table = document.getElementById(cfg.tableId);
+        var mount = document.getElementById(cfg.mountId);
+        if (!table || !mount) return;
+
+        var rows = Array.prototype.slice.call(table.querySelectorAll('tbody tr')).filter(function (tr) {
+            return !tr.querySelector('[colspan]');
+        });
+        if (!rows.length) return;
+
+        var perPage = PAGE_SIZES[0];
+        var page = 1;
+
+        function iconBtn(icon, target, label, disabled) {
+            return '<button type="button" class="page-btn" title="' + label + '" aria-label="' + label + '"' +
+                ' data-page="' + target + '"' + (disabled ? ' disabled' : '') + '>' +
+                '<i class="bi ' + icon + '"></i></button>';
+        }
+
+        function render() {
+            var total = rows.length;
+            var totalPages = Math.max(1, Math.ceil(total / perPage));
+            if (page > totalPages) page = totalPages;
+            if (page < 1) page = 1;
+
+            var start = (page - 1) * perPage;
+            var end = Math.min(start + perPage, total);
+
+            rows.forEach(function (tr, i) {
+                tr.style.display = (i >= start && i < end) ? '' : 'none';
+            });
+
+            var html = '<div class="page-summary">ပြသနေသည် <strong>' + (start + 1) + '–' + end + '</strong> / ' + total + '</div>';
+            html += '<div class="page-controls" role="navigation" aria-label="စာမျက်နှာ ရွေးချယ်မှု">';
+            html += iconBtn('bi-chevron-double-left', 1, 'ပထမစာမျက်နှာ', page === 1);
+            html += iconBtn('bi-chevron-left', page - 1, 'ယခင်စာမျက်နှာ', page === 1);
+            pageNumbers(page, totalPages).forEach(function (n) {
+                if (n === '...') {
+                    html += '<span class="page-ellipsis">…</span>';
+                } else {
+                    var active = n === page;
+                    html += '<button type="button" class="page-btn' + (active ? ' active' : '') + '"' +
+                        ' data-page="' + n + '"' + (active ? ' aria-current="page"' : '') + '>' + n + '</button>';
+                }
+            });
+            html += iconBtn('bi-chevron-right', page + 1, 'နောက်စာမျက်နှာ', page === totalPages);
+            html += iconBtn('bi-chevron-double-right', totalPages, 'နောက်ဆုံးစာမျက်နှာ', page === totalPages);
+            html += '</div>';
+            html += '<div class="page-size"><label for="' + cfg.mountId + 'Size">တစ်မျက်နှာ</label>' +
+                '<select id="' + cfg.mountId + 'Size" class="form-select form-select-sm page-size-select" aria-label="တစ်မျက်နှာ ပြသမည့် အရေအတွက်">' +
+                PAGE_SIZES.map(function (n) {
+                    return '<option value="' + n + '"' + (n === perPage ? ' selected' : '') + '>' + n + '</option>';
+                }).join('') +
+                '</select></div>';
+
+            mount.innerHTML = html;
+        }
+
+        mount.addEventListener('click', function (e) {
+            var btn = e.target.closest('[data-page]');
+            if (!btn || btn.disabled) return;
+            page = parseInt(btn.getAttribute('data-page'), 10);
+            render();
+        });
+
+        mount.addEventListener('change', function (e) {
+            if (!e.target.classList.contains('page-size-select')) return;
+            perPage = parseInt(e.target.value, 10);
+            page = 1;
+            render();
+        });
+
+        render();
+    }
+
+    document.addEventListener('DOMContentLoaded', function () {
+        TABLES.forEach(setupPagination);
+    });
+})();
+</script>
 {% endblock %}

@@ -438,7 +438,7 @@
     }
 
     /* ============================================
-       SAVE GRAPH BUTTON & SNAPSHOT STYLES
+       SAVE GRAPH BUTTON
        ============================================ */
     .btn-save-graph {
         background: linear-gradient(135deg, #1d4ed8, #2563eb);
@@ -459,7 +459,7 @@
     .btn-save-graph:hover {
         color: #fff;
         transform: translateY(-1px);
-        box-shadow: 0 4px 12px #d1fae5;
+        box-shadow: 0 4px 12px rgba(37, 99, 235, 0.35);
     }
 
     .btn-save-graph:disabled {
@@ -472,12 +472,15 @@
         font-size: 0.9rem;
     }
 
-    /* Off-screen snapshot container */
-    #snapshotArea {
+    /* ============================================
+       OFF-SCREEN SNAPSHOT AREAS (Bar + Doughnut သီးခြား)
+       ============================================ */
+    #snapshotAreaBar,
+    #snapshotAreaDoughnut {
         position: fixed;
         left: -12000px;
         top: 0;
-        width: 1080px;
+        width: 900px;
         background: #ffffff;
         padding: 28px;
         font-family: 'Noto Sans Myanmar', 'Pyidaungsu', sans-serif;
@@ -485,7 +488,8 @@
         box-sizing: border-box;
     }
 
-    #snapshotArea .snap-header {
+    #snapshotAreaBar .snap-header,
+    #snapshotAreaDoughnut .snap-header {
         border-bottom: 2px solid #047857;
         padding-bottom: 10px;
         margin-bottom: 16px;
@@ -495,124 +499,87 @@
         gap: 12px;
     }
 
-    #snapshotArea .snap-title {
+    #snapshotAreaBar .snap-title,
+    #snapshotAreaDoughnut .snap-title {
         font-size: 1.15rem;
         font-weight: 700;
         color: #047857;
         margin: 0 0 3px 0;
     }
 
-    #snapshotArea .snap-sub {
+    #snapshotAreaBar .snap-sub,
+    #snapshotAreaDoughnut .snap-sub {
         font-size: 0.72rem;
         color: #6b7280;
         margin: 0;
     }
 
-    #snapshotArea .snap-meta {
+    #snapshotAreaBar .snap-meta,
+    #snapshotAreaDoughnut .snap-meta {
         font-size: 0.7rem;
         color: #6b7280;
         text-align: right;
         line-height: 1.55;
     }
 
-    #snapshotArea .snap-stats {
+    #snapshotAreaBar .snap-stats,
+    #snapshotAreaDoughnut .snap-stats {
         display: grid;
         grid-template-columns: repeat(4, 1fr);
         gap: 10px;
         margin-bottom: 16px;
     }
 
-    #snapshotArea .snap-stat {
+    #snapshotAreaBar .snap-stat,
+    #snapshotAreaDoughnut .snap-stat {
         border-radius: 10px;
         padding: 10px 12px;
         border: 1px solid #e5e7eb;
     }
 
-    #snapshotArea .snap-stat .lbl {
+    #snapshotAreaBar .snap-stat .lbl,
+    #snapshotAreaDoughnut .snap-stat .lbl {
         font-size: 0.65rem;
         font-weight: 700;
         color: #6b7280;
     }
 
-    #snapshotArea .snap-stat .val {
+    #snapshotAreaBar .snap-stat .val,
+    #snapshotAreaDoughnut .snap-stat .val {
         font-size: 1.1rem;
         font-weight: 700;
     }
 
-    #snapshotArea .snap-charts {
-        display: flex;
-        gap: 16px;
-        margin-bottom: 16px;
-    }
-
-    #snapshotArea .snap-charts > div {
-        flex: 1;
+    #snapshotAreaBar .snap-chart-box,
+    #snapshotAreaDoughnut .snap-chart-box {
         border: 1px solid #e5e7eb;
         border-radius: 10px;
-        padding: 10px;
-        min-width: 0;
+        padding: 12px;
+        margin-bottom: 16px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        min-height: 340px;
     }
 
-    #snapshotArea .snap-charts h6 {
-        font-size: 0.78rem;
-        font-weight: 700;
-        color: #065f46;
-        margin-bottom: 8px;
+    #snapshotAreaBar .snap-chart-box img,
+    #snapshotAreaDoughnut .snap-chart-box img {
+        max-height: 340px;
+        max-width: 100%;
+        width: auto;
+        height: auto;
+        object-fit: contain;
+        display: block;
     }
 
-    #snapshotArea .snap-charts canvas {
-        max-height: 240px;
-        width: 100% !important;
-    }
-
-    #snapshotArea .snap-table {
-        width: 100%;
-        border-collapse: collapse;
-        font-size: 0.72rem;
-    }
-
-    #snapshotArea .snap-table thead tr {
-        background: #ecfdf5;
-        color: #065f46;
-    }
-
-    #snapshotArea .snap-table th,
-    #snapshotArea .snap-table td {
-        padding: 5px 8px;
-        border: 1px solid #e5e7eb;
-        text-align: left;
-    }
-
-    #snapshotArea .snap-table th {
-        font-weight: 700;
-        font-size: 0.68rem;
-        text-transform: uppercase;
-        white-space: nowrap;
-    }
-
-    #snapshotArea .snap-table .num {
-        text-align: right;
-        font-weight: 700;
-        color: #047857;
-    }
-
-    #snapshotArea .snap-footer {
+    #snapshotAreaBar .snap-footer,
+    #snapshotAreaDoughnut .snap-footer {
         margin-top: 14px;
         border-top: 1px dashed #d1d5db;
         padding-top: 8px;
         font-size: 0.65rem;
         color: #9ca3af;
         text-align: center;
-    }
-
-    #snapshotArea .snap-badge {
-        display: inline-block;
-        padding: 1px 8px;
-        font-size: 0.66rem;
-        font-weight: 700;
-        border-radius: 999px;
-        background: #ecfdf5;
-        color: #065f46;
     }
 
     @media (max-width: 575.98px) {
@@ -682,15 +649,18 @@
         <p class="text-muted mb-0">သက်ဆိုင်ရာ တိုင်း/ခရိုင်/မြို့နယ်အလိုက် တိရစ္ဆာန်အရေအတွက်ပြ Graphs များ</p>
     </div>
 
-    <!-- ⭐ Graph & Data Save Button -->
-    <button type="button" class="btn-save-graph" id="btnSaveGraph">
-        <i class="bi bi-download"></i>
-        <span>Graph များ Save ရန်</span>
-    </button>
+    <!-- ⭐ Chart များ Save ရန် Button (ဖိုင်နှစ်ခု တစ်ချက်နှိပ်) -->
+    <div class="d-flex gap-2 flex-wrap">
+        <button type="button" class="btn-save-graph" id="btnSaveAllCharts">
+            <i class="bi bi-download"></i>
+            <span>Chart များ Save ရန်</span>
+        </button>
+    </div>
 </div>
 
-<!-- ⭐ Snapshot rendering area (off-screen, hidden) -->
-<div id="snapshotArea" aria-hidden="true"></div>
+<!-- ⭐ Snapshot rendering areas (off-screen, hidden) -->
+<div id="snapshotAreaBar" aria-hidden="true"></div>
+<div id="snapshotAreaDoughnut" aria-hidden="true"></div>
 
 <!-- ============ ROLE NOTICE ============ -->
 {% if role in ('state', 'district', 'township') %}
@@ -937,11 +907,11 @@
     document.getElementById('countLarge').textContent = fmt(STATS.large);
     document.getElementById('countSmall').textContent = fmt(STATS.small);
     document.getElementById('countPoultry').textContent = fmt(STATS.poultry);
-        document.getElementById('countBreeding').textContent = fmt(STATS.breeding);
+    document.getElementById('countBreeding').textContent = fmt(STATS.breeding);
 
     // ⭐ User info from data attributes
     const ROLE = dataEl.dataset.role || 'admin';
-    const USER_STATE_ID = dataEl.dataset.userStateId || '';
+        const USER_STATE_ID = dataEl.dataset.userStateId || '';
     const USER_STATE_NAME = dataEl.dataset.userStateName || '';
     const USER_DISTRICT_ID = dataEl.dataset.userDistrictId || '';
     const USER_TOWNSHIP_ID = dataEl.dataset.userTownshipId || '';
@@ -1552,13 +1522,14 @@
         hideLoading();
     })();
 
-       // ==================================================
-    // 8. GRAPH & CHART SAVE AS PNG (Table မပါ)
+    // ==================================================
+    // 8. GRAPH & CHART SAVE AS 2 PNG FILES (တစ်ချက်နှိပ်)
     // ==================================================
     (function initSaveGraph() {
-        const btn = document.getElementById('btnSaveGraph');
-        const snapArea = document.getElementById('snapshotArea');
-        if (!btn || !snapArea) return;
+        const btn = document.getElementById('btnSaveAllCharts');
+        const snapBar = document.getElementById('snapshotAreaBar');
+        const snapDoughnut = document.getElementById('snapshotAreaDoughnut');
+        if (!btn || !snapBar || !snapDoughnut) return;
 
         // ---- html2canvas CDN dynamic loader ----
         function loadHtml2Canvas() {
@@ -1572,23 +1543,32 @@
             });
         }
 
-        // ---- Canvas chart ကို ပုံအဖြစ် ပြောင်း ----
+        // ---- Canvas chart ကို ပုံအဖြစ် ပြောင်း (aspect ratio မှန်အောင်) ----
         function canvasToImg(canvasEl) {
             return new Promise((resolve) => {
                 if (!canvasEl) return resolve(null);
                 try {
+                    const rect = canvasEl.getBoundingClientRect();
+                    const cssW = Math.round(rect.width) || canvasEl.clientWidth;
+                    const cssH = Math.round(rect.height) || canvasEl.clientHeight;
+                    if (!cssW || !cssH) return resolve(null);
+
                     const tmp = document.createElement('canvas');
-                    tmp.width = canvasEl.width;
-                    tmp.height = canvasEl.height;
+                    tmp.width = cssW * 2;
+                    tmp.height = cssH * 2;
                     const ctx = tmp.getContext('2d');
                     ctx.fillStyle = '#ffffff';
                     ctx.fillRect(0, 0, tmp.width, tmp.height);
-                    ctx.drawImage(canvasEl, 0, 0);
+                    ctx.drawImage(canvasEl, 0, 0, tmp.width, tmp.height);
+
                     const img = new Image();
                     img.src = tmp.toDataURL('image/png');
-                    img.style.width = '100%';
-                    img.style.maxHeight = '320px';
+                    img.style.maxHeight = '340px';
+                    img.style.maxWidth = '100%';
+                    img.style.width = 'auto';
+                    img.style.height = 'auto';
                     img.style.objectFit = 'contain';
+                    img.style.display = 'block';
                     img.onload = () => resolve(img);
                     img.onerror = () => resolve(null);
                 } catch (e) {
@@ -1608,71 +1588,56 @@
                 .replace(/'/g, '&#39;');
         }
 
-        // ---- Snapshot တည်ဆောက် (Graph + Chart သာ) ----
-        async function buildSnapshot() {
-            const regionName = (document.querySelector('.page-head h5')?.textContent || '').trim();
-            const now = new Date();
-            const stamp = now.toLocaleString('en-GB', {
-                year: 'numeric',
-                month: '2-digit',
-                day: '2-digit',
-                hour: '2-digit',
-                minute: '2-digit'
-            });
-
-            // Filter summary
+        // ---- Filter summary ----
+        function getFilterParts() {
             const filterParts = [];
-            const fSelState = document.getElementById('filterState');
-            const fSelDistrict = document.getElementById('filterDistrict');
-            const fSelTownship = document.getElementById('filterTownship');
-            const fSelVillage = document.getElementById('filterVillage');
-
             function selText(sel) {
                 if (!sel || !sel.value) return '';
                 const opt = sel.options[sel.selectedIndex];
                 return opt ? opt.textContent : '';
             }
-            if (selText(fSelState)) filterParts.push('တိုင်း: ' + selText(fSelState));
-            if (selText(fSelDistrict)) filterParts.push('ခရိုင်: ' + selText(fSelDistrict));
-            if (selText(fSelTownship)) filterParts.push('မြို့နယ်: ' + selText(fSelTownship));
-            if (selText(fSelVillage)) filterParts.push('ကျေးရွာအုပ်စုး: ' + selText(fSelVillage));
+            const s = selText(document.getElementById('filterState'));
+            const d = selText(document.getElementById('filterDistrict'));
+            const t = selText(document.getElementById('filterTownship'));
+            const v = selText(document.getElementById('filterVillage'));
+            if (s) filterParts.push('တိုင်း: ' + s);
+            if (d) filterParts.push('ခရိုင်: ' + d);
+            if (t) filterParts.push('မြို့နယ်: ' + t);
+            if (v) filterParts.push('ကျေးရွာအုပ်စုး: ' + v);
+            return filterParts;
+        }
 
-            // Stat cards (Graph နဲ့တွဲပြီး ပါဝင်ခွင့်ပြု)
-            const statDefs = [{
-                    label: 'တိရစ္ဆာန်ကြီး',
-                    value: STATS.large,
-                    color: '#047857'
-                },
-                {
-                    label: 'တိရစ္ဆာန်ငယ်',
-                    value: STATS.small,
-                    color: '#1d4ed8'
-                },
-                {
-                    label: 'ကြက်၊ ဘဲ၊ ငုံး',
-                    value: STATS.poultry,
-                    color: '#b45309'
-                },
-                {
-                    label: 'မျိုးတိရစ္ဆာန်',
-                    value: STATS.breeding,
-                    color: '#be123c'
-                },
+        // ---- Stat cards HTML ----
+        function buildStatHtml() {
+            const statDefs = [
+                { label: 'တိရစ္ဆာန်ကြီး', value: STATS.large, color: '#047857' },
+                { label: 'တိရစ္ဆာန်ငယ်', value: STATS.small, color: '#1d4ed8' },
+                { label: 'ကြက်၊ ဘဲ၊ ငုံး', value: STATS.poultry, color: '#b45309' },
+                { label: 'မျိုးတိရစ္ဆာန်', value: STATS.breeding, color: '#be123c' },
             ];
-
-            const statHtml = statDefs.map(s => `
+            return statDefs.map(s => `
                 <div class="snap-stat">
                     <div class="lbl">${esc(s.label)}</div>
                     <div class="val" style="color:${s.color}">${Number(s.value || 0).toLocaleString()}</div>
                 </div>
             `).join('');
+        }
 
-            // ⭐ Table မပါ — Graph + Chart သာ
-            snapArea.innerHTML = `
+        // ---- Snapshot တစ်ခု တည်ဆောက် ----
+        async function buildSnapshot(target, chartCanvas, subtitle, imgHolderId) {
+            const regionName = (document.querySelector('.page-head h5')?.textContent || '').trim();
+            const now = new Date();
+            const stamp = now.toLocaleString('en-GB', {
+                year: 'numeric', month: '2-digit', day: '2-digit',
+                hour: '2-digit', minute: '2-digit'
+            });
+            const filterParts = getFilterParts();
+
+            target.innerHTML = `
                 <div class="snap-header">
                     <div>
                         <h2 class="snap-title">${esc(regionName || 'တိရစ္ဆာန်ကောင်ရေ အနှစ်ချုပ်')}</h2>
-                        <p class="snap-sub">တိရစ္ဆာန်အရေအတွက် အနှစ်ချုပ် Graphs နှင့် Chart</p>
+                        <p class="snap-sub">${esc(subtitle)}</p>
                     </div>
                     <div class="snap-meta">
                         ရက်စွဲ: ${esc(stamp)}<br>
@@ -1680,50 +1645,29 @@
                     </div>
                 </div>
 
-                <div class="snap-stats">${statHtml}</div>
+                <div class="snap-stats">${buildStatHtml()}</div>
 
-                <div class="snap-charts">
-                    <div>
-                        <h6>📊 တိရစ္ဆာန် အုပ်စုအလိုက် ကောင်ရေ</h6>
-                        <div id="snapBarChart"></div>
-                    </div>
-                    <div>
-                        <h6>🍩 အချိုးအစား</h6>
-                        <div id="snapDoughnutChart"></div>
-                    </div>
-                </div>
+                <div class="snap-chart-box" id="${imgHolderId}"></div>
 
                 <div class="snap-footer">
                     LBVD Dashboard • ${esc(regionName)} • Generated on ${esc(stamp)}
                 </div>
             `;
 
-            // Charts ကို <img> အဖြစ် ထည့်
-            const barCanvas = document.getElementById('barChart');
-            const doughnutCanvas = document.getElementById('doughnutChart');
-            const [barImg, doughnutImg] = await Promise.all([
-                canvasToImg(barCanvas),
-                canvasToImg(doughnutCanvas),
-            ]);
-
-            const barHolder = document.getElementById('snapBarChart');
-            const doughnutHolder = document.getElementById('snapDoughnutChart');
-            if (barImg && barHolder) barHolder.appendChild(barImg);
-            else if (barHolder) barHolder.innerHTML = '<p style="font-size:0.7rem;color:#9ca3af;">Chart မရပါ</p>';
-
-            if (doughnutImg && doughnutHolder) doughnutHolder.appendChild(doughnutImg);
-            else if (doughnutHolder) doughnutHolder.innerHTML = '<p style="font-size:0.7rem;color:#9ca3af;">Chart မရပါ</p>';
+            // Chart ကို <img> အဖြစ် ထည့်
+            const img = await canvasToImg(chartCanvas);
+            const holder = document.getElementById(imgHolderId);
+            if (img && holder) holder.appendChild(img);
+            else if (holder) holder.innerHTML = '<p style="font-size:0.7rem;color:#9ca3af;">Chart မရပါ</p>';
 
             // Font load ပြီးတဲ့အထိ စောင့်
             if (document.fonts && document.fonts.ready) {
-                try {
-                    await document.fonts.ready;
-                } catch (e) {}
+                try { await document.fonts.ready; } catch (e) {}
             }
             await new Promise(r => setTimeout(r, 150));
         }
 
-        // ---- Download trigger ----
+        // ---- Download helper ----
         function downloadDataURL(dataURL, filename) {
             const a = document.createElement('a');
             a.href = dataURL;
@@ -1733,18 +1677,33 @@
             document.body.removeChild(a);
         }
 
-        function buildFilename() {
+        function buildFilename(kind) {
             const region = (document.querySelector('.page-head h5')?.textContent || 'dashboard')
                 .replace(/မူလစာမျက်နှာ\s*—?\s*/g, '')
                 .replace(/[^\w\u1000-\u109F\-]+/g, '_')
                 .trim() || 'dashboard';
             const d = new Date();
             const pad = n => String(n).padStart(2, '0');
-            const stamp = `${d.getFullYear()}${pad(d.getMonth()+1)}${pad(d.getDate())}_${pad(d.getHours())}${pad(d.getMinutes())}`;
-            return `LBVD_Graph_${region}_${stamp}.png`;
+            const stamp = `${d.getFullYear()}${pad(d.getMonth()+1)}${pad(d.getDate())}_${pad(d.getHours())}${pad(d.getMinutes())}${pad(d.getSeconds())}`;
+            return `LBVD_${kind}_${region}_${stamp}.png`;
         }
 
-        // ---- Button click ----
+        // ---- html2canvas → PNG dataURL ----
+        async function renderSnapshotToDataURL(html2canvas, snapArea) {
+            const canvas = await html2canvas(snapArea, {
+                backgroundColor: '#ffffff',
+                scale: 2,
+                useCORS: true,
+                logging: false,
+                width: snapArea.scrollWidth,
+                height: snapArea.scrollHeight,
+                windowWidth: snapArea.scrollWidth,
+                windowHeight: snapArea.scrollHeight,
+            });
+            return canvas.toDataURL('image/png');
+        }
+
+        // ---- Button click: ဖိုင်နှစ်ခု ဆက်တိုက် save ----
         btn.addEventListener('click', async () => {
             const originalHtml = btn.innerHTML;
             btn.disabled = true;
@@ -1752,39 +1711,54 @@
 
             try {
                 const html2canvas = await loadHtml2Canvas();
-                await buildSnapshot();
 
-                const canvas = await html2canvas(snapArea, {
-                    backgroundColor: '#ffffff',
-                    scale: 2,
-                    useCORS: true,
-                    logging: false,
-                    width: snapArea.scrollWidth,
-                    height: snapArea.scrollHeight,
-                    windowWidth: snapArea.scrollWidth,
-                    windowHeight: snapArea.scrollHeight,
-                });
+                const barCanvas = document.getElementById('barChart');
+                const doughnutCanvas = document.getElementById('doughnutChart');
 
-                const dataURL = canvas.toDataURL('image/png');
-                downloadDataURL(dataURL, buildFilename());
+                // ---- 1) Bar Graph snapshot ----
+                await buildSnapshot(
+                    snapBar,
+                    barCanvas,
+                    'တိရစ္ဆာန်အရေအတွက် Bar Graph',
+                    'snapBarImgHolder'
+                );
+                const barDataURL = await renderSnapshotToDataURL(html2canvas, snapBar);
+                snapBar.innerHTML = '';
 
-                snapArea.innerHTML = '';
+                // ---- 2) Doughnut Chart snapshot ----
+                await buildSnapshot(
+                    snapDoughnut,
+                    doughnutCanvas,
+                    'တိရစ္ဆာန်အရေအတွက် အချိုးအစား Chart',
+                    'snapDoughnutImgHolder'
+                );
+                const doughnutDataURL = await renderSnapshotToDataURL(html2canvas, snapDoughnut);
+                snapDoughnut.innerHTML = '';
 
-                btn.innerHTML = '<i class="bi bi-check-circle-fill"></i><span>Save ပြီးပါပြီ</span>';
+                // ---- 3) ဖိုင်နှစ်ခု ဆက်တိုက် download ----
+                downloadDataURL(barDataURL, buildFilename('BarChart'));
+
+                // ခလုတ်၏ နောက်ဆက်တွဲ download ကို browser က ပိတ်မပစ်အောင် ခဏစောင့်
+                await new Promise(r => setTimeout(r, 400));
+
+                downloadDataURL(doughnutDataURL, buildFilename('DoughnutChart'));
+
+                btn.innerHTML = '<i class="bi bi-check-circle-fill"></i><span>ဖိုင် ၂ ခု Save ပြီးပါပြီ</span>';
                 setTimeout(() => {
                     btn.innerHTML = originalHtml;
                     btn.disabled = false;
-                }, 1600);
+                }, 1800);
 
             } catch (err) {
-                console.error('Save graph failed:', err);
-                snapArea.innerHTML = '';
+                console.error('Save charts failed:', err);
+                snapBar.innerHTML = '';
+                snapDoughnut.innerHTML = '';
                 btn.innerHTML = '<i class="bi bi-exclamation-triangle-fill"></i><span>မအောင်မြင်ပါ</span>';
                 setTimeout(() => {
                     btn.innerHTML = originalHtml;
                     btn.disabled = false;
                 }, 1800);
-                alert('ပုံ Save မအောင်မြင်ပါ။ Internet ချိတ်ဆက်မှုကို စစ်ဆေးပြီး ပြန်ကြိုးစားပါ။');
+                alert('ပုံများ Save မအောင်မြင်ပါ။ Internet ချိတ်ဆက်မှုကို စစ်ဆေးပြီး ပြန်ကြိုးစားပါ။\n\n(မှတ်ချက် - Browser က "multiple downloads" ကို ပိတ်ထားရင် Allow လုပ်ပေးပါ)');
             }
         });
     })();

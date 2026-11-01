@@ -10,84 +10,137 @@
     .page-head h5 { font-size: 1.05rem; }
     .page-head p  { font-size: 0.78rem; }
 
+    /* ================= FILTER CARD (COMPACT) ================= */
     .filter-card {
-        border: none; border-radius: 12px;
-        box-shadow: 0 2px 10px rgba(0,0,0,0.05);
-        background: #ffffff;
+        position: relative;
+        border: 1px solid #e6ebe8; border-radius: 14px;
+        box-shadow: 0 4px 16px rgba(2, 44, 34, 0.06), 0 1px 2px rgba(2, 44, 34, 0.03);
+        background: #ffffff; overflow: hidden;
     }
+    .filter-card::before {
+        content: ""; position: absolute; inset: 0 0 auto 0; height: 2px;
+        background: linear-gradient(90deg, #10b981, #34d399 45%, #a7f3d0);
+    }
+    .filter-card-head {
+        display: flex; align-items: center; gap: 10px;
+        padding: 9px 14px;
+        background: linear-gradient(180deg, #f7fdfa 0%, #ffffff 100%);
+        border-bottom: 1px solid #eef2f0;
+    }
+    .filter-head-icon {
+        width: 30px; height: 30px; border-radius: 9px; flex-shrink: 0;
+        display: flex; align-items: center; justify-content: center;
+        background: linear-gradient(135deg, #059669, #34d399);
+        color: #ffffff; font-size: 0.82rem;
+        box-shadow: 0 3px 8px rgba(5, 150, 105, 0.25);
+    }
+    .filter-head-text { flex: 1 1 auto; min-width: 0; }
+    .filter-title { font-size: 0.82rem; font-weight: 800; color: #064e3b; line-height: 1.3; }
+    .filter-sub {
+        font-size: 0.67rem; color: #64748b; line-height: 1.4; margin-top: 1px;
+        white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+    }
+
+    .filter-body { padding: 10px 14px 12px; }
+    .filter-field { min-width: 0; }
+
+    /* One compact row on wide screens: 6 fields + actions */
+    .filter-grid {
+        display: grid;
+        grid-template-columns: repeat(6, minmax(0, 1fr)) auto;
+        gap: 8px 12px;
+        align-items: end;
+    }
+
     .filter-card .filter-label {
-        font-size: 0.72rem; font-weight: 700;
-        color: #065f46; margin-bottom: 3px; display: block;
+        font-size: 0.65rem; font-weight: 600; color: #475569;
+        margin-bottom: 3px; display: flex; align-items: center; gap: 4px;
+        line-height: 1.25; white-space: nowrap;
+        overflow: hidden; text-overflow: ellipsis;
     }
+    .filter-card .filter-label i { color: #10b981; font-size: 0.66rem; flex-shrink: 0; }
     .filter-card .form-select,
     .filter-card .form-control {
-        font-size: 0.8rem;
-        border: 1px solid #d1fae5;
-        border-radius: 8px;
-        padding: 6px 10px;
-        color: #374151; font-weight: 500;
-        background-color: #f9fafb;
+        font-size: 0.74rem; border: 1px solid #e2e8f0; border-radius: 8px;
+        padding: 5px 9px; color: #0f172a; font-weight: 500;
+        background-color: #ffffff; min-height: 34px;
+        box-shadow: 0 1px 1px rgba(15, 23, 42, 0.02);
+        transition: border-color 0.15s ease, box-shadow 0.15s ease, background-color 0.15s ease;
     }
     .filter-card .form-select {
-        padding: 6px 28px 6px 10px;
+        padding-right: 28px;
+        background-position: right 9px center;
+        background-size: 11px 8px;
     }
+    .filter-card .form-control { padding: 4px 8px; }
+    .filter-card .form-control::placeholder { color: #94a3b8; font-weight: 400; }
+    .filter-card .form-select:hover:not(:disabled),
+    .filter-card .form-control:hover:not(:disabled) { border-color: #cbd5e1; }
     .filter-card .form-select:focus,
     .filter-card .form-control:focus {
-        border-color: #10b981;
-        box-shadow: 0 0 0 0.15rem rgba(16,185,129,0.2);
-        background-color: #fff;
+        border-color: #10b981; box-shadow: 0 0 0 3px rgba(16, 185, 129, 0.12);
+        background-color: #ffffff;
     }
-    .filter-card .form-select:disabled {
-        background-color: #f3f4f6; color: #4b5563;
-        cursor: not-allowed; opacity: 1; font-weight: 700;
-    }
-
-    /* ⭐ Date range row */
-    .date-range-row {
-        border-top: 1px dashed #d1fae5;
-        margin-top: 10px;
-        padding-top: 10px;
-    }
-    .date-range-row .filter-label i { color: #10b981; margin-right: 4px; }
-    .date-hint {
-        font-size: 0.68rem; color: #6b7280;
-        margin-top: 3px; display: block;
+    .filter-card .form-select:disabled,
+    .filter-card .form-control:disabled {
+        background-color: #f1f5f3; color: #94a3b8; border-color: #e8eeeb;
+        cursor: not-allowed; opacity: 1;
     }
 
+    /* ================= FILTER ACTIONS ================= */
     .filter-actions {
-        display: flex; justify-content: flex-end;
-        gap: 8px; margin-top: 14px;
+        display: flex; align-items: center; justify-content: flex-end;
+        gap: 6px; margin: 0; padding: 0; border: 0; flex-shrink: 0;
+    }
+    .btn-filter-submit,
+    .btn-filter-reset {
+        min-width: 150px; padding: 6px 12px; border-radius: 8px;
+        font-size: 0.71rem; font-weight: 700; line-height: 1.35;
+        display: inline-flex; align-items: center; justify-content: center; gap: 5px;
+        white-space: nowrap; transition: all 0.16s ease; text-decoration: none;
     }
     .btn-filter-submit {
-        background: linear-gradient(135deg, #10b981, #34d399);
-        color: #fff; border: none;
-        padding: 8px 20px; border-radius: 8px;
-        font-weight: 700; font-size: 0.8rem;
-        display: inline-flex; align-items: center; gap: 6px;
-        box-shadow: 0 2px 6px rgba(16, 185, 129, 0.2);
+        background: linear-gradient(135deg, #059669, #10b981);
+        color: #fff; border: 1px solid #059669;
+        box-shadow: 0 3px 10px rgba(5, 150, 105, 0.25);
     }
-    .btn-filter-submit:hover { color: #fff; transform: translateY(-1px); }
-    .btn-filter-reset {
-        background: #fff; color: #4b5563;
-        border: 1px solid #d1d5db;
-        padding: 8px 20px; border-radius: 8px;
-        font-weight: 700; font-size: 0.8rem;
-        text-decoration: none;
-        display: inline-flex; align-items: center; gap: 6px;
+    .btn-filter-submit:hover {
+        background: linear-gradient(135deg, #047857, #059669);
+        border-color: #047857; color: #fff;
+        box-shadow: 0 5px 14px rgba(5, 150, 105, 0.32);
     }
-    .btn-filter-reset:hover { background: #f9fafb; color: #111827; }
+    .btn-filter-submit:disabled { opacity: 0.6; cursor: wait; }
+
+    .btn-filter-reset { background: #ffffff; color: #475569; border: 1px solid #dbe3e0; }
+    .btn-filter-reset:hover {
+        background: #f8fafc; border-color: #94a3b8; color: #0f172a;
+        box-shadow: 0 3px 10px rgba(15, 23, 42, 0.06);
+    }
+
+    /* ---- Responsive: keep the filter short ---- */
+    @media (max-width: 1399.98px) {
+        .filter-grid { grid-template-columns: repeat(6, minmax(0, 1fr)); }
+        .filter-grid .filter-actions { grid-column: 1 / -1; margin-top: 2px; }
+    }
+    @media (max-width: 1199.98px) {
+        .filter-grid { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+    }
+    @media (max-width: 575.98px) {
+        .filter-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 8px 10px; }
+        .filter-head-text .filter-sub { display: none; }
+        .filter-grid .filter-actions {
+            display: grid; grid-template-columns: 1fr 1fr; gap: 8px;
+        }
+        .btn-filter-submit,
+        .btn-filter-reset { min-width: 0; width: 100%; }
+    }
 
     .btn-excel {
-        background: linear-gradient(135deg, #10b981, #34d399);
-        color: #fff; border: none;
-        padding: 9px 18px; border-radius: 8px;
-        font-weight: 700; font-size: 0.8rem;
-        display: inline-flex; align-items: center; gap: 6px;
-        box-shadow: 0 2px 6px rgba(16, 185, 129, 0.2);
-        transition: all 0.15s ease;
-        white-space: nowrap;
+        background: #d1fae5; color: #047857; border: 1px solid #a7f3d0;
+        padding: 7px 14px !important; font-size: 0.8rem !important; font-weight: 700;
+        box-shadow: 0 1px 3px rgba(0,0,0,0.05); white-space: nowrap;
     }
-    .btn-excel:hover { color: #fff; transform: translateY(-1px); }
+    .btn-excel:hover { background: #a7f3d0; color: #065f46; transform: translateY(-1px); }
     .btn-excel:disabled { opacity: 0.6; cursor: wait; }
 
     .info-note {
@@ -274,12 +327,15 @@
         font-size: 0.9rem;
     }
 
-    /* Off-screen snapshot container */
-    #snapshotArea {
+    /* ============================================
+       OFF-SCREEN SNAPSHOT AREAS (Bar + Doughnut သီးခြား)
+       ============================================ */
+    #snapshotAreaBar,
+    #snapshotAreaDoughnut {
         position: fixed;
         left: -12000px;
         top: 0;
-        width: 1080px;
+        width: 900px;
         background: #ffffff;
         padding: 28px;
         font-family: 'Noto Sans Myanmar', 'Pyidaungsu', sans-serif;
@@ -287,7 +343,8 @@
         box-sizing: border-box;
     }
 
-    #snapshotArea .snap-header {
+    #snapshotAreaBar .snap-header,
+    #snapshotAreaDoughnut .snap-header {
         border-bottom: 2px solid #047857;
         padding-bottom: 10px;
         margin-bottom: 16px;
@@ -297,77 +354,81 @@
         gap: 12px;
     }
 
-    #snapshotArea .snap-title {
+    #snapshotAreaBar .snap-title,
+    #snapshotAreaDoughnut .snap-title {
         font-size: 1.15rem;
         font-weight: 700;
         color: #047857;
         margin: 0 0 3px 0;
     }
 
-    #snapshotArea .snap-sub {
+    #snapshotAreaBar .snap-sub,
+    #snapshotAreaDoughnut .snap-sub {
         font-size: 0.72rem;
         color: #6b7280;
         margin: 0;
     }
 
-    #snapshotArea .snap-meta {
+    #snapshotAreaBar .snap-meta,
+    #snapshotAreaDoughnut .snap-meta {
         font-size: 0.7rem;
         color: #6b7280;
         text-align: right;
         line-height: 1.55;
     }
 
-    #snapshotArea .snap-stats {
+    #snapshotAreaBar .snap-stats,
+    #snapshotAreaDoughnut .snap-stats {
         display: grid;
         grid-template-columns: repeat(4, 1fr);
         gap: 10px;
         margin-bottom: 16px;
     }
 
-    #snapshotArea .snap-stat {
+    #snapshotAreaBar .snap-stat,
+    #snapshotAreaDoughnut .snap-stat {
         border-radius: 10px;
         padding: 10px 12px;
         border: 1px solid #e5e7eb;
     }
 
-    #snapshotArea .snap-stat .lbl {
+    #snapshotAreaBar .snap-stat .lbl,
+    #snapshotAreaDoughnut .snap-stat .lbl {
         font-size: 0.65rem;
         font-weight: 700;
         color: #6b7280;
     }
 
-    #snapshotArea .snap-stat .val {
+    #snapshotAreaBar .snap-stat .val,
+    #snapshotAreaDoughnut .snap-stat .val {
         font-size: 1.1rem;
         font-weight: 700;
     }
 
-    #snapshotArea .snap-charts {
-        display: flex;
-        gap: 16px;
-        margin-bottom: 16px;
-    }
-
-    #snapshotArea .snap-charts > div {
-        flex: 1;
+    #snapshotAreaBar .snap-chart-box,
+    #snapshotAreaDoughnut .snap-chart-box {
         border: 1px solid #e5e7eb;
         border-radius: 10px;
-        padding: 10px;
-        min-width: 0;
+        padding: 12px;
+        margin-bottom: 16px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        min-height: 340px;
     }
 
-    #snapshotArea .snap-charts h6 {
-        font-size: 0.78rem;
-        font-weight: 700;
-        color: #065f46;
-        margin-bottom: 8px;
+    #snapshotAreaBar .snap-chart-box img,
+    #snapshotAreaDoughnut .snap-chart-box img {
+        max-height: 340px;
+        max-width: 100%;
+        width: auto;
+        height: auto;
+        object-fit: contain;
+        display: block;
     }
 
-    #snapshotArea .snap-charts canvas {
-        max-height: 320px;
-        width: 100% !important;
-    }
-
-    #snapshotArea .snap-footer {
+    #snapshotAreaBar .snap-footer,
+    #snapshotAreaDoughnut .snap-footer {
         margin-top: 14px;
         border-top: 1px dashed #d1d5db;
         padding-top: 8px;
@@ -377,8 +438,6 @@
     }
 
     @media (max-width: 575.98px) {
-        .filter-card .form-select,
-        .filter-card .form-control { font-size: 0.75rem; }
         .report-table { font-size: 0.7rem; min-width: 800px; }
         .report-table thead tr:first-child th { font-size: 0.62rem; padding: 7px 4px; }
         .report-table thead tr:nth-child(2) th { font-size: 0.6rem; padding: 5px 4px; }
@@ -415,8 +474,9 @@
      data-breeding-rows='{{ breeding_rows|tojson }}'
      hidden></div>
 
-<!-- ⭐ Snapshot rendering area (off-screen, hidden) -->
-<div id="snapshotArea" aria-hidden="true"></div>
+<!-- ⭐ Snapshot rendering areas (off-screen, hidden) -->
+<div id="snapshotAreaBar" aria-hidden="true"></div>
+<div id="snapshotAreaDoughnut" aria-hidden="true"></div>
 
 <div class="page-head mb-3 d-flex justify-content-between align-items-start flex-wrap gap-2">
     <div>
@@ -428,7 +488,7 @@
     </div>
 
     <div class="d-flex gap-2 flex-wrap">
-        <!-- ⭐ Graph & Chart Save Button -->
+        <!-- ⭐ Graph & Chart Save Button (ဖိုင်နှစ်ခု တစ်ချက်နှိပ်) -->
         <button type="button" id="btnSaveGraph" class="btn-save-graph">
             <i class="bi bi-download"></i>
             <span>Graph များ Save ရန်</span>
@@ -442,74 +502,66 @@
 </div>
 
 <form method="GET" action="/report/1" id="filterForm">
-    <div class="filter-card p-3 mb-3">
-        <div class="d-flex align-items-center gap-2 mb-2">
-            <span class="fw-bold" style="font-size:0.85rem; color:#065f46;">တည်နေရာအလိုက် ကြည့်ရှုရန်</span>
-        </div>
-
-        <div class="row g-2">
-            <div class="col-6 col-md-3">
-                <label class="filter-label">တိုင်းဒေသကြီး/ပြည်နယ်</label>
-                <select id="filterState" name="state" class="form-select form-select-sm">
-                    <option value="">အားလုံး</option>
-                </select>
-            </div>
-            <div class="col-6 col-md-3">
-                <label class="filter-label">ခရိုင်</label>
-                <select id="filterDistrict" name="district" class="form-select form-select-sm" disabled>
-                    <option value="">အားလုံး</option>
-                </select>
-            </div>
-            <div class="col-6 col-md-3">
-                <label class="filter-label">မြို့နယ်</label>
-                <select id="filterTownship" name="township" class="form-select form-select-sm" disabled>
-                    <option value="">အားလုံး</option>
-                </select>
-            </div>
-            <div class="col-6 col-md-3">
-                <label class="filter-label">ကျေးရွာအုပ်စု</label>
-                <select id="filterVillage" name="qv" class="form-select form-select-sm" disabled>
-                    <option value="">အားလုံး</option>
-                </select>
+    <div class="filter-card mb-3">
+        <div class="filter-card-head">
+            <div class="filter-head-icon"><i class="bi bi-geo-alt-fill"></i></div>
+            <div class="filter-head-text">
+                <div class="filter-title">တည်နေရာအလိုက် ကြည့်ရှုရန်</div>
+                <div class="filter-sub">တိုင်း/ခရိုင်/မြို့နယ်/ကျေးရွာအုပ်စု ရွေးချယ်ပြီး လိုအပ်ပါက ရက်စွဲဖြင့် စစ်ထုတ်နိုင်ပါသည် — ရက်စွဲ မဖြစ်မနေ မဟုတ်ပါ။</div>
             </div>
         </div>
 
-        <!-- ⭐ DATE RANGE ROW -->
-        <div class="date-range-row">
-            <div class="d-flex align-items-center gap-2 mb-2">
-                <span class="fw-bold" style="font-size:0.85rem; color:#065f46;">
-                    <i class="bi bi-calendar-range"></i> ရက်စွဲအလိုက် ကြည့်ရှုရန်
-                </span>
-            </div>
-            <div class="row g-2">
-                <div class="col-6 col-md-3">
-                    <label class="filter-label"><i class="bi bi-calendar-event"></i>စတင်သည့်ရက်</label>
+        <div class="filter-body">
+            <div class="filter-grid">
+                <!-- တည်နေရာ -->
+                <div class="filter-field">
+                    <label class="form-label filter-label" for="filterState"><i class="bi bi-geo-alt-fill"></i>တိုင်းဒေသကြီး/ပြည်နယ်</label>
+                    <select id="filterState" name="state" class="form-select form-select-sm">
+                        <option value="">အားလုံး</option>
+                    </select>
+                </div>
+                <div class="filter-field">
+                    <label class="form-label filter-label" for="filterDistrict"><i class="bi bi-signpost-split-fill"></i>ခရိုင်</label>
+                    <select id="filterDistrict" name="district" class="form-select form-select-sm" disabled>
+                        <option value="">အားလုံး</option>
+                    </select>
+                </div>
+                <div class="filter-field">
+                    <label class="form-label filter-label" for="filterTownship"><i class="bi bi-building-fill"></i>မြို့နယ်</label>
+                    <select id="filterTownship" name="township" class="form-select form-select-sm" disabled>
+                        <option value="">အားလုံး</option>
+                    </select>
+                </div>
+                <div class="filter-field">
+                    <label class="form-label filter-label" for="filterVillage"><i class="bi bi-house-fill"></i>ကျေးရွာအုပ်စု</label>
+                    <select id="filterVillage" name="qv" class="form-select form-select-sm" disabled>
+                        <option value="">အားလုံး</option>
+                    </select>
+                </div>
+
+                <!-- ရက်စွဲ (optional) -->
+                <div class="filter-field">
+                    <label class="form-label filter-label" for="filterStartDate"><i class="bi bi-calendar-event-fill"></i>စတင်သည့်ရက်</label>
                     <input type="date" id="filterStartDate" name="start_date"
                            class="form-control form-control-sm"
                            value="{{ filters.start_date or '' }}">
                 </div>
-                <div class="col-6 col-md-3">
-                    <label class="filter-label"><i class="bi bi-calendar-check"></i>ပြီးဆုံးသည့်ရက်</label>
+                <div class="filter-field">
+                    <label class="form-label filter-label" for="filterEndDate"><i class="bi bi-calendar-check-fill"></i>ပြီးဆုံးသည့်ရက်</label>
                     <input type="date" id="filterEndDate" name="end_date"
                            class="form-control form-control-sm"
                            value="{{ filters.end_date or '' }}">
                 </div>
-                <div class="col-12 col-md-6 d-flex align-items-center">
-                    <span class="date-hint mb-0">
-                        <i class="bi bi-info-circle"></i>
-                        ရက်တစ်ရက်ပဲ ထည့်လိုပါက — စတင်ရက် သို့မဟုတ် ပြီးဆုံးရက် တစ်ခုတည်းကို ဖြည့်ပါ။
-                    </span>
+
+                <div class="filter-actions">
+                    <a href="/report/1" class="btn-filter-reset">
+                        <i class="bi bi-arrow-counterclockwise"></i> ပြန်လည်ရွေးချယ်မည်
+                    </a>
+                    <button type="submit" class="btn-filter-submit" id="btnFilterSubmit">
+                        <i class="bi bi-search"></i> ကြည့်ရှုမည်
+                    </button>
                 </div>
             </div>
-        </div>
-
-        <div class="filter-actions">
-            <a href="/report/1" class="btn-filter-reset">
-                <i class="bi bi-arrow-clockwise"></i> ဒေသပြန်ရွေးရန်
-            </a>
-            <button type="submit" class="btn-filter-submit" id="btnFilterSubmit">
-                <i class="bi bi-search"></i> ကြည့်ရှုမည်
-            </button>
         </div>
     </div>
 </form>
@@ -627,7 +679,7 @@
 <div class="table-section">
     <div class="sec-header">
         <h6>(ခ) တိရစ္စာန်ငယ် — ဆိတ်၊ သိုး၊ ဝက် စသည်</h6>
-        <span class="badge-count">{{ small_rows|length }} မျိုး</span>
+                <span class="badge-count">{{ small_rows|length }} မျိုး</span>
     </div>
     <div class="table-responsive">
         <table class="report-table">
@@ -725,7 +777,7 @@
                 </tr>
             </thead>
             <tbody>
-                                {% for row in breeding_rows %}
+                {% for row in breeding_rows %}
                 <tr>
                     <td class="animal-name">{{ row.animalName }}</td>
                     <td>{{ row.male }}</td>
@@ -1123,7 +1175,6 @@ form.addEventListener('submit', function() {
 });
 
 (async function initFilters() {
-    // ⭐ date input တွေကို ပြန်ဖြည့် (HTML value မှာ ရှိပြီးသားဖြစ်ပေမယ့် safety အတွက်)
     if (inputStart) inputStart.value = INIT_START_DATE;
     if (inputEnd)   inputEnd.value   = INIT_END_DATE;
 
@@ -1212,7 +1263,6 @@ function buildFilename() {
     addText(selState); addText(selDistrict); addText(selTownship); addText(selVillage);
     var prefix = parts.length > 0 ? parts.join('_') : 'အားလုံး';
 
-    // ⭐ Date range ပါ ထည့်
     var s = (inputStart && inputStart.value) ? inputStart.value : '';
     var e = (inputEnd && inputEnd.value)     ? inputEnd.value   : '';
     var dateTag = '';
@@ -1319,7 +1369,7 @@ function setRowHeights(ws, aoa, sections) {
     rows[1] = { hpt: 22 };
     rows[2] = { hpt: 22 };
     rows[FILTER_ROW] = { hpt: 22 };
-    rows[BLANK_ROW] = { hpt: 6 };
+        rows[BLANK_ROW] = { hpt: 6 };
     sections.forEach(function(sec) {
         rows[sec.titleRow] = { hpt: 22 };
         sec.headerRows.forEach(function(hr) {
@@ -1390,7 +1440,7 @@ function buildSheetContent(typeLabel, filterTitle, rows) {
                 r.o3_male || 0, r.o3_castrated || 0, r.o3_female || 0,
                 r.total || 0
             ]);
-                } else if (typeLabel === 'small') {
+        } else if (typeLabel === 'small') {
             dataRows.push([
                 r.animalName || '',
                 r.u2m_male || 0, r.u2m_castrated || 0, r.u2m_female || 0,
@@ -1608,12 +1658,13 @@ document.querySelectorAll('.sheet-option').forEach(function(btn) {
 });
 
 // ==================================================
-// 6. GRAPH & CHART SAVE AS PNG (Table မပါ)
+// 6. GRAPH & CHART SAVE AS 2 PNG FILES (တစ်ချက်နှိပ်)
 // ==================================================
 (function initSaveGraph() {
     var btn = document.getElementById('btnSaveGraph');
-    var snapArea = document.getElementById('snapshotArea');
-    if (!btn || !snapArea) return;
+    var snapBar = document.getElementById('snapshotAreaBar');
+    var snapDoughnut = document.getElementById('snapshotAreaDoughnut');
+    if (!btn || !snapBar || !snapDoughnut) return;
 
     // ---- html2canvas CDN dynamic loader ----
     function loadHtml2Canvas() {
@@ -1627,23 +1678,33 @@ document.querySelectorAll('.sheet-option').forEach(function(btn) {
         });
     }
 
-    // ---- Canvas chart ကို ပုံအဖြစ် ပြောင်း ----
+    // ---- Canvas chart ကို ပုံအဖြစ် ပြောင်း (aspect ratio မှန်အောင်) ----
     function canvasToImg(canvasEl) {
         return new Promise(function(resolve) {
             if (!canvasEl) return resolve(null);
             try {
+                // ⭐ CSS display size ကို သုံး (buffer size မဟုတ်)
+                var rect = canvasEl.getBoundingClientRect();
+                var cssW = Math.round(rect.width) || canvasEl.clientWidth;
+                var cssH = Math.round(rect.height) || canvasEl.clientHeight;
+                if (!cssW || !cssH) return resolve(null);
+
                 var tmp = document.createElement('canvas');
-                tmp.width = canvasEl.width;
-                tmp.height = canvasEl.height;
+                tmp.width = cssW * 2;
+                tmp.height = cssH * 2;
                 var ctx = tmp.getContext('2d');
                 ctx.fillStyle = '#ffffff';
                 ctx.fillRect(0, 0, tmp.width, tmp.height);
-                ctx.drawImage(canvasEl, 0, 0);
+                ctx.drawImage(canvasEl, 0, 0, tmp.width, tmp.height);
+
                 var img = new Image();
                 img.src = tmp.toDataURL('image/png');
-                img.style.width = '100%';
-                img.style.maxHeight = '320px';
+                img.style.maxHeight = '340px';
+                img.style.maxWidth = '100%';
+                img.style.width = 'auto';
+                img.style.height = 'auto';
                 img.style.objectFit = 'contain';
+                img.style.display = 'block';
                 img.onload = function() { resolve(img); };
                 img.onerror = function() { resolve(null); };
             } catch (e) {
@@ -1663,8 +1724,47 @@ document.querySelectorAll('.sheet-option').forEach(function(btn) {
             .replace(/'/g, '&#39;');
     }
 
-    // ---- Snapshot တည်ဆောက် (Graph + Chart သာ) ----
-    function buildSnapshot() {
+    // ---- Filter summary ----
+    function getFilterParts() {
+        var filterParts = [];
+        function selText(sel) {
+            if (!sel || !sel.value) return '';
+            var opt = sel.options[sel.selectedIndex];
+            return opt ? opt.textContent : '';
+        }
+        var s = selText(selState);
+        var d = selText(selDistrict);
+        var t = selText(selTownship);
+        var v = selText(selVillage);
+        if (s) filterParts.push('တိုင်း: ' + s);
+        if (d) filterParts.push('ခရိုင်: ' + d);
+        if (t) filterParts.push('မြို့နယ်: ' + t);
+        if (v) filterParts.push('ကျေးရွာအုပ်စု: ' + v);
+
+        var dateLabel = getDateRangeLabel();
+        if (dateLabel) filterParts.push(dateLabel);
+
+        return filterParts;
+    }
+
+    // ---- Stat cards HTML ----
+    function buildStatHtml() {
+        var statDefs = [
+            { label: 'တိရစ္ဆာန်ကြီး',  value: countLarge,    color: '#047857' },
+            { label: 'တိရစ္ဆာန်ငယ်',  value: countSmall,    color: '#1d4ed8' },
+            { label: 'ကြက်၊ ဘဲ၊ ငုံး', value: countPoultry,  color: '#b45309' },
+            { label: 'မျိုးတိရစ္ဆာန်', value: countBreeding, color: '#be185d' }
+        ];
+        return statDefs.map(function(s) {
+            return '<div class="snap-stat">' +
+                '<div class="lbl">' + esc(s.label) + '</div>' +
+                '<div class="val" style="color:' + s.color + '">' + Number(s.value || 0).toLocaleString() + '</div>' +
+            '</div>';
+        }).join('');
+    }
+
+    // ---- Snapshot တစ်ခု တည်ဆောက် ----
+    function buildSnapshot(target, chartCanvas, subtitle, imgHolderId) {
         return new Promise(function(resolve) {
             var regionName = (document.querySelector('.page-head h5')?.textContent || '').trim();
             var now = new Date();
@@ -1672,84 +1772,30 @@ document.querySelectorAll('.sheet-option').forEach(function(btn) {
                 year: 'numeric', month: '2-digit', day: '2-digit',
                 hour: '2-digit', minute: '2-digit'
             });
+            var filterParts = getFilterParts();
 
-            // Filter summary
-            var filterParts = [];
-            function selText(sel) {
-                if (!sel || !sel.value) return '';
-                var opt = sel.options[sel.selectedIndex];
-                return opt ? opt.textContent : '';
-            }
-            if (selText(selState))    filterParts.push('တိုင်း: ' + selText(selState));
-            if (selText(selDistrict)) filterParts.push('ခရိုင်: ' + selText(selDistrict));
-            if (selText(selTownship)) filterParts.push('မြို့နယ်: ' + selText(selTownship));
-            if (selText(selVillage))  filterParts.push('ကျေးရွာအုပ်စု: ' + selText(selVillage));
-
-            // Date range
-            var dateLabel = getDateRangeLabel();
-            if (dateLabel) filterParts.push(dateLabel);
-
-            // Stat cards
-            var statDefs = [
-                { label: 'တိရစ္ဆာန်ကြီး',  value: countLarge,    color: '#047857' },
-                { label: 'တိရစ္ဆာန်ငယ်',  value: countSmall,    color: '#1d4ed8' },
-                { label: 'ကြက်၊ ဘဲ၊ ငုံး', value: countPoultry,  color: '#b45309' },
-                { label: 'မျိုးတိရစ္ဆာန်', value: countBreeding, color: '#be185d' }
-            ];
-
-            var statHtml = statDefs.map(function(s) {
-                return '<div class="snap-stat">' +
-                    '<div class="lbl">' + esc(s.label) + '</div>' +
-                    '<div class="val" style="color:' + s.color + '">' + Number(s.value || 0).toLocaleString() + '</div>' +
-                '</div>';
-            }).join('');
-
-            // Snapshot DOM တည်ဆောက် (Table မပါ)
-            snapArea.innerHTML =
+            target.innerHTML =
                 '<div class="snap-header">' +
                     '<div>' +
                         '<h2 class="snap-title">' + esc(regionName || 'တိရစ္ဆာန်ကောင်ရေ အနှစ်ချုပ်') + '</h2>' +
-                        '<p class="snap-sub">တိရစ္ဆာန်အရေအတွက် အနှစ်ချုပ် Graphs နှင့် Chart</p>' +
+                        '<p class="snap-sub">' + esc(subtitle) + '</p>' +
                     '</div>' +
                     '<div class="snap-meta">' +
                         'ရက်စွဲ: ' + esc(stamp) + '<br>' +
                         (filterParts.length ? 'စစ်ထုတ်ချက်: ' + filterParts.map(esc).join(' • ') : 'စစ်ထုတ်ချက်: အားလုံး') +
                     '</div>' +
                 '</div>' +
-
-                '<div class="snap-stats">' + statHtml + '</div>' +
-
-                '<div class="snap-charts">' +
-                    '<div>' +
-                        '<h6>📊 တိရစ္ဆာန် အုပ်စုအလိုက် ကောင်ရေ</h6>' +
-                        '<div id="snapBarChart"></div>' +
-                    '</div>' +
-                    '<div>' +
-                        '<h6>🍩 အချိုးအစား</h6>' +
-                        '<div id="snapDoughnutChart"></div>' +
-                    '</div>' +
-                '</div>' +
-
+                '<div class="snap-stats">' + buildStatHtml() + '</div>' +
+                '<div class="snap-chart-box" id="' + imgHolderId + '"></div>' +
                 '<div class="snap-footer">' +
                     'LBVD Dashboard • ' + esc(regionName) + ' • Generated on ' + esc(stamp) +
                 '</div>';
 
-            // Charts ကို <img> အဖြစ် ထည့်
-            var barCanvas = document.getElementById('barChart');
-            var doughnutCanvas = document.getElementById('doughnutChart');
-
-            Promise.all([
-                canvasToImg(barCanvas),
-                canvasToImg(doughnutCanvas)
-            ]).then(function(imgs) {
-                var barHolder = document.getElementById('snapBarChart');
-                var doughnutHolder = document.getElementById('snapDoughnutChart');
-
-                if (imgs[0] && barHolder) barHolder.appendChild(imgs[0]);
-                else if (barHolder) barHolder.innerHTML = '<p style="font-size:0.7rem;color:#9ca3af;">Chart မရပါ</p>';
-
-                if (imgs[1] && doughnutHolder) doughnutHolder.appendChild(imgs[1]);
-                else if (doughnutHolder) doughnutHolder.innerHTML = '<p style="font-size:0.7rem;color:#9ca3af;">Chart မရပါ</p>';
+            // Chart ကို <img> အဖြစ် ထည့်
+            canvasToImg(chartCanvas).then(function(img) {
+                var holder = document.getElementById(imgHolderId);
+                if (img && holder) holder.appendChild(img);
+                else if (holder) holder.innerHTML = '<p style="font-size:0.7rem;color:#9ca3af;">Chart မရပါ</p>';
 
                 // Font load ပြီးတဲ့အထိ စောင့်
                 if (document.fonts && document.fonts.ready) {
@@ -1765,7 +1811,7 @@ document.querySelectorAll('.sheet-option').forEach(function(btn) {
         });
     }
 
-    // ---- Download trigger ----
+    // ---- Download helper ----
     function downloadDataURL(dataURL, filename) {
         var a = document.createElement('a');
         a.href = dataURL;
@@ -1775,7 +1821,7 @@ document.querySelectorAll('.sheet-option').forEach(function(btn) {
         document.body.removeChild(a);
     }
 
-    function buildGraphFilename() {
+    function buildGraphFilename(kind) {
         var region = (document.querySelector('.page-head h5')?.textContent || 'dashboard')
             .replace(/နယ်မြေဒေသအလိုက်\s*အနှစ်ချုပ်စာရင်း\s*—?\s*/g, '')
             .replace(/[^\w\u1000-\u109F\-]+/g, '_')
@@ -1783,7 +1829,7 @@ document.querySelectorAll('.sheet-option').forEach(function(btn) {
         var d = new Date();
         var pad = function(n) { return String(n).padStart(2, '0'); };
         var stamp = d.getFullYear() + pad(d.getMonth()+1) + pad(d.getDate())
-                  + '_' + pad(d.getHours()) + pad(d.getMinutes());
+                  + '_' + pad(d.getHours()) + pad(d.getMinutes()) + pad(d.getSeconds());
 
         // Date range ပါ ထည့်
         var s = (inputStart && inputStart.value) ? inputStart.value : '';
@@ -1793,50 +1839,89 @@ document.querySelectorAll('.sheet-option').forEach(function(btn) {
         else if (s) dateTag = '_' + s;
         else if (e) dateTag = '_' + e;
 
-        return 'LBVD_Graph_' + region + dateTag + '_' + stamp + '.png';
+        return 'LBVD_' + kind + '_' + region + dateTag + '_' + stamp + '.png';
     }
 
-    // ---- Button click ----
+    // ---- html2canvas → PNG dataURL ----
+    function renderSnapshotToDataURL(html2canvas, snapArea) {
+        return html2canvas(snapArea, {
+            backgroundColor: '#ffffff',
+            scale: 2,
+            useCORS: true,
+            logging: false,
+            width: snapArea.scrollWidth,
+            height: snapArea.scrollHeight,
+            windowWidth: snapArea.scrollWidth,
+            windowHeight: snapArea.scrollHeight
+        }).then(function(canvas) {
+            return canvas.toDataURL('image/png');
+        });
+    }
+
+    // ---- Button click: ဖိုင်နှစ်ခု ဆက်တိုက် save ----
     btn.addEventListener('click', function() {
         var originalHtml = btn.innerHTML;
         btn.disabled = true;
         btn.innerHTML = '<span class="spinner-border spinner-border-sm" role="status" aria-hidden="true"></span><span>ပြင်ဆင်နေသည်...</span>';
 
+        var barCanvas = document.getElementById('barChart');
+        var doughnutCanvas = document.getElementById('doughnutChart');
+
         loadHtml2Canvas()
             .then(function(html2canvas) {
-                return buildSnapshot().then(function() {
-                    return html2canvas(snapArea, {
-                        backgroundColor: '#ffffff',
-                        scale: 2,
-                        useCORS: true,
-                        logging: false,
-                        width: snapArea.scrollWidth,
-                        height: snapArea.scrollHeight,
-                        windowWidth: snapArea.scrollWidth,
-                        windowHeight: snapArea.scrollHeight
+                // ---- 1) Bar Graph snapshot ----
+                return buildSnapshot(
+                    snapBar,
+                    barCanvas,
+                    'တိရစ္ဆာန်အရေအတွက် Bar Graph',
+                    'snapBarImgHolder'
+                )
+                .then(function() {
+                    return renderSnapshotToDataURL(html2canvas, snapBar);
+                })
+                .then(function(barDataURL) {
+                    snapBar.innerHTML = '';
+
+                    // ---- 2) Doughnut Chart snapshot ----
+                    return buildSnapshot(
+                        snapDoughnut,
+                        doughnutCanvas,
+                        'တိရစ္ဆာန်အရေအတွက် အချိုးအစား Chart',
+                        'snapDoughnutImgHolder'
+                    )
+                    .then(function() {
+                        return renderSnapshotToDataURL(html2canvas, snapDoughnut);
+                    })
+                    .then(function(doughnutDataURL) {
+                        snapDoughnut.innerHTML = '';
+
+                        // ---- 3) ဖိုင်နှစ်ခု ဆက်တိုက် download ----
+                        downloadDataURL(barDataURL, buildGraphFilename('BarChart'));
+
+                        // ခလုတ်၏ နောက်ဆက်တွဲ download ကို browser က ပိတ်မပစ်အောင် ခဏစောင့်
+                        return new Promise(function(r) { setTimeout(r, 400); })
+                            .then(function() {
+                                downloadDataURL(doughnutDataURL, buildGraphFilename('DoughnutChart'));
+
+                                btn.innerHTML = '<i class="bi bi-check-circle-fill"></i><span>ဖိုင် ၂ ခု Save ပြီးပါပြီ</span>';
+                                setTimeout(function() {
+                                    btn.innerHTML = originalHtml;
+                                    btn.disabled = false;
+                                }, 1800);
+                            });
                     });
                 });
             })
-            .then(function(canvas) {
-                var dataURL = canvas.toDataURL('image/png');
-                downloadDataURL(dataURL, buildGraphFilename());
-                snapArea.innerHTML = '';
-
-                btn.innerHTML = '<i class="bi bi-check-circle-fill"></i><span>Save ပြီးပါပြီ</span>';
-                setTimeout(function() {
-                    btn.innerHTML = originalHtml;
-                    btn.disabled = false;
-                }, 1600);
-            })
             .catch(function(err) {
                 console.error('Save graph failed:', err);
-                snapArea.innerHTML = '';
+                snapBar.innerHTML = '';
+                snapDoughnut.innerHTML = '';
                 btn.innerHTML = '<i class="bi bi-exclamation-triangle-fill"></i><span>မအောင်မြင်ပါ</span>';
                 setTimeout(function() {
                     btn.innerHTML = originalHtml;
                     btn.disabled = false;
                 }, 1800);
-                alert('ပုံ Save မအောင်မြင်ပါ။ Internet ချိတ်ဆက်မှုကို စစ်ဆေးပြီး ပြန်ကြိုးစားပါ။');
+                alert('ပုံများ Save မအောင်မြင်ပါ။ Internet ချိတ်ဆက်မှုကို စစ်ဆေးပြီး ပြန်ကြိုးစားပါ။\n\n(မှတ်ချက် - Browser က "multiple downloads" ကို ပိတ်ထားရင် Allow လုပ်ပေးပါ)');
             });
     });
 })();

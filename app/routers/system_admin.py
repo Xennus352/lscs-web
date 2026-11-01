@@ -20,6 +20,47 @@ from app.utils import next_numeric_id, next_species_id
 logger = logging.getLogger("lbvd")
 router = APIRouter(tags=["system_admin"])
 
+# Username rules: English letters/digits plus @ and _ only, never starting with a digit.
+USERNAME_MAX_LEN = 50
+USERNAME_PATTERN = re.compile(r"^[A-Za-z_@][A-Za-z0-9_@]*$")
+USERNAME_RULE_MESSAGE = (
+    "❌ အသုံးပြုသူအမည်တွင် အင်္ဂလိပ်စာလုံး (A-Z, a-z)၊ အင်္ဂလိပ်ဂဏန်း (0-9)၊ "
+    "@ နှင့် _ သာ သုံးနိုင်ပါသည်။ ဂဏန်းဖြင့် စတင်၍လည်း မရပါ။"
+)
+
+
+def _is_valid_username(username: str) -> bool:
+    """English letters/digits plus @/_ only, never starting with a digit."""
+    if not username or len(username) > USERNAME_MAX_LEN:
+        return False
+    return bool(USERNAME_PATTERN.fullmatch(username))
+
+
+def _normalize_username(raw: str) -> str:
+    """Trim and validate a username, raising HTTPException on invalid input."""
+    username = (raw or "").strip()
+    if not username:
+        raise HTTPException(400, "❌ အသုံးပြုသူအမည် ထည့်ပါ။")
+    if len(username) > USERNAME_MAX_LEN:
+        raise HTTPException(
+            400,
+            f"❌ အသုံးပြုသူအမည်သည် စာလုံး {USERNAME_MAX_LEN} ခုထက် မကျော်ရပါ။",
+        )
+    if not _is_valid_username(username):
+        raise HTTPException(400, USERNAME_RULE_MESSAGE)
+    return username
+
+
+def _username_taken(db, username: str, exclude_uid=None) -> bool:
+    """True when the username is already used as a login name or display name."""
+    sql = ("SELECT userId FROM `user` "
+           "WHERE (LOWER(loginName) = LOWER(:uname) OR LOWER(userName) = LOWER(:uname))")
+    params = {"uname": username}
+    if exclude_uid:
+        sql += " AND userId != :uid"
+        params["uid"] = exclude_uid
+    return db.execute(text(sql + " LIMIT 1"), params).fetchone() is not None
+
 
 # ============================================================
 # 🏠 SYSTEM DASHBOARD
@@ -216,23 +257,44 @@ async def api_system_user_action(request: Request):
         db.close()
 
 
+@router.get("/api/system/users/check-username")
+async def api_check_username(
+    request: Request, username: str = Query(""), exclude: int = Query(0),
+):
+    """Live uniqueness/format check used by the create/edit user form."""
+    admin_user = request.session.get("user")
+    if not admin_user or admin_user.get("role") not in ("admin", "union"):
+        raise HTTPException(403, "Admin သာ စစ်ဆေးနိုင်ပါသည်။")
+    try:
+        uname = _normalize_username(username)
+    except HTTPException as exc:
+        return {"valid": False, "available": False, "message": exc.detail}
+
+    db = SessionLocal()
+    try:
+        if _username_taken(db, uname, exclude or None):
+            return {"valid": True, "available": False,
+                    "message": "❌ ဤအသုံးပြုသူအမည် အသုံးပြုပြီးသား ဖြစ်ပါသည်။"}
+        return {"valid": True, "available": True, "message": "✅ ဤအသုံးပြုသူအမည်ကို သုံးနိုင်ပါသည်။"}
+    finally:
+        db.close()
+
+
 @router.post("/api/system/users/create")
 async def api_create_system_user(
     request: Request, username: str = Form(...), role_id: int = Form(...),
-    email: str = Form(...), phone: str = Form(""),
+    phone: str = Form(""),
     stateID: str = Form(""), districtID: str = Form(""), townshipID: str = Form(""),
 ):
     admin_user = request.session.get("user")
     if not admin_user or admin_user.get("role") not in ("admin", "union"):
         raise HTTPException(403, "Admin သာ ဖန်တီးနိုင်ပါသည်။")
-    if not username or not username.strip():
-        raise HTTPException(400, "❌ အသုံးပြုသူအမည် ထည့်ပါ။")
+    uname = _normalize_username(username)
 
     db = SessionLocal()
     try:
-        if db.execute(text("SELECT userId FROM `user` WHERE loginName = :email"),
-                      {"email": email}).fetchone():
-            raise HTTPException(409, "❌ ဤအီးမေးလ် အသုံးပြုပြီးသားပါ။")
+        if _username_taken(db, uname):
+            raise HTTPException(409, "❌ ဤအသုံးပြုသူအမည် အသုံးပြုပြီးသား ဖြစ်ပါသည်။")
         phone_val = phone.strip() if phone else ""
         if phone_val and db.execute(text("SELECT userId FROM `user` WHERE phone = :phone"),
                                     {"phone": phone_val}).fetchone():
@@ -254,9 +316,9 @@ async def api_create_system_user(
         db.execute(text("""
             INSERT INTO `user` (userName, userRole, loginName, password,
                 stateID, districtID, townshipID, status, phone)
-            VALUES (:uname, :role, :email, :pwd, :sid, :did, :tid, 1, :phone)
+            VALUES (:uname, :role, :login, :pwd, :sid, :did, :tid, 1, :phone)
         """), {
-            "uname": username.strip(), "role": role_id, "email": email,
+            "uname": uname, "role": role_id, "login": uname,
             "pwd": hash_password(DEFAULT_PASSWORD),
             "sid": stateID or None, "did": districtID or None,
             "tid": townshipID or None,
@@ -278,21 +340,37 @@ async def api_create_system_user(
 @router.post("/api/system/users/update")
 async def api_update_system_user(
     request: Request, userId: int = Form(...), username: str = Form(...),
-    role_id: int = Form(...), email: str = Form(...), phone: str = Form(""),
+    role_id: int = Form(...), phone: str = Form(""),
     stateID: str = Form(""), districtID: str = Form(""), townshipID: str = Form(""),
 ):
     admin_user = request.session.get("user")
     if not admin_user or admin_user.get("role") not in ("admin", "union"):
         raise HTTPException(403, "Admin သာ ပြင်ဆင်နိုင်ပါသည်။")
-    if not username or not username.strip():
+    raw_username = (username or "").strip()
+    if not raw_username:
         raise HTTPException(400, "❌ အသုံးပြုသူအမည် ထည့်ပါ။")
 
     db = SessionLocal()
     try:
-        if db.execute(text("SELECT userId FROM `user` "
-                           "WHERE loginName = :email AND userId != :uid"),
-                      {"email": email, "uid": userId}).fetchone():
-            raise HTTPException(409, "❌ ဤအီးမေးလ်ကို အခြားသူတစ်ဦး အသုံးပြုနေပါသည်။")
+        current = db.execute(
+            text("SELECT userName, loginName FROM `user` WHERE userId = :uid"),
+            {"uid": userId},
+        ).mappings().first()
+        if not current:
+            raise HTTPException(404, "အသုံးပြုသူ မတွေ့ပါ။")
+
+        # Accounts created before the username-login change keep their existing
+        # display name / login name when the username field is left untouched.
+        username_changed = raw_username != str(current["userName"] or "").strip()
+        if username_changed:
+            uname = _normalize_username(raw_username)
+            if _username_taken(db, uname, exclude_uid=userId):
+                raise HTTPException(409, "❌ ဤအသုံးပြုသူအမည်ကို အခြားသူတစ်ဦး အသုံးပြုနေပါသည်။")
+            login_name = uname
+        else:
+            uname = raw_username
+            login_name = current["loginName"]
+
         phone_val = phone.strip() if phone else ""
         if phone_val and db.execute(text("SELECT userId FROM `user` "
                                          "WHERE phone = :phone AND userId != :uid"),
@@ -313,11 +391,11 @@ async def api_update_system_user(
                 raise HTTPException(400, "တိုင်း၊ ခရိုင်၊ မြို့နယ် အားလုံး ရွေးပါ။")
 
         db.execute(text("""
-            UPDATE `user` SET userName = :uname, userRole = :role, loginName = :email,
+            UPDATE `user` SET userName = :uname, userRole = :role, loginName = :login,
                 stateID = :sid, districtID = :did, townshipID = :tid, phone = :phone
             WHERE userId = :uid
         """), {
-            "uname": username.strip(), "role": role_id, "email": email,
+            "uname": uname, "role": role_id, "login": login_name,
             "sid": stateID or None, "did": districtID or None,
             "tid": townshipID or None,
             "phone": phone_val if phone_val else None, "uid": userId,
@@ -354,14 +432,13 @@ async def api_import_users_excel(request: Request, file: UploadFile = File(...))
         ws = wb.active
         header_row = next(ws.iter_rows(min_row=1, max_row=1, values_only=True))
         headers = [str(h).strip() for h in header_row if h is not None]
-        required_cols = ["userName", "userRole", "loginName"]
+        required_cols = ["userName", "userRole"]
         missing_cols = [col for col in required_cols if col not in headers]
         if missing_cols:
             raise HTTPException(400, f"❌ လိုအပ်သော Column များ ပျောက်နေပါသည်: {', '.join(missing_cols)}")
 
         idx_name = headers.index("userName")
         idx_role = headers.index("userRole")
-        idx_login = headers.index("loginName")
         idx_state = headers.index("stateID") if "stateID" in headers else -1
         idx_district = headers.index("districtID") if "districtID" in headers else -1
         idx_township = headers.index("townshipID") if "townshipID" in headers else -1
@@ -373,12 +450,13 @@ async def api_import_users_excel(request: Request, file: UploadFile = File(...))
             val = row[idx]
             return str(val).strip() if val is not None else ""
 
+        seen_usernames = set()
+
         for row_idx, row in enumerate(ws.iter_rows(min_row=2, values_only=True), start=2):
             if not row or all(cell is None for cell in row):
                 continue
             username = get_val(row, idx_name)
             role_str = get_val(row, idx_role)
-            email = get_val(row, idx_login)
             state_id = get_val(row, idx_state)
             district_id = get_val(row, idx_district)
             township_id = get_val(row, idx_township)
@@ -389,43 +467,50 @@ async def api_import_users_excel(request: Request, file: UploadFile = File(...))
             except ValueError:
                 role_id = 0
             if role_id not in (1, 2, 3, 4, 5, 6):
-                failed_rows.append({"row": row_idx, "email": email, "username": username,
+                failed_rows.append({"row": row_idx, "username": username,
                                     "reason": "Role မမှန်ကန်ပါ။ (1-6 အတွင်းသာ)"})
                 continue
             if role_id == 3 and not state_id:
-                failed_rows.append({"row": row_idx, "email": email, "username": username,
+                failed_rows.append({"row": row_idx, "username": username,
                                     "reason": "Role 3 အတွက် stateID လိုအပ်ပါသည်။"})
                 continue
             if role_id == 4 and (not state_id or not district_id):
-                failed_rows.append({"row": row_idx, "email": email, "username": username,
+                failed_rows.append({"row": row_idx, "username": username,
                                     "reason": "Role 4 အတွက် stateID+districtID လိုအပ်ပါသည်။"})
                 continue
             if role_id in (5, 6) and (not state_id or not district_id or not township_id):
-                failed_rows.append({"row": row_idx, "email": email, "username": username,
+                failed_rows.append({"row": row_idx, "username": username,
                                     "reason": "Role 5,6 အတွက် state+district+township လိုအပ်ပါသည်။"})
                 continue
             if not username:
-                failed_rows.append({"row": row_idx, "email": email, "username": username,
+                failed_rows.append({"row": row_idx, "username": username,
                                     "reason": "အသုံးပြုသူအမည် မပါဝင်ပါ။"})
                 continue
-            if not email or not re.match(r"^[\w\.-]+@[\w\.-]+\.\w+$", email):
-                failed_rows.append({"row": row_idx, "email": email, "username": username,
-                                    "reason": "Email Format မှားယွင်းနေပါသည်။"})
+            try:
+                username = _normalize_username(username)
+            except HTTPException as exc:
+                failed_rows.append({"row": row_idx, "username": username,
+                                    "reason": exc.detail})
+                continue
+            username_key = username.casefold()
+            if username_key in seen_usernames:
+                failed_rows.append({"row": row_idx, "username": username,
+                                    "reason": "ဤအသုံးပြုသူအမည်သည် ဖိုင်ထဲတွင် ထပ်နေပါသည်။"})
+                continue
+            if _username_taken(db, username):
+                failed_rows.append({"row": row_idx, "username": username,
+                                    "reason": "ဤအသုံးပြုသူအမည် အသုံးပြုပြီးသား ဖြစ်ပါသည်။"})
                 continue
             if phone and not re.match(r"^(09|\+959)\d{7,9}$", phone):
-                failed_rows.append({"row": row_idx, "email": email, "username": username,
+                failed_rows.append({"row": row_idx, "username": username,
                                     "reason": "ဖုန်းနံပါတ် Format မှားယွင်းနေပါသည်။"})
-                continue
-            if db.execute(text("SELECT userId FROM `user` WHERE loginName = :email"),
-                          {"email": email}).fetchone():
-                failed_rows.append({"row": row_idx, "email": email, "username": username,
-                                    "reason": "ဤအီးမေးလ် အသုံးပြုပြီးသား ဖြစ်ပါသည်။"})
                 continue
             if phone and db.execute(text("SELECT userId FROM `user` WHERE phone = :phone"),
                                     {"phone": phone}).fetchone():
-                failed_rows.append({"row": row_idx, "email": email, "username": username,
+                failed_rows.append({"row": row_idx, "username": username,
                                     "reason": "ဤဖုန်းနံပါတ် အသုံးပြုပြီးသား ဖြစ်ပါသည်။"})
                 continue
+            seen_usernames.add(username_key)
 
             final_sid = final_did = final_tid = None
             if role_id == 3:
@@ -439,9 +524,9 @@ async def api_import_users_excel(request: Request, file: UploadFile = File(...))
                 db.execute(text("""
                     INSERT INTO `user` (userName, userRole, loginName, password,
                         stateID, districtID, townshipID, status, phone)
-                    VALUES (:uname, :role, :email, :pwd, :sid, :did, :tid, 1, :phone)
+                    VALUES (:uname, :role, :login, :pwd, :sid, :did, :tid, 1, :phone)
                 """), {
-                    "uname": username, "role": role_id, "email": email,
+                    "uname": username, "role": role_id, "login": username,
                     "pwd": hashed_pwd,
                     "sid": final_sid or None, "did": final_did or None,
                     "tid": final_tid or None,
@@ -451,14 +536,14 @@ async def api_import_users_excel(request: Request, file: UploadFile = File(...))
                 success_count += 1
             except IntegrityError:
                 db.rollback()
-                failed_rows.append({"row": row_idx, "email": email, "username": username,
+                failed_rows.append({"row": row_idx, "username": username,
                                     "reason": "Database တွင် အချက်အလက် ထပ်နေပါသည်။"})
 
         return {"status": "success",
                 "message": "အောင်မြင်စွာ ထည့်သွင်းပြီးပါပြီ။",
                 "success_count": success_count,
                 "duplicate_count": len(failed_rows),
-                "duplicate_emails": failed_rows,
+                "failed_rows": failed_rows,
                 "default_password": DEFAULT_PASSWORD}
     except HTTPException:
         db.rollback(); raise
@@ -485,7 +570,7 @@ async def api_export_users_data(request: Request, roles: str = Query("")):
         placeholders = ", ".join([f":r{i}" for i in range(len(role_list))])
         params = {f"r{i}": r for i, r in enumerate(role_list)}
         sql = text(f"""
-            SELECT u.userId, u.userName, u.userRole, u.loginName AS email,
+            SELECT u.userId, u.userName, u.userRole,
                    u.stateID, st.stateName, u.districtID, dt.districtName,
                    u.townshipID, ts.townshipName, u.phone, u.status
             FROM `user` u
@@ -513,15 +598,14 @@ async def api_download_error_excel(request: Request):
 
     wb = Workbook()
     ws = wb.active
-    ws.title = "Error Emails"
-    ws.append(["Row နံပါတ်", "အသုံးပြုသူအမည်", "အီးမေးလ် (Login Name)", "အကြောင်းရင်း"])
+    ws.title = "Import Errors"
+    ws.append(["Row နံပါတ်", "အသုံးပြုသူအမည်", "အကြောင်းရင်း"])
     for err in errors:
-        ws.append([err.get("row"), err.get("username"), err.get("email"),
+        ws.append([err.get("row"), err.get("username"),
                    err.get("reason") or "အမှားအယွင်း ရှိနေပါသည်။"])
-    ws.column_dimensions["A"].width = 15
-    ws.column_dimensions["B"].width = 25
-    ws.column_dimensions["C"].width = 35
-    ws.column_dimensions["D"].width = 50
+    ws.column_dimensions["A"].width = 12
+    ws.column_dimensions["B"].width = 30
+    ws.column_dimensions["C"].width = 60
 
     output = io.BytesIO()
     wb.save(output)

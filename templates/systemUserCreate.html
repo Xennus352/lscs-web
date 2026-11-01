@@ -142,6 +142,14 @@
         border-radius: 8px; font-size: 0.85rem; background: #f9fafb; transition: 0.15s;
     }
     .input-field:focus { outline: none; border-color: #10b981; background: #fff; box-shadow: 0 0 0 3px rgba(16,185,129,0.1); }
+    .input-field.input-invalid { border-color: #ef4444; background: #fef2f2; }
+    .input-field.input-valid { border-color: #10b981; background: #fff; }
+    .field-hint { font-size: 0.7rem; color: #6b7280; margin-top: 4px; line-height: 1.35; }
+    .username-feedback { font-size: 0.72rem; margin-top: 4px; min-height: 16px; font-weight: 600; display: none; }
+    .username-feedback.show { display: block; }
+    .username-feedback.error { color: #dc2626; }
+    .username-feedback.success { color: #047857; }
+    .username-feedback.checking { color: #6b7280; }
 
     .location-box { background: #f0fdf4; border: 1px solid #d1fae5; border-radius: 10px; padding: 15px; margin-top: 15px; margin-bottom: 10px; }
 
@@ -215,7 +223,7 @@
             <div class="search-wrap">
                 <i class="bi bi-search search-icon"></i>
                 <input type="text" id="searchInput" class="search-input"
-                       placeholder="အမည် သို့မဟုတ် အီးမေးလ်ဖြင့် ရှာပါ...">
+                       placeholder="အသုံးပြုသူအမည်ဖြင့် ရှာပါ...">
                 <button type="button" id="searchClear" class="search-clear" title="ရှင်းမည်">
                     <i class="bi bi-x-circle-fill"></i>
                 </button>
@@ -236,8 +244,7 @@
         <table class="table custom-table align-middle">
             <thead>
                 <tr>
-                    <th>အမည်</th>
-                    <th>အီးမေးလ်</th>
+                    <th>အသုံးပြုသူအမည်</th>
                     <th>ဖုန်း</th>
                     <th>ရာထူး</th>
                     <th>တည်နေရာ</th>
@@ -246,7 +253,7 @@
                 </tr>
             </thead>
             <tbody id="userTableBody">
-                <tr><td colspan="7" class="text-center text-muted py-4">ဒေတာ ရယူနေသည်...</td></tr>
+                <tr><td colspan="6" class="text-center text-muted py-4">ဒေတာ ရယူနေသည်...</td></tr>
             </tbody>
         </table>
     </div>
@@ -269,20 +276,20 @@
                 <form id="userForm">
                     <input type="hidden" id="editUserId" value="">
                     <div class="row g-3">
-                        <div class="col-md-6">
-                            <label class="field-label">အသုံးပြုသူအမည် <span class="req">*</span></label>
-                            <input type="text" id="username" class="input-field" required>
+                        <div class="col-12">
+                            <label class="field-label">အသုံးပြုသူအမည် (Login) <span class="req">*</span></label>
+                            <input type="text" id="username" class="input-field" maxlength="50"
+                                   autocomplete="off" spellcheck="false" required>
+                            <div class="field-hint">
+                                အင်္ဂလိပ်စာလုံး (A-Z, a-z)၊ အင်္ဂလိပ်ဂဏန်း (0-9)၊ <b>@</b> နှင့် <b>_</b> သာ သုံးနိုင်ပြီး ဂဏန်းဖြင့် စတင်၍ မရပါ။ မြန်မာစာလုံး နှင့် ကွက်လပ် (space) မပါဝင်ရပါ။
+                            </div>
+                            <div id="usernameFeedback" class="username-feedback" role="status" aria-live="polite"></div>
                         </div>
                         <div class="col-md-6">
                             <label class="field-label">အသုံးပြုသူ အမျိုးအစား <span class="req">*</span></label>
                             <select id="role" class="input-field" required>
                                 <option value="">ရွေးချယ်ပါ...</option>
                             </select>
-                        </div>
-
-                        <div class="col-md-6">
-                            <label class="field-label">အီးမေးလ် (Login) <span class="req">*</span></label>
-                            <input type="email" id="email" class="input-field" required>
                         </div>
                         <div class="col-md-6">
                             <label class="field-label">ဖုန်းနံပါတ် <span class="req">*</span></label>
@@ -335,6 +342,14 @@
             <div class="modal-body">
                 <div class="alert alert-warning py-2 mb-3" style="font-size:0.78rem;">
                     <i class="bi bi-info-circle-fill me-1"></i> ကျေးဇူးပြု၍ မှန်ကန်သောဖိုင်အားရွေးချယ်ထည့်သွင်းပါ။
+                </div>
+                <div class="alert alert-info py-2 mb-3" style="font-size:0.75rem; line-height:1.55;">
+                    <div class="fw-bold mb-1"><i class="bi bi-list-check me-1"></i> လိုအပ်သော Column များ</div>
+                    <div><code>userName</code>, <code>userRole</code> (stateID, districtID, townshipID, phone များကို လိုအပ်သလို ထည့်နိုင်သည်)</div>
+                    <div class="mt-1">
+                        Username တွင် အင်္ဂလိပ်စာလုံး (A-Z, a-z)၊ အင်္ဂလိပ်ဂဏန်း (0-9)၊ <b>@</b> နှင့် <b>_</b> သာ သုံးနိုင်ပါသည်။
+                        မြန်မာစာလုံး၊ ကွက်လပ် နှင့် အခြားအထူးစာလုံးများ မပါဝင်ရပါ။ ဂဏန်းဖြင့် စတင်၍ မရပါ။ ရှိပြီးသား Username များကို ထည့်၍ မရပါ။
+                    </div>
                 </div>
 
                 <form id="importForm">
@@ -548,6 +563,86 @@
     let resetPwTarget = null;
     let currentExportRoles = [];
 
+    // ⭐ Username rules: English letters/digits plus @/_ only, no spaces, must not start with a digit.
+    const USERNAME_RE = /^[A-Za-z_@][A-Za-z0-9_@]{0,49}$/;
+    const USERNAME_RULE_MSG = 'အသုံးပြုသူအမည်တွင် အင်္ဂလိပ်စာလုံး (A-Z, a-z)၊ အင်္ဂလိပ်ဂဏန်း (0-9)၊ @ နှင့် _ သာ သုံးနိုင်ပါသည်။ ဂဏန်းဖြင့် စတင်၍လည်း မရပါ။';
+    let usernameCheckTimer = null;
+    let usernameCheckSeq = 0;
+    let originalUsername = '';
+
+    function validateUsernameFormat(raw) {
+        const username = (raw || '').trim();
+        if (!username) return { ok: false, message: 'အသုံးပြုသူအမည် ထည့်ပါ။' };
+        if (username.length > 50) return { ok: false, message: 'အသုံးပြုသူအမည်သည် စာလုံး ၅၀ ခုထက် မကျော်ရပါ။' };
+        if (!USERNAME_RE.test(username)) return { ok: false, message: USERNAME_RULE_MSG };
+        return { ok: true, username };
+    }
+
+    function setUsernameFeedback(message, type) {
+        const el = document.getElementById('usernameFeedback');
+        const input = document.getElementById('username');
+        if (!el || !input) return;
+        el.textContent = message || '';
+        el.className = 'username-feedback' + (message ? ' show ' + type : '');
+        input.classList.remove('input-invalid', 'input-valid');
+        if (type === 'error') input.classList.add('input-invalid');
+        else if (type === 'success') input.classList.add('input-valid');
+    }
+
+    function isEditingUnchangedUsername() {
+        const userId = document.getElementById('editUserId').value;
+        if (userId === '') return false;
+        return document.getElementById('username').value.trim() === originalUsername.trim();
+    }
+
+    async function checkUsernameAvailability(username, excludeId) {
+        const params = new URLSearchParams({ username });
+        if (excludeId) params.append('exclude', excludeId);
+        const res = await fetch('/api/system/users/check-username?' + params.toString());
+        const data = await res.json().catch(() => ({}));
+        if (!res.ok) throw new Error(data.detail || 'Username စစ်ဆေး၍ မရပါ။');
+        return data;
+    }
+
+    async function runUsernameCheck() {
+        const raw = document.getElementById('username').value;
+        if (isEditingUnchangedUsername()) {
+            setUsernameFeedback('', '');
+            return { ok: true, unchanged: true };
+        }
+        const fmt = validateUsernameFormat(raw);
+        if (!fmt.ok) {
+            setUsernameFeedback(fmt.message, 'error');
+            return fmt;
+        }
+        const seq = ++usernameCheckSeq;
+        setUsernameFeedback('စစ်ဆေးနေသည်...', 'checking');
+        try {
+            const result = await checkUsernameAvailability(
+                fmt.username, document.getElementById('editUserId').value
+            );
+            if (seq !== usernameCheckSeq) return null;
+            if (result.valid === false) {
+                const msg = result.message || USERNAME_RULE_MSG;
+                setUsernameFeedback(msg, 'error');
+                return { ok: false, message: msg };
+            }
+            if (result.available === false) {
+                const msg = result.message || 'ဤအသုံးပြုသူအမည် အသုံးပြုပြီးသား ဖြစ်ပါသည်။';
+                setUsernameFeedback(msg, 'error');
+                return { ok: false, message: msg };
+            }
+            setUsernameFeedback(result.message || '✅ ဤအသုံးပြုသူအမည်ကို သုံးနိုင်ပါသည်။', 'success');
+            return { ok: true, username: fmt.username };
+        } catch (err) {
+            console.warn('Username check failed:', err);
+            if (seq === usernameCheckSeq) {
+                setUsernameFeedback('စစ်ဆေး၍ မရပါ။ သိမ်းဆည်းသည့်အခါ ထပ်မံစစ်ဆေးပါမည်။', 'checking');
+            }
+            return { ok: true, username: fmt.username, unchecked: true };
+        }
+    }
+
     function showResult(success, title, msg) {
         const iconWrap = document.getElementById('resIconWrap');
         const icon = document.getElementById('resIcon');
@@ -674,7 +769,7 @@
     function renderTable(users) {
         const tbody = document.getElementById('userTableBody');
         if (users.length === 0) {
-            tbody.innerHTML = `<tr><td colspan="7" class="text-center text-muted py-4">မှတ်တမ်း မရှိပါ</td></tr>`;
+            tbody.innerHTML = `<tr><td colspan="6" class="text-center text-muted py-4">မှတ်တမ်း မရှိပါ</td></tr>`;
             return;
         }
 
@@ -698,7 +793,6 @@
             return `
                 <tr>
                     <td class="fw-bold">${u.userName}</td>
-                    <td>${u.email}</td>
                     <td>${u.phone || '—'}</td>
                     <td><span class="badge-role ${badgeClass}">${roleNameMM}</span></td>
                     <td>${loc}</td>
@@ -817,6 +911,10 @@
     function resetForm() {
         document.getElementById('userForm').reset();
         document.getElementById('editUserId').value = '';
+        originalUsername = '';
+        clearTimeout(usernameCheckTimer);
+        usernameCheckSeq++;
+        setUsernameFeedback('', '');
         document.getElementById('role').value = '';
         document.getElementById('locationBox').style.display = 'none';
 
@@ -843,7 +941,8 @@
 
         document.getElementById('editUserId').value = user.userId;
         document.getElementById('username').value = user.userName;
-        document.getElementById('email').value = user.email;
+        originalUsername = user.userName || '';
+        setUsernameFeedback('', '');
         document.getElementById('phone').value = user.phone || '';
 
         document.getElementById('role').value = user.userRole;
@@ -944,10 +1043,42 @@
         });
     });
 
+    // ⭐ Username live validation / uniqueness check
+    const usernameField = document.getElementById('username');
+    usernameField.addEventListener('input', function() {
+        clearTimeout(usernameCheckTimer);
+        if (isEditingUnchangedUsername()) { setUsernameFeedback('', ''); return; }
+        const fmt = validateUsernameFormat(this.value);
+        if (!fmt.ok) { setUsernameFeedback(fmt.message, 'error'); return; }
+        usernameCheckTimer = setTimeout(runUsernameCheck, 350);
+    });
+    usernameField.addEventListener('blur', function() {
+        clearTimeout(usernameCheckTimer);
+        if (!this.value.trim() || isEditingUnchangedUsername()) return;
+        runUsernameCheck();
+    });
+
     document.getElementById('userForm').addEventListener('submit', async function(e) {
         e.preventDefault();
         const btn = document.getElementById('btnSubmit');
-        
+        const usernameInput = document.getElementById('username');
+        const usernameVal = usernameInput.value.trim();
+        const unchangedUsername = isEditingUnchangedUsername();
+
+        if (!usernameVal) {
+            setUsernameFeedback('အသုံးပြုသူအမည် ထည့်ပါ။', 'error');
+            usernameInput.focus();
+            return;
+        }
+        if (!unchangedUsername) {
+            const fmt = validateUsernameFormat(usernameVal);
+            if (!fmt.ok) {
+                setUsernameFeedback(fmt.message, 'error');
+                usernameInput.focus();
+                return;
+            }
+        }
+
         // ⭐ Role 3, 4, 5, 6 အတွက်သာ တိုင်းရွေးထားရမယ်
         const roleId = parseInt(document.getElementById('role').value);
         if (roleId >= 3 && !document.getElementById('modalState').value) {
@@ -955,29 +1086,49 @@
             return;
         }
 
-        btn.disabled = true;
-        btn.innerHTML = '<span class="spinner-border spinner-border-sm me-1"></span> သိမ်းဆည်းနေသည်...';
-
         const userId = document.getElementById('editUserId').value;
         const isEdit = userId !== '';
 
-        const fd = new FormData();
-        if (isEdit) fd.append('userId', userId);
+        clearTimeout(usernameCheckTimer);
+        usernameCheckSeq++;  // invalidate any pending live check
 
-        fd.append('username', document.getElementById('username').value);
-        fd.append('role_id', roleId);
-        fd.append('email', document.getElementById('email').value);
-        
-        const phoneVal = document.getElementById('phone').value.trim();
-        if (phoneVal) fd.append('phone', phoneVal);
-
-        if (document.getElementById('modalState').value) fd.append('stateID', document.getElementById('modalState').value);
-        if (document.getElementById('modalDistrict').value) fd.append('districtID', document.getElementById('modalDistrict').value);
-        if (document.getElementById('modalTownship').value) fd.append('townshipID', document.getElementById('modalTownship').value);
-
-        const url = isEdit ? '/api/system/users/update' : '/api/system/users/create';
+        btn.disabled = true;
+        btn.innerHTML = '<span class="spinner-border spinner-border-sm me-1"></span> သိမ်းဆည်းနေသည်...';
 
         try {
+            // ⭐ Username ရှိပြီးသား ဟုတ်/မဟုတ် စစ်ဆေး (Server ကလည်း ထပ်မံစစ်ဆေးသည်)
+            if (!unchangedUsername) {
+                let availability = null;
+                try {
+                    availability = await checkUsernameAvailability(
+                        usernameVal, isEdit ? userId : ''
+                    );
+                } catch (checkErr) {
+                    console.warn('Username availability check failed:', checkErr);
+                }
+                if (availability && availability.available === false) {
+                    const msg = availability.message || 'ဤအသုံးပြုသူအမည် အသုံးပြုပြီးသား ဖြစ်ပါသည်။';
+                    setUsernameFeedback(msg, 'error');
+                    showResult(false, 'မအောင်မြင်ပါ', msg);
+                    return;
+                }
+            }
+
+            const fd = new FormData();
+            if (isEdit) fd.append('userId', userId);
+
+            fd.append('username', usernameVal);
+            fd.append('role_id', roleId);
+
+            const phoneVal = document.getElementById('phone').value.trim();
+            if (phoneVal) fd.append('phone', phoneVal);
+
+            if (document.getElementById('modalState').value) fd.append('stateID', document.getElementById('modalState').value);
+            if (document.getElementById('modalDistrict').value) fd.append('districtID', document.getElementById('modalDistrict').value);
+            if (document.getElementById('modalTownship').value) fd.append('townshipID', document.getElementById('modalTownship').value);
+
+            const url = isEdit ? '/api/system/users/update' : '/api/system/users/create';
+
             const res = await fetch(url, { method: 'POST', body: fd });
             const data = await res.json();
 
@@ -1059,12 +1210,12 @@
     });
 
     function showImportResult(data) {
+        const failedRows = data.failed_rows || data.duplicate_emails || [];
         let errHtml = '';
-        if (data.duplicate_emails.length > 0) {
-            errHtml = data.duplicate_emails.map(e => `
+        if (failedRows.length > 0) {
+            errHtml = failedRows.map(e => `
                 <tr>
-                    <td>${e.row}</td><td>${e.username}</td>
-                    <td style="font-family:monospace;">${e.email}</td>
+                    <td>${e.row}</td><td style="font-family:monospace;">${e.username}</td>
                     <td style="color:#dc2626; font-weight:600;">${e.reason || 'Error'}</td>
                 </tr>
             `).join('');
@@ -1083,13 +1234,13 @@
                             <div class="alert alert-danger py-2 mb-3"><i class="bi bi-x-circle-fill me-1"></i> ထည့်သွင်း၍မရပါ: <b>${data.duplicate_count}</b> ခု</div>
                             <div class="table-responsive" style="max-height:250px;">
                                 <table class="table table-sm table-bordered" style="font-size:0.8rem;">
-                                    <thead class="table-light"><tr><th>Row</th><th>အမည်</th><th>အီးမေးလ်</th><th>အကြောင်းရင်း</th></tr></thead>
+                                    <thead class="table-light"><tr><th>Row</th><th>အသုံးပြုသူအမည်</th><th>အကြောင်းရင်း</th></tr></thead>
                                     <tbody>${errHtml}</tbody>
                                 </table>
                             </div>
                             <div class="mt-3 p-2 rounded" style="background:#ecfdf5; border:1px dashed #a7f3d0;"><i class="bi bi-key-fill text-success me-1"></i> Default Password: <b>${data.default_password}</b></div>
                             <div class="d-flex gap-2 mt-4 justify-content-end">
-                                <button type="button" class="btn btn-outline-secondary" onclick="copyErrorEmails()"><i class="bi bi-clipboard"></i> Copy ကူးမည်</button>
+                                <button type="button" class="btn btn-outline-secondary" onclick="copyErrorUsernames()"><i class="bi bi-clipboard"></i> Copy ကူးမည်</button>
                                 <button type="button" class="btn btn-danger" onclick="downloadErrorExcel()"><i class="bi bi-download"></i> Excel ဖြင့် ရယူမည်</button>
                                 <button type="button" class="btn btn-success" data-bs-dismiss="modal">ပိတ်မည်</button>
                             </div>
@@ -1106,10 +1257,10 @@
         const m = new bootstrap.Modal(document.getElementById('importResultModal'));
         m.show();
 
-        window.copyErrorEmails = function() {
-            const emails = data.duplicate_emails.map(e => e.email).join('\n');
-            navigator.clipboard.writeText(emails).then(() => {
-                const copyBtns = document.querySelectorAll('button[onclick="copyErrorEmails()"]');
+        window.copyErrorUsernames = function() {
+            const usernames = failedRows.map(e => e.username).join('\n');
+            navigator.clipboard.writeText(usernames).then(() => {
+                const copyBtns = document.querySelectorAll('button[onclick="copyErrorUsernames()"]');
                 copyBtns.forEach(btn => {
                     const originalHtml = btn.innerHTML;
                     btn.innerHTML = '<i class="bi bi-check2-all"></i> ကူးယူပြီးပါပြီ';
@@ -1128,7 +1279,7 @@
             try {
                 const res = await fetch('/api/system/users/import-excel/errors', {
                     method: 'POST', headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ errors: data.duplicate_emails })
+                    body: JSON.stringify({ errors: failedRows })
                 });
                 if (res.ok) {
                     const blob = await res.blob();
@@ -1212,7 +1363,7 @@
             };
 
             // ⭐ မြန်မာစာ ခေါင်းစဉ်များ
-            const headers = ["စဉ်", "အမည်", "အီးမေးလ်", "ဖုန်း", "ရာထူး", "တိုင်း", "ခရိုင်", "မြို့နယ်", "အကောင့်အခြေအနေ", "Default Password"];
+            const headers = ["စဉ်", "အသုံးပြုသူအမည်", "ဖုန်း", "ရာထူး", "တိုင်း", "ခရိုင်", "မြို့နယ်", "အကောင့်အခြေအနေ", "Default Password"];
             
             const TITLE_ROW_1 = "စိုက်ပျိုးရေး၊ မွေးမြူရေးနှင့် ဆည်မြောင်းဝန်ကြီးဌာန";
             const TITLE_ROW_2 = "မွေးမြူရေးနှင့် ကုသရေးဦးစီးဌာန";
@@ -1240,7 +1391,6 @@
                     aoa.push([
                         i + 1,
                         u.userName || "",
-                        u.email || "",
                         u.phone || "",
                         roleName,
                         u.stateName || "",
@@ -1255,15 +1405,15 @@
                 
                 // Column တွေရဲ့ အကျယ် သတ်မှတ်မယ်
                 ws['!cols'] = [
-                    {wch: 6}, {wch: 25}, {wch: 30}, {wch: 15}, {wch: 15}, 
+                    {wch: 6}, {wch: 28}, {wch: 15}, {wch: 15},
                     {wch: 20}, {wch: 20}, {wch: 20}, {wch: 15}, {wch: 18}
                 ];
 
                 // Merge Title
                 if (!ws['!merges']) ws['!merges'] = [];
-                ws['!merges'].push({ s: { r: 0, c: 0 }, e: { r: 0, c: 9 } });
-                ws['!merges'].push({ s: { r: 1, c: 0 }, e: { r: 1, c: 9 } });
-                ws['!merges'].push({ s: { r: 2, c: 0 }, e: { r: 2, c: 9 } });
+                ws['!merges'].push({ s: { r: 0, c: 0 }, e: { r: 0, c: 8 } });
+                ws['!merges'].push({ s: { r: 1, c: 0 }, e: { r: 1, c: 8 } });
+                ws['!merges'].push({ s: { r: 2, c: 0 }, e: { r: 2, c: 8 } });
 
                 // Row အမြင့်တွေ သတ်မှတ်မယ်
                 ws['!rows'] = [{ hpt: 24 }, { hpt: 24 }, { hpt: 24 }, { hpt: 10 }, { hpt: 30 }];

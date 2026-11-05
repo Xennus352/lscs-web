@@ -42,7 +42,7 @@ def _database_url():
                     url = url.update_query_dict({"ssl_check_hostname": "false"})
         return url
     return URL.create(
-        "mysql+mysqlconnector",
+        "mysql+pymysql",
         username=os.getenv("DB_USER", "root"),
         password=os.getenv("DB_PASSWORD", ""),
         host=os.getenv("DB_HOST", "localhost"),

@@ -3,6 +3,7 @@ import os
 from contextlib import asynccontextmanager
 from fastapi import Request, FastAPI
 from fastapi.staticfiles import StaticFiles
+from fastapi.middleware.gzip import GZipMiddleware
 from slowapi import _rate_limit_exceeded_handler
 from slowapi.errors import RateLimitExceeded
 from starlette.middleware.sessions import SessionMiddleware
@@ -17,7 +18,7 @@ from app.database import engine
 from app.extensions import limiter
 from app.routers import (
     auth, dashboard, enumerator, exports, households, locations,
-    reports, settings, survey, system_admin, updates,
+    reports, settings, survey, system_admin, updates, villages,
 )
 from fastapi.responses import JSONResponse
 
@@ -41,6 +42,17 @@ def init_db():
         logger.warning("init_db: %s", e)
 
 
+def ensure_indexes():
+    try:
+        with engine.begin() as conn:
+            conn.exec_driver_sql("CREATE INDEX IF NOT EXISTS idx_district_state ON district(stateID, districtID)")
+            conn.exec_driver_sql("CREATE INDEX IF NOT EXISTS idx_township_state_district ON township(stateID, districtID, townshipID)")
+            conn.exec_driver_sql("CREATE INDEX IF NOT EXISTS idx_personcv_state_district_township ON personcv(stateID, districtID, townshipID)")
+        logger.info("Database indexes ensured.")
+    except SQLAlchemyError as e:
+        logger.warning("ensure_indexes: %s", e)
+
+
 def ensure_personcv_status():
     with engine.begin() as conn:
         columns = inspect(conn).get_columns("personcv")
@@ -59,10 +71,32 @@ def ensure_personcv_status():
             )
 
 
+def ensure_village_table():
+    try:
+        with engine.begin() as conn:
+            conn.exec_driver_sql("""
+                CREATE TABLE IF NOT EXISTS village (
+                    stateID VARCHAR(30) NOT NULL,
+                    districtID VARCHAR(30) NOT NULL,
+                    townshipID VARCHAR(30) NOT NULL,
+                    QVID VARCHAR(30) NOT NULL,
+                    villageID VARCHAR(30) NOT NULL,
+                    villageName TEXT DEFAULT NULL,
+                    PRIMARY KEY (stateID, districtID, townshipID, QVID, villageID),
+                    KEY villageindex (stateID, districtID, townshipID, QVID, villageID)
+                ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci
+            """)
+        logger.info("village table ready")
+    except SQLAlchemyError as e:
+        logger.warning("ensure_village_table: %s", e)
+
+
 @asynccontextmanager
 async def lifespan(app: FastAPI):
     init_db()
     ensure_personcv_status()
+    ensure_indexes()
+    ensure_village_table()
     yield
 
 
@@ -93,6 +127,11 @@ app.add_middleware(
     https_only=COOKIE_HTTPS_ONLY,         # production: True
 )
 
+app.add_middleware(
+    GZipMiddleware,
+    minimum_size=256,
+)
+
 # ---------- Routers ----------
 app.include_router(auth.router)
 app.include_router(locations.router)
@@ -105,6 +144,7 @@ app.include_router(settings.router)
 app.include_router(system_admin.router)
 app.include_router(exports.router)
 app.include_router(updates.router)   # public: /api/check-update, /api/download-latest
+app.include_router(villages.router)
 
 # ---------- Static ----------
 _current_dir = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))

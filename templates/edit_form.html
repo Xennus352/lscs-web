@@ -90,16 +90,14 @@
 #refreshFormsBtn,
 #cancelEditBtn,
 #addRowBtn,
-#saveBtn,
-#deleteBtn {
+#saveBtn {
     padding: 0.3rem 0.8rem !important;
     font-size: 0.78rem !important;
     border-radius: 0.4rem !important;
 }
 
-/* ⭐ Save/Delete ခလုတ်တွေကို နည်းနည်း ပိုသေး */
-#saveBtn,
-#deleteBtn {
+/* ⭐ Save ခလုတ်ကို နည်းနည်း ပိုသေး */
+#saveBtn {
     padding: 0.3rem 0.9rem !important;
     font-size: 0.8rem !important;
 }
@@ -140,8 +138,7 @@
         padding: 0.28rem 0.6rem;
         font-size: 0.72rem;
     }
-    #saveBtn,
-    #deleteBtn {
+    #saveBtn {
         padding: 0.28rem 0.75rem !important;
         font-size: 0.75rem !important;
     }
@@ -670,9 +667,6 @@
         <button type="submit" id="saveBtn" class="btn btn-success">
             ပြင်ဆင်ချက်များ သိမ်းမည်
         </button>
-        <button type="button" id="deleteBtn" class="btn btn-danger ms-auto">
-            🗑️ ဤ Form ကို ဖျက်မည်
-        </button>
     </div>
 </div>
 {% endblock %}
@@ -739,7 +733,6 @@ document.addEventListener('DOMContentLoaded', function() {
     const message = document.getElementById('editMessage');
     const addRowBtn = document.getElementById('addRowBtn');
     const saveBtn = document.getElementById('saveBtn');
-    const deleteBtn = document.getElementById('deleteBtn');
 
     // ⭐ Pagination Elements
     const paginationContainer = document.getElementById('paginationContainer');
@@ -1318,7 +1311,7 @@ document.addEventListener('DOMContentLoaded', function() {
             }
         }
 
-        saving = true; saveBtn.disabled = true; addRowBtn.disabled = true; deleteBtn.disabled = true;
+        saving = true; saveBtn.disabled = true; addRowBtn.disabled = true;
 
         try {
             const url = '/enumerator/api/forms/' + encodeURIComponent(loadedFormID);
@@ -1338,36 +1331,7 @@ document.addEventListener('DOMContentLoaded', function() {
             console.error('Update form error:', error);
             safeShowModal('error', 'သိမ်းဆည်းမရပါ', error.message);
         } finally {
-            saving = false; saveBtn.disabled = false; addRowBtn.disabled = false; deleteBtn.disabled = false;
-        }
-    });
-
-    // ============================================================
-    // 🗑️ Delete Handler
-    // ============================================================
-    deleteBtn.addEventListener('click', async function() {
-        if (saving || loading || !loadedFormID) return;
-
-        const ok = window.confirm('Form ID "' + loadedFormID + '" ကို ဖျက်တော့မည်။\nသေချာပါသလား?');
-        if (!ok) return;
-
-        saving = true; deleteBtn.disabled = true; saveBtn.disabled = true; addRowBtn.disabled = true;
-
-        try {
-            const url = '/enumerator/api/forms/' + encodeURIComponent(loadedFormID);
-            const result = await apiRequest(url, { method: 'DELETE' });
-
-            safeShowModal('success', 'ဖျက်ပြီးပါပြီ', result.message || 'ဒေတာကို ဖျက်ပြီးပါပြီ။', function() {
-                formFields.classList.add('d-none');
-                formsListView.classList.remove('d-none');
-                loadFormsList();
-            });
-
-        } catch (error) {
-            console.error('Delete form error:', error);
-            safeShowModal('error', 'ဖျက်မရပါ', error.message);
-        } finally {
-            saving = false; deleteBtn.disabled = false; saveBtn.disabled = false; addRowBtn.disabled = false;
+            saving = false; saveBtn.disabled = false; addRowBtn.disabled = false;
         }
     });
 

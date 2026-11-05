@@ -246,40 +246,6 @@ async def update_existing_form(formID: str, request: Request):
         cur.close(); conn.close()
 
 
-@router.delete("/enumerator/api/forms/{formID}")
-async def delete_existing_form(formID: str, request: Request):
-    user = get_signed_in_user(request)
-    if str(user.get("role", "")).lower() != "enumerator":
-        raise HTTPException(403, "Enumerator role only")
-    user_id = user["id"]
-    conn = get_db_connection(); cur = conn.cursor(dictionary=True)
-    try:
-        conn.start_transaction()
-        cur.execute("""SELECT formID FROM personcv
-                       WHERE formID = %s AND userId = %s LIMIT 1 FOR UPDATE""",
-                    (formID, user_id))
-        if not cur.fetchone():
-            conn.rollback()
-            raise HTTPException(404, "သင့်အကောင့်ပိုင် ဒေတာမတွေ့ပါ။")
-        cur.execute("DELETE FROM collecteddata WHERE formID = %s", (formID,))
-        deleted_animals = cur.rowcount
-        cur.execute("DELETE FROM personcv WHERE formID = %s AND userId = %s",
-                    (formID, user_id))
-        deleted_person = cur.rowcount
-        conn.commit()
-        return {"status": "success", "message": "ဒေတာကို ဖျက်ပြီးပါပြီ။",
-                "formID": formID, "deletedAnimals": deleted_animals,
-                "deletedPerson": deleted_person}
-    except HTTPException:
-        raise
-    except Exception:
-        conn.rollback()
-        logger.exception("Delete form failed")
-        raise HTTPException(500, "ဒေတာဖျက်ခြင်း မအောင်မြင်ပါ။")
-    finally:
-        cur.close(); conn.close()
-
-
 # ---------- My forms + filters ----------
 @router.get("/enumerator/api/my-forms")
 async def get_my_forms(

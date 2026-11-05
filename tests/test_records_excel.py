@@ -80,10 +80,11 @@ class ExportRouteTests(unittest.TestCase):
     def setUp(self):
         self.engine = create_engine("sqlite://", connect_args={"check_same_thread": False}, poolclass=StaticPool)
         schemas = {
-            "personcv": "formID householdNo name gender age eduStatus phoneNo interviewDate headName headGender headAge headEduStatus headPhoneNo Interviewer interviewerPhoneNo WardName stateID districtID townshipID QVID",
+            "personcv": "formID householdNo name gender age eduStatus phoneNo interviewDate headName headGender headAge headEduStatus headPhoneNo Interviewer interviewerPhoneNo WardName stateID districtID townshipID QVID status",
             "state": "stateID stateName", "district": "stateID districtID districtName",
             "township": "stateID districtID townshipID townshipName",
             "qv": "stateID districtID townshipID QVID QVName",
+            "village": "stateID districtID townshipID QVID villageID villageName",
             "collecteddata": "formID animalTypeID animalID speciesID ageID genderID dataCount",
             "largeanimals": "animalID animalName", "younganimals": "animalID animalName",
             "livestock": "animalID animalName", "breedingstock": "animalID animalName",
@@ -94,7 +95,8 @@ class ExportRouteTests(unittest.TestCase):
         with self.engine.begin() as connection:
             for table, columns in schemas.items():
                 connection.execute(text(f'CREATE TABLE {table} (' + ','.join(f'{column} TEXT' for column in columns.split()) + ')'))
-            connection.execute(text("INSERT INTO personcv (formID,stateID,districtID,townshipID,QVID) VALUES ('allowed','s','d','t','q'),('other','s','d2','t','q')"))
+            connection.execute(text("INSERT INTO personcv (formID,WardName,stateID,districtID,townshipID,QVID,status) VALUES ('allowed','v1','s','d','t','q',1),('other',NULL,'s','d2','t','q',1)"))
+            connection.execute(text("INSERT INTO village VALUES ('s','d','t','q','v1','Allowed Village')"))
             # Composite location IDs must not multiply household rows.
             connection.execute(text("INSERT INTO district VALUES ('s','d','correct'),('elsewhere','d','incorrect')"))
         app = FastAPI()
@@ -122,6 +124,7 @@ class ExportRouteTests(unittest.TestCase):
         self.assertEqual(sheet.max_row, 6)
         self.assertEqual(sheet["B6"].value, "allowed")
         self.assertEqual(sheet["D6"].value, "correct")
+        self.assertEqual(sheet["G6"].value, "Allowed Village")
         self.assertIn("attachment;", response.headers["content-disposition"])
         self.sign_in("admin")
         response = self.client.post("/api/admin/records/export", json=["other", "allowed"])

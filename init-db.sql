@@ -19292,6 +19292,20 @@ ALTER TABLE `user`
 --
 ALTER TABLE `users`
   MODIFY `id` int(11) NOT NULL AUTO_INCREMENT;
+--
+-- Table structure for table `village`
+--
+CREATE TABLE IF NOT EXISTS `village` (
+  `stateID` varchar(30) NOT NULL,
+  `districtID` varchar(30) NOT NULL,
+  `townshipID` varchar(30) NOT NULL,
+  `QVID` varchar(30) NOT NULL,
+  `villageID` varchar(30) NOT NULL,
+  `villageName` text DEFAULT NULL,
+  PRIMARY KEY (`stateID`,`districtID`,`townshipID`,`QVID`,`villageID`),
+  KEY `villageindex` (`stateID`,`districtID`,`townshipID`,`QVID`,`villageID`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
 COMMIT;
 
 /*!40101 SET CHARACTER_SET_CLIENT=@OLD_CHARACTER_SET_CLIENT */;

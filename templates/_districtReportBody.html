@@ -1,0 +1,379 @@
+<div class="township-report-page">
+
+    {% if error %}
+    <div class="report-alert" role="alert">
+        <i class="bi bi-exclamation-triangle-fill"></i>
+        <span>{{ error }}</span>
+    </div>
+    {% endif %}
+
+    {% if view == 'village' %}
+    <div class="report-hero mb-3">
+        <div class="hero-main">
+            <div class="hero-icon"><i class="bi bi-file-earmark-bar-graph"></i></div>
+            <div>
+                <h4 class="hero-title">{{ township_name }} — ကျေးရွာအုပ်စုနှင့် ကျေးရွာ/ရပ်ကွက် အိမ်ထောင်စုစာရင်း</h4>
+                <p class="hero-sub">ခရိုင်အကောင့်အတွက် မြို့နယ်တစ်ခုကို ရွေးချယ်ပြီး ကောက်ယူပြီးသော ကျေးရွာအုပ်စုနှင့် ကျေးရွာ/ရပ်ကွက်များ၏ အိမ်ထောင်စုအရေအတွက်ကို ကြည့်ရှုနိုင်ပါသည်။</p>
+            </div>
+        </div>
+        <div class="hero-stats">
+            <div class="hero-stat">
+                <span class="hero-stat-label">ကောက်ယူပြီး ကျေးရွာအုပ်စုနှင့် ကျေးရွာ/ရပ်ကွက်</span>
+                <span class="hero-stat-value">{{ total_villages }}</span>
+            </div>
+            <div class="hero-stat">
+                <span class="hero-stat-label">အိမ်ထောင်စု စုစုပေါင်း</span>
+                <span class="hero-stat-value">{{ total_households }}</span>
+            </div>
+        </div>
+    </div>
+    {% else %}
+    <div class="report-hero mb-3">
+        <div class="hero-main">
+            <div class="hero-icon"><i class="bi bi-table"></i></div>
+            <div>
+                <h4 class="hero-title">{{ district_name }} — မြို့နယ်အလိုက် ကောက်ယူမှုအနှစ်ချုပ်</h4>
+                <p class="hero-sub">ခရိုင်အတွင်းရှိ မြို့နယ်များ၏ ကောက်ယူပြီးသော ရပ်ကွက်၊ ကျေးရွာနှင့် အိမ်ထောင်စုအရေအတွက်များကို နောက်ဆက်တွဲ(ဃ) ပုံစံအတိုင်း ကြည့်ရှုနိုင်ပါသည်။</p>
+            </div>
+        </div>
+        <div class="hero-stats">
+            <div class="hero-stat">
+                <span class="hero-stat-label">ကောက်ယူပြီး ရပ်ကွက်</span>
+                <span class="hero-stat-value">{{ summary_totals.ward_count }}</span>
+            </div>
+            <div class="hero-stat">
+                <span class="hero-stat-label">ကောက်ယူပြီး ကျေးရွာ</span>
+                <span class="hero-stat-value">{{ summary_totals.village_count }}</span>
+            </div>
+            <div class="hero-stat">
+                <span class="hero-stat-label">အိမ်ထောင်စု စုစုပေါင်း</span>
+                <span class="hero-stat-value">{{ summary_totals.household_count }}</span>
+            </div>
+        </div>
+    </div>
+    {% endif %}
+
+    <div class="report-view-tabs mb-3" role="tablist" aria-label="အစီရင်ခံစာ မျက်နှာပြင်များ">
+        <a href="/district/report?view=village&amp;township={{ (selected_township or '')|urlencode }}&amp;start_date={{ (filters.start_date or '')|urlencode }}&amp;end_date={{ (filters.end_date or '')|urlencode }}"
+           class="report-view-tab {% if view == 'village' %}active{% endif %}" role="tab"
+           aria-selected="{{ 'true' if view == 'village' else 'false' }}">
+            <i class="bi bi-diagram-3-fill"></i>
+            <span>ကျေးရွာအုပ်စုနှင့် ကျေးရွာ/ရပ်ကွက် အစီရင်ခံစာ</span>
+        </a>
+        <a href="/district/report?view=summary&amp;start_date={{ (filters.start_date or '')|urlencode }}&amp;end_date={{ (filters.end_date or '')|urlencode }}"
+           class="report-view-tab {% if view == 'summary' %}active{% endif %}" role="tab"
+           aria-selected="{{ 'true' if view == 'summary' else 'false' }}">
+            <i class="bi bi-table"></i>
+            <span>မြို့နယ်အလိုက် အနှစ်ချုပ်</span>
+        </a>
+    </div>
+
+    <form method="GET" action="/district/report" id="districtReportFilter">
+        <input type="hidden" name="view" value="{{ view }}">
+        <div class="filter-card mb-3">
+            <div class="filter-card-head">
+                <div class="filter-head-icon"><i class="bi bi-calendar-range-fill"></i></div>
+                <div>
+                    <div class="filter-title">
+                        {% if view == 'village' %}
+                            ကျေးရွာအုပ်စုနှင့် ကျေးရွာအစီရင်ခံစာ စစ်ထုတ်ခြင်း
+                        {% else %}
+                            ရက်စွဲအလိုက် စစ်ထုတ်ခြင်း
+                        {% endif %}
+                    </div>
+                    <div class="filter-sub">
+                        {% if view == 'village' %}
+                            တိုင်းဒေသကြီး/ပြည်နယ်နှင့် ခရိုင်ကို သင့်အကောင့်မှ အလိုအလျောက် သတ်မှတ်ထားပြီး မြို့နယ်ကို ရွေးချယ်နိုင်ပါသည်။
+                        {% else %}
+                            ခရိုင်အတွင်းရှိ မြို့နယ်အားလုံးအတွက် ရက်စွဲအပိုင်းအခြားဖြင့် အနှစ်ချုပ်စာရင်းကို ပြသပါသည်။
+                        {% endif %}
+                    </div>
+                </div>
+            </div>
+
+            <div class="filter-body">
+                {% if view == 'village' %}
+                <div class="filter-grid">
+                    <div class="filter-field">
+                        <label class="filter-label" for="reportState">
+                            <i class="bi bi-geo-alt-fill"></i>တိုင်းဒေသကြီး/ပြည်နယ်
+                        </label>
+                        <input type="text" id="reportState" class="form-control"
+                               value="{{ state_name }}" readonly>
+                    </div>
+                    <div class="filter-field">
+                        <label class="filter-label" for="reportDistrict">
+                            <i class="bi bi-signpost-split-fill"></i>ခရိုင်
+                        </label>
+                        <input type="text" id="reportDistrict" class="form-control"
+                               value="{{ district_name }}" readonly>
+                    </div>
+                    <div class="filter-field">
+                        <label class="filter-label" for="reportTownship">
+                            <i class="bi bi-building-fill"></i>မြို့နယ်
+                        </label>
+                        <select id="reportTownship" name="township" class="form-control">
+                            {% for item in townships %}
+                            <option value="{{ item.townshipID }}"
+                                    {% if item.townshipID == selected_township %}selected{% endif %}>
+                                {{ item.townshipName or item.townshipID }}
+                            </option>
+                            {% else %}
+                            <option value="">မြို့နယ် မရှိပါ</option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                    <div class="filter-field">
+                        <label class="filter-label" for="reportStartDate">
+                            <i class="bi bi-calendar-event-fill"></i>စတင်သည့်ရက်စွဲ
+                        </label>
+                        <input type="date" id="reportStartDate" name="start_date"
+                               class="form-control" value="{{ filters.start_date or '' }}">
+                    </div>
+                    <div class="filter-field">
+                        <label class="filter-label" for="reportEndDate">
+                            <i class="bi bi-calendar-check-fill"></i>ပြီးဆုံးသည့်ရက်စွဲ
+                        </label>
+                        <input type="date" id="reportEndDate" name="end_date"
+                               class="form-control" value="{{ filters.end_date or '' }}">
+                    </div>
+                    <div class="filter-actions">
+                        <a href="/district/report?view=village" class="btn-filter-reset">
+                            <i class="bi bi-arrow-counterclockwise"></i> ပြန်လည်သတ်မှတ်ရန်
+                        </a>
+                        <button type="submit" class="btn-filter-submit">
+                            <i class="bi bi-search"></i> ရှာဖွေကြည့်ရှုရန်
+                        </button>
+                    </div>
+                </div>
+                <div class="filter-note">
+                    <i class="bi bi-lock-fill"></i>
+                    <span>တိုင်းဒေသကြီး/ပြည်နယ်နှင့် ခရိုင်ကို သင့်အကောင့်၏ နယ်မြေအလိုက် သတ်မှတ်ထားသဖြင့် ပြောင်းလဲ၍ မရပါ။ မြို့နယ်ကို ရွေးချယ်ပြီး ရက်စွဲအပိုင်းအခြားဖြင့် စစ်ထုတ်နိုင်ပါသည်။</span>
+                </div>
+                {% else %}
+                <div class="filter-grid summary-filter-grid">
+                    <div class="filter-field">
+                        <label class="filter-label" for="summaryStartDate">
+                            <i class="bi bi-calendar-event-fill"></i>စတင်သည့်ရက်စွဲ
+                        </label>
+                        <input type="date" id="summaryStartDate" name="start_date"
+                               class="form-control" value="{{ filters.start_date or '' }}">
+                    </div>
+                    <div class="filter-field">
+                        <label class="filter-label" for="summaryEndDate">
+                            <i class="bi bi-calendar-check-fill"></i>ပြီးဆုံးသည့်ရက်စွဲ
+                        </label>
+                        <input type="date" id="summaryEndDate" name="end_date"
+                               class="form-control" value="{{ filters.end_date or '' }}">
+                    </div>
+                    <div class="filter-actions">
+                        <a href="/district/report?view=summary" class="btn-filter-reset">
+                            <i class="bi bi-arrow-counterclockwise"></i> ပြန်လည်သတ်မှတ်ရန်
+                        </a>
+                        <button type="submit" class="btn-filter-submit">
+                            <i class="bi bi-search"></i> ရှာဖွေကြည့်ရှုရန်
+                        </button>
+                    </div>
+                </div>
+                <div class="filter-note">
+                    <i class="bi bi-lock-fill"></i>
+                    <span>တိုင်းဒေသကြီး/ပြည်နယ်နှင့် ခရိုင်ကို သင့်အကောင့်၏ နယ်မြေအလိုက် သတ်မှတ်ထားသဖြင့် စစ်ထုတ်၍ မရပါ။ ရက်စွဲအပိုင်းအခြားဖြင့်သာ စစ်ထုတ်နိုင်ပါသည်။</span>
+                </div>
+                {% endif %}
+            </div>
+        </div>
+    </form>
+
+    {% if view == 'village' %}
+    <div class="table-section">
+        <div class="sec-header">
+            <h6><i class="bi bi-table"></i> ကျေးရွာအုပ်စုနှင့် ကျေးရွာ/ရပ်ကွက် အိမ်ထောင်စုစာရင်း</h6>
+            <div class="table-head-actions">
+                <span class="badge-count">{{ total_villages }} ရွာ</span>
+                <button type="button" class="btn-export-excel"
+                        data-bs-toggle="modal" data-bs-target="#districtExportModal">
+                    <i class="bi bi-file-earmark-excel-fill"></i> Excel ထုတ်ယူရန်
+                </button>
+            </div>
+        </div>
+        <div class="table-responsive">
+            <table class="report-table">
+                <thead>
+                    <tr>
+                        <th style="width:58px;">စဉ်</th>
+                        <th>စာရင်းကောက်ယူသောကျေးရွာရပ် ကွက်အမည်</th>
+                        <th style="width:190px;">Village/Ward P-code</th>
+                        <th style="width:180px;">အိမ်ထောင်စုအရေအတွက်</th>
+                        <th style="width:160px;">မှတ်ချက်</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for row in villages %}
+                    <tr>
+                        <td class="sr-cell">{{ loop.index }}</td>
+                        <td class="village-name">{{ row.villageName or '' }}</td>
+                        <td class="code-cell">-</td>
+                        <td class="count-cell">{{ row.household_count|int }}</td>
+                        <td class="remark-cell"></td>
+                    </tr>
+                    {% else %}
+                    <tr class="empty-row">
+                        <td colspan="5">ရွေးချယ်ထားသော မြို့နယ်တွင် ကောက်ယူပြီးသော ကျေးရွာအုပ်စုနှင့် ကျေးရွာ/ရပ်ကွက် မှတ်တမ်း မရှိပါ</td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+    {% else %}
+    <div class="summary-report-head mb-2">
+        <h4 class="summary-report-title">{{ report_year }} ခုနှစ် တိရစ္ဆာန်ကောင်ရေစာရင်း ကောက်ယူမှုအခြေအနေတင်ပြခြင်း</h4>
+        <div class="summary-report-meta">
+            <span><i class="bi bi-geo-alt-fill"></i>တိုင်းဒေသကြီး/ပြည်နယ် - <strong>{{ state_name }}</strong></span>
+            <span><i class="bi bi-signpost-split-fill"></i>ခရိုင် - <strong>{{ district_name }}</strong></span>
+            <span><i class="bi bi-calendar3"></i>{{ report_date_line }}</span>
+        </div>
+    </div>
+
+    <div class="table-section">
+        <div class="sec-header">
+            <h6><i class="bi bi-table"></i> မြို့နယ်အလိုက် အနှစ်ချုပ်</h6>
+            <div class="table-head-actions">
+                <span class="badge-count">{{ summary_rows|length }} မြို့နယ်</span>
+                <button type="button" class="btn-export-excel"
+                        data-bs-toggle="modal" data-bs-target="#districtSummaryExportModal">
+                    <i class="bi bi-file-earmark-excel-fill"></i> Excel ထုတ်ယူမည်
+                </button>
+            </div>
+        </div>
+        <div class="table-responsive">
+            <table class="report-table summary-report-table">
+                <thead>
+                    <tr>
+                        <th style="width:58px;">စဉ်</th>
+                        <th>မြို့နယ်</th>
+                        <th style="width:180px;">ကောက်ယူသော<br>ရပ်ကွက်<br>စုစုပေါင်း</th>
+                        <th style="width:180px;">ကောက်ယူသော<br>ကျေးရွာ<br>စုစုပေါင်း</th>
+                        <th style="width:180px;">အိမ်ထောင်စု<br>စုစုပေါင်း</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for row in summary_rows %}
+                    <tr>
+                        <td class="sr-cell">{{ loop.index }}</td>
+                        <td class="village-name">{{ row.townshipName or row.townshipID }}</td>
+                        <td class="count-cell">{{ row.ward_count|int }}</td>
+                        <td class="count-cell">{{ row.village_count|int }}</td>
+                        <td class="count-cell">{{ row.household_count|int }}</td>
+                    </tr>
+                    {% else %}
+                    <tr class="empty-row">
+                        <td colspan="5">ဤခရိုင်အတွင်း မြို့နယ်များ မရှိပါ</td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+    {% endif %}
+
+    <!-- ==================== VILLAGE EXCEL EXPORT CONFIRM MODAL ==================== -->
+    <div class="modal fade report-export-modal" id="districtExportModal" tabindex="-1"
+         aria-labelledby="districtExportModalLabel" aria-hidden="true">
+        <div class="modal-dialog modal-dialog-centered">
+            <div class="modal-content">
+                <div class="export-accent"></div>
+                <div class="modal-body text-center">
+                    <div class="export-modal-icon">
+                        <i class="bi bi-file-earmark-excel-fill"></i>
+                    </div>
+                    <h5 class="modal-title" id="districtExportModalLabel">Excel ဖိုင် ထုတ်ယူရန် အတည်ပြုပါ</h5>
+                    <p class="export-subtitle">
+                        ရွေးချယ်ထားသော မြို့နယ်နှင့် ရက်စွဲအပိုင်းအခြားအတိုင်း Excel ဖိုင်ကို ထုတ်ယူပါမည်။
+                    </p>
+                    <div class="export-filter-summary">
+                        <div><span>တိုင်းဒေသကြီး/ပြည်နယ်</span> - <strong>{{ state_name }}</strong></div>
+                        <div><span>ခရိုင်</span> - <strong>{{ district_name }}</strong></div>
+                        <div><span>မြို့နယ်</span> - <strong>{{ township_name }}</strong></div>
+                        <div>
+                            <span>ရက်စွဲ</span> -
+                            <strong>
+                                {% if filters.start_date and filters.end_date %}
+                                    {{ filters.start_date }} မှ {{ filters.end_date }} ထိ
+                                {% elif filters.start_date %}
+                                    {{ filters.start_date }} မှ ထိ
+                                {% elif filters.end_date %}
+                                    မှ {{ filters.end_date }} ထိ
+                                {% else %}
+                                    အားလုံး
+                                {% endif %}
+                            </strong>
+                        </div>
+                        <div><span>ကျေးရွာအုပ်စုနှင့် ကျေးရွာ/ရပ်ကွက်</span> - <strong>{{ total_villages }}</strong> ရွာ</div>
+                        <div><span>အိမ်ထောင်စု စုစုပေါင်း</span> - <strong>{{ total_households }}</strong></div>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-light flex-fill" data-bs-dismiss="modal">
+                        <i class="bi bi-x-lg me-1"></i> မလုပ်တော့ပါ
+                    </button>
+                    <a id="districtExportConfirm"
+                       href="/district/report/export?township={{ (selected_township or '')|urlencode }}&amp;start_date={{ (filters.start_date or '')|urlencode }}&amp;end_date={{ (filters.end_date or '')|urlencode }}"
+                       class="btn btn-export-confirm flex-fill">
+                        <i class="bi bi-download me-1"></i> ထုတ်ယူရန်
+                    </a>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- ==================== SUMMARY EXCEL EXPORT CONFIRM MODAL ==================== -->
+    <div class="modal fade report-export-modal" id="districtSummaryExportModal" tabindex="-1"
+         aria-labelledby="districtSummaryExportModalLabel" aria-hidden="true">
+        <div class="modal-dialog modal-dialog-centered">
+            <div class="modal-content">
+                <div class="export-accent"></div>
+                <div class="modal-body text-center">
+                    <div class="export-modal-icon">
+                        <i class="bi bi-file-earmark-excel-fill"></i>
+                    </div>
+                    <h5 class="modal-title" id="districtSummaryExportModalLabel">Excel ဖိုင် ထုတ်ယူရန် အတည်ပြုပါ</h5>
+                    <p class="export-subtitle">
+                        ခရိုင်အတွင်းရှိ မြို့နယ်အားလုံး၏ အနှစ်ချုပ်စာရင်းကို နောက်ဆက်တွဲ(ဃ) ပုံစံဖြင့် ထုတ်ယူပါမည်။
+                    </p>
+                    <div class="export-filter-summary">
+                        <div><span>တိုင်းဒေသကြီး/ပြည်နယ်</span> - <strong>{{ state_name }}</strong></div>
+                        <div><span>ခရိုင်</span> - <strong>{{ district_name }}</strong></div>
+                        <div>
+                            <span>ရက်စွဲ</span> -
+                            <strong>
+                                {% if filters.start_date and filters.end_date %}
+                                    {{ filters.start_date }} မှ {{ filters.end_date }} ထိ
+                                {% elif filters.start_date %}
+                                    {{ filters.start_date }} မှ ထိ
+                                {% elif filters.end_date %}
+                                    မှ {{ filters.end_date }} ထိ
+                                {% else %}
+                                    အားလုံး
+                                {% endif %}
+                            </strong>
+                        </div>
+                        <div><span>မြို့နယ်</span> - <strong>{{ summary_rows|length }}</strong> မြို့နယ်</div>
+                        <div><span>ကောက်ယူပြီး အိမ်ထောင်စု</span> - <strong>{{ summary_totals.household_count }}</strong></div>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-light flex-fill" data-bs-dismiss="modal">
+                        <i class="bi bi-x-lg me-1"></i> မလုပ်တော့ပါ
+                    </button>
+                    <a id="districtSummaryExportConfirm"
+                       href="/district/report/summary/export?start_date={{ (filters.start_date or '')|urlencode }}&amp;end_date={{ (filters.end_date or '')|urlencode }}"
+                       class="btn btn-export-confirm flex-fill">
+                        <i class="bi bi-download me-1"></i> ထုတ်ယူရန်
+                    </a>
+                </div>
+            </div>
+        </div>
+    </div>
+
+</div>

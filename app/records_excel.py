@@ -139,7 +139,8 @@ def build_records_workbook(households, details):
         base = [
             household["formID"], household.get("state_name") or "",
             household.get("district_name") or "", household.get("township_name") or "",
-            household.get("qv_name") or "", household.get("WardName") or "",
+            household.get("qv_name") or "",
+            household.get("village_name") or household.get("WardName") or "",
             household.get("householdNo") or "", _date(household.get("interviewDate")),
             household.get("respondent_name") or "", household.get("respondent_gender") or "",
             household.get("respondent_edu") or "", household.get("respondent_phone") or "",

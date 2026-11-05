@@ -27,7 +27,9 @@
         </div>
         <div class="col-md-6 col-lg-4">
             <label class="form-label">ရပ်ကွက်/ကျေးရွာ <span class="text-danger">*</span></label>
-            <input type="text" id="ward" name="wardName" required class="form-control" style="background:#f9fafb;">
+            <select id="ward" name="wardName" required class="form-select" style="background:#f9fafb;" disabled>
+                <option value="">ကျေးရွာအုပ်စု ကို အရင်ရွေးချယ်ပါ</option>
+            </select>
         </div>
         <div class="col-md-6 col-lg-4">
             <label class="form-label">အိမ်ထောင်စုအမှတ်စဉ် <span class="text-danger">*</span></label>
@@ -247,6 +249,49 @@
     .household-match-hint { color: #52665e; font-size: .78rem; line-height: 1.9; }
     .household-option-icon { color: #81978b; font-size: 24px; }
     .household-match-option:has(input:checked) .household-option-icon { color: #047857; }
+
+    /* ================= SEARCHABLE SELECT ================= */
+    .searchable-select { position: relative; width: 100%; }
+    .searchable-select .searchable-input {
+        background: #f9fafb; border: 1px solid #d1d5db; border-radius: .375rem;
+        font-size: .875rem; font-weight: 400; color: #212529;
+        padding: .375rem 2rem .375rem .75rem; width: 100%;
+    }
+    .searchable-select .searchable-input:focus {
+        background: #fff; border-color: #86b7fe;
+        box-shadow: 0 0 0 .25rem rgba(13, 110, 253, .25);
+    }
+    .searchable-select .searchable-input:disabled {
+        background: #e9ecef; cursor: not-allowed; color: #6c757d;
+    }
+    .searchable-arrow {
+        position: absolute; right: 12px; top: 50%; transform: translateY(-50%);
+        pointer-events: none; color: #6c757d; font-size: .75rem;
+    }
+    .searchable-select.is-disabled .searchable-arrow { color: #adb5bd; }
+    .searchable-menu {
+        position: absolute; z-index: 1080; left: 0; right: 0; top: calc(100% + 4px);
+        max-height: 240px; overflow-y: auto;
+        background: #fff; border: 1px solid #dbe7e1; border-radius: 10px;
+        box-shadow: 0 10px 24px rgba(15, 23, 42, .14); padding: 4px;
+    }
+    .searchable-option {
+        padding: 8px 10px; border-radius: 7px; font-size: .82rem;
+        color: #24483a; cursor: pointer; line-height: 1.5;
+    }
+    .searchable-option:hover, .searchable-option.is-active { background: #ecfdf5; color: #065f46; }
+    .searchable-option.is-selected { background: #d1fae5; color: #065f46; font-weight: 700; }
+    .searchable-empty { padding: 10px; font-size: .78rem; color: #94a3b8; text-align: center; }
+    .searchable-native {
+        position: absolute !important; width: 1px !important; height: 1px !important;
+        padding: 0 !important; margin: -1px !important; overflow: hidden !important;
+        clip: rect(0, 0, 0, 0) !important; white-space: nowrap !important; border: 0 !important;
+    }
+    .searchable-select.is-invalid .searchable-input {
+        border-color: #dc3545;
+        box-shadow: 0 0 0 .2rem rgba(220, 53, 69, .15);
+    }
+
     #collectionDetails input[readonly] { background: #f0fdf4 !important; border-color: #b9dfca; color: #23533b; }
     @media (max-width: 575.98px) {
         .household-match { padding: 18px; }
@@ -276,6 +321,247 @@ function toArabicDigits(str) {
 }
 function stripNonDigits(value) {
     return String(value ?? '').replace(/[^0-9၀-၉]/g, '');
+}
+
+/* ============================================================
+ * Searchable select (select-only, no custom values)
+ * The original <select> stays in the form so validation, FormData
+ * submission and database integration remain unchanged. The visible
+ * search box is not named, therefore typed text is never submitted.
+ * ============================================================ */
+function enhanceSearchableSelect(select) {
+    if (!select || select._searchableWidget) return select && select._searchableWidget;
+
+    select.classList.add('searchable-native');
+    select.tabIndex = -1;
+
+    const wrap = document.createElement('div');
+    wrap.className = 'searchable-select';
+
+    const control = document.createElement('div');
+    control.className = 'searchable-control';
+
+    const input = document.createElement('input');
+    input.type = 'text';
+    input.className = 'form-control searchable-input';
+    input.autocomplete = 'off';
+    input.spellcheck = false;
+    input.setAttribute('role', 'combobox');
+    input.setAttribute('aria-autocomplete', 'list');
+    input.setAttribute('aria-expanded', 'false');
+
+    const arrow = document.createElement('i');
+    arrow.className = 'bi bi-chevron-down searchable-arrow';
+    arrow.setAttribute('aria-hidden', 'true');
+
+    const menu = document.createElement('div');
+    menu.className = 'searchable-menu';
+    menu.setAttribute('role', 'listbox');
+    menu.hidden = true;
+
+    control.appendChild(input);
+    control.appendChild(arrow);
+    wrap.appendChild(control);
+    wrap.appendChild(menu);
+    select.insertAdjacentElement('afterend', wrap);
+    select._searchableInput = input;
+
+    let optionEls = [];
+    let activeIndex = -1;
+
+    function optionText(option) {
+        return (option.textContent || '').trim();
+    }
+
+    function placeholderText() {
+        const first = select.options[0];
+        return first && first.value === '' ? optionText(first) : '';
+    }
+
+    function selectedText() {
+        const option = select.options[select.selectedIndex];
+        return option && option.value !== '' ? optionText(option) : '';
+    }
+
+    function closeMenu() {
+        menu.hidden = true;
+        input.setAttribute('aria-expanded', 'false');
+        activeIndex = -1;
+    }
+
+    function syncErrorState() {
+        wrap.classList.toggle(
+            'is-invalid',
+            select.classList.contains('error-input') || select.classList.contains('is-invalid')
+        );
+    }
+
+    function syncFromSelect() {
+        if (!select.isConnected) return;
+        wrap.classList.toggle('is-disabled', select.disabled);
+        input.disabled = select.disabled;
+        input.placeholder = placeholderText();
+        input.value = selectedText();
+        closeMenu();
+        syncErrorState();
+    }
+
+    function setActive(index) {
+        activeIndex = index;
+        optionEls.forEach(function (el, i) {
+            el.classList.toggle('is-active', i === index);
+        });
+        if (optionEls[index]) optionEls[index].scrollIntoView({ block: 'nearest' });
+    }
+
+    function choose(value) {
+        if (select.disabled) return;
+        const exists = Array.prototype.some.call(select.options, function (opt) {
+            return opt.value === value && !opt.disabled;
+        });
+        if (!exists) return;
+        select.value = value;
+        const event = new Event('change', { bubbles: true });
+        event.lbvdUserSelection = true;
+        select.dispatchEvent(event);
+        syncFromSelect();
+        if (document.activeElement !== input) input.focus();
+    }
+
+    function renderMenu(filterText) {
+        if (select.disabled) return;
+        const query = String(filterText || '').trim().toLowerCase();
+        menu.replaceChildren();
+        optionEls = [];
+        activeIndex = -1;
+
+        const matches = Array.prototype.filter.call(select.options, function (opt) {
+            if (opt.disabled) return false;
+            if (!query) return true;
+            return optionText(opt).toLowerCase().includes(query);
+        });
+
+        if (!matches.length) {
+            const empty = document.createElement('div');
+            empty.className = 'searchable-empty';
+            empty.textContent = 'ကိုက်ညီသော ရွေးချယ်မှု မတွေ့ပါ';
+            menu.appendChild(empty);
+        } else {
+            matches.forEach(function (opt) {
+                const item = document.createElement('div');
+                item.className = 'searchable-option';
+                item.setAttribute('role', 'option');
+                item.setAttribute('aria-selected', opt.value === select.value ? 'true' : 'false');
+                item.dataset.value = opt.value;
+                item.textContent = optionText(opt);
+                if (opt.value === select.value) item.classList.add('is-selected');
+                item.addEventListener('mousedown', function (event) {
+                    event.preventDefault();
+                });
+                item.addEventListener('click', function () {
+                    choose(opt.value);
+                });
+                menu.appendChild(item);
+                optionEls.push(item);
+            });
+        }
+
+        menu.hidden = false;
+        input.setAttribute('aria-expanded', 'true');
+    }
+
+    input.addEventListener('focus', function () {
+        if (select.disabled) return;
+        input.select();
+        renderMenu('');
+    });
+
+    input.addEventListener('click', function () {
+        if (select.disabled || !menu.hidden) return;
+        renderMenu('');
+    });
+
+    input.addEventListener('input', function () {
+        select.classList.remove('error-input');
+        wrap.classList.remove('is-invalid');
+        renderMenu(input.value);
+    });
+
+    input.addEventListener('keydown', function (event) {
+        if (event.key === 'ArrowDown') {
+            event.preventDefault();
+            if (menu.hidden) renderMenu(input.value);
+            if (optionEls.length) setActive((activeIndex + 1) % optionEls.length);
+        } else if (event.key === 'ArrowUp') {
+            event.preventDefault();
+            if (menu.hidden) renderMenu(input.value);
+            if (optionEls.length) setActive((activeIndex - 1 + optionEls.length) % optionEls.length);
+        } else if (event.key === 'Enter') {
+            if (!menu.hidden && activeIndex >= 0 && optionEls[activeIndex]) {
+                event.preventDefault();
+                choose(optionEls[activeIndex].dataset.value);
+            } else if (!menu.hidden && optionEls.length === 1) {
+                event.preventDefault();
+                choose(optionEls[0].dataset.value);
+            }
+        } else if (event.key === 'Escape') {
+            closeMenu();
+            input.value = selectedText();
+            input.blur();
+        } else if (event.key === 'Tab') {
+            closeMenu();
+            input.value = selectedText();
+        }
+    });
+
+    input.addEventListener('blur', function () {
+        // As soon as focus leaves, drop the search text and show the real
+        // selection. This prevents custom values from ever being submitted.
+        window.setTimeout(function () {
+            if (document.activeElement === input) return;
+            closeMenu();
+            input.value = selectedText();
+        }, 100);
+    });
+
+    select.addEventListener('change', syncFromSelect);
+
+    const structureObserver = new MutationObserver(function () {
+        if (document.activeElement === input && !menu.hidden) {
+            if (select.disabled) {
+                syncFromSelect();
+                return;
+            }
+            renderMenu(input.value);
+            return;
+        }
+        syncFromSelect();
+    });
+    structureObserver.observe(select, {
+        childList: true,
+        subtree: true,
+        characterData: true,
+        attributes: true,
+        attributeFilter: ['disabled']
+    });
+
+    const classObserver = new MutationObserver(syncErrorState);
+    classObserver.observe(select, { attributes: true, attributeFilter: ['class'] });
+
+    syncFromSelect();
+
+    const widget = {
+        input: input,
+        menu: menu,
+        wrap: wrap,
+        sync: syncFromSelect
+    };
+    select._searchableWidget = widget;
+    return widget;
+}
+
+function refreshSearchableSelect(select) {
+    if (select && select._searchableWidget) select._searchableWidget.sync();
 }
 
 function setupRespondentHeadSync(form) {
@@ -366,6 +652,8 @@ async function loadLocationOptions() {
         districtEl.disabled = false;
         townshipEl.disabled = true;
         qvEl.disabled = true;
+        const wardEl = document.getElementById('ward');
+        if (wardEl) wardEl.disabled = true;
         if (!stateEl.value) return;
         const res = await fetch('/api/locations?state_id=' + encodeURIComponent(stateEl.value), {credentials:'same-origin'});
         if (!res.ok) throw new Error('ခရိုင်စာရင်း မရရှိပါ။');
@@ -383,6 +671,8 @@ async function loadTownshipOptions() {
     const qvEl = document.getElementById('villageTract');
     if (IS_ENUMERATOR || !state || !district) return;
     townshipEl.disabled = true; qvEl.disabled = true;
+    const wardEl = document.getElementById('ward');
+    if (wardEl) wardEl.disabled = true;
     const res = await fetch('/api/locations?state_id=' + encodeURIComponent(state) + '&district_id=' + encodeURIComponent(district), {credentials:'same-origin'});
     if (!res.ok) return;
     fillSelect(townshipEl, await res.json(), 'townshipID', 'townshipName');
@@ -396,10 +686,90 @@ async function loadQVOptions() {
     const qvEl = document.getElementById('villageTract');
     if (IS_ENUMERATOR || !state || !district || !township) return;
     qvEl.disabled = true;
+    const wardEl = document.getElementById('ward');
+    if (wardEl) {
+        wardEl.disabled = true;
+    }
     const res = await fetch('/api/locations?state_id=' + encodeURIComponent(state) + '&district_id=' + encodeURIComponent(district) + '&township_id=' + encodeURIComponent(township), {credentials:'same-origin'});
     if (!res.ok) return;
     fillSelect(qvEl, await res.json(), 'QVID', 'QVName');
     qvEl.disabled = false;
+    loadVillageOptions();
+}
+
+function fillWardSelect(wardEl, rows, placeholderText) {
+    const previous = wardEl.value;
+    wardEl.replaceChildren();
+
+    const placeholder = document.createElement('option');
+    placeholder.value = '';
+    placeholder.textContent = placeholderText;
+    wardEl.appendChild(placeholder);
+
+    (rows || []).forEach(row => {
+        const villageId = String(row.villageID || '').trim();
+        const name = String(row.villageName || '').trim();
+        if (!villageId || !name) return;
+        const option = document.createElement('option');
+        option.value = villageId;
+        option.textContent = name;
+        // The saved value may be a legacy village name, so match both.
+        if (previous && (previous === villageId || previous === name)) option.selected = true;
+        wardEl.appendChild(option);
+    });
+
+    if (wardEl.value !== '') {
+        const stillValid = Array.prototype.some.call(wardEl.options, function (opt) {
+            return opt.value === wardEl.value;
+        });
+        if (!stillValid) wardEl.value = '';
+    }
+}
+
+/* Load the villages that belong to the selected QV into the ward select.
+ * The field stays disabled until a QV is selected, and it only ever
+ * contains villages that exist for that QV. */
+async function loadVillageOptions() {
+    const state = document.getElementById('regionState')?.value;
+    const district = document.getElementById('district')?.value;
+    const township = document.getElementById('township')?.value;
+    const qv = document.getElementById('villageTract')?.value;
+    const wardEl = document.getElementById('ward');
+    if (!wardEl) return;
+
+    if (!state || !district || !township || !qv) {
+        wardEl.disabled = true;
+        fillWardSelect(wardEl, [], 'ကျေးရွာအုပ်စု ကို အရင်ရွေးချယ်ပါ');
+        return;
+    }
+
+    wardEl.disabled = true;
+    const requestQV = qv;
+
+    try {
+        const params = new URLSearchParams({
+            state_id: state,
+            district_id: district,
+            township_id: township,
+            qv_id: qv
+        });
+        const response = await fetch('/api/locations?' + params.toString(), {credentials: 'same-origin'});
+        if (!response.ok) throw new Error('ကျေးရွာစာရင်း မရရှိပါ။');
+        const rows = await response.json();
+        // Ignore a slow response for a QV that is no longer selected.
+        if (document.getElementById('villageTract')?.value !== requestQV) return;
+        fillWardSelect(
+            wardEl,
+            rows || [],
+            (rows || []).length ? '---- ကျေးရွာ ရွေးချယ်ပါ -----' : '---- ကျေးရွာ မရှိပါ -----'
+        );
+        wardEl.disabled = false;
+    } catch (error) {
+        console.error(error);
+        if (document.getElementById('villageTract')?.value !== requestQV) return;
+        fillWardSelect(wardEl, [], '---- ကျေးရွာစာရင်း မရယူနိုင်ပါ -----');
+        wardEl.disabled = false;
+    }
 }
 
 document.addEventListener('DOMContentLoaded', async function () {
@@ -440,10 +810,27 @@ document.addEventListener('DOMContentLoaded', async function () {
     const stateEl = document.getElementById('regionState');
     const districtEl = document.getElementById('district');
     const townshipEl = document.getElementById('township');
+    const qvEl = document.getElementById('villageTract');
     if (stateEl) stateEl.addEventListener('change', loadLocationOptions);
     if (districtEl) districtEl.addEventListener('change', loadTownshipOptions);
-    if (townshipEl) townshipEl.addEventListener('change', loadQVOptions);
+    if (townshipEl) townshipEl.addEventListener('change', function (event) {
+        const wardEl = document.getElementById('ward');
+        if (wardEl && (event.isTrusted || event.lbvdUserSelection)) wardEl.value = '';
+        loadQVOptions();
+    });
+    if (qvEl) qvEl.addEventListener('change', function (event) {
+        const wardEl = document.getElementById('ward');
+        if (wardEl && (event.isTrusted || event.lbvdUserSelection)) wardEl.value = '';
+        loadVillageOptions();
+    });
     await loadLocationOptions();
+    loadVillageOptions();
+
+    // QV and village become searchable, select-only controls. The original
+    // <select> elements stay in the form, so validation and FormData still
+    // use the real option values (never the typed search text).
+    enhanceSearchableSelect(qvEl);
+    enhanceSearchableSelect(document.getElementById('ward'));
 
     // အသက် field နှစ်ခုလုံးအတွက် မြန်မာဂဏန်း + အာရဗီဂဏန်း ခွင့်ပြု
     ['respondentAge', 'headAge'].forEach(id => {
@@ -517,7 +904,12 @@ document.addEventListener('DOMContentLoaded', async function () {
         }
         if (!valid) {
             if (errorBox) errorBox.classList.remove('d-none');
-            if (firstError) { firstError.scrollIntoView({behavior:'smooth', block:'center'}); firstError.focus(); }
+            if (firstError) {
+                const focusTarget = firstError._searchableInput || firstError;
+                const scrollTarget = firstError._searchableWidget ? firstError._searchableWidget.wrap : firstError;
+                scrollTarget.scrollIntoView({behavior:'smooth', block:'center'});
+                focusTarget.focus();
+            }
         }
         return valid;
     }

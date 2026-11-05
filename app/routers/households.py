@@ -21,7 +21,9 @@ def _query_household_records(cursor, role, user, state="", district="",
                              township="", qv="", search="", form_id="",
                              household_no="", head_name="", limit=None,
                              offset=0, start_date="", end_date="", form_ids=None):
-    conds = ["1=1"]
+    # Only households that actually collected animal data belong in the
+    # records report. status = 0 means "data not collected".
+    conds = ["pc.status = 1"]
     params = []
 
     if form_ids is not None:
@@ -80,6 +82,7 @@ def _query_household_records(cursor, role, user, state="", district="",
             dt.districtName AS district_name,
             ts.townshipName AS township_name,
             qv.QVName AS qv_name,
+            vl.villageName AS village_name,
             COALESCE(ct.large_total, 0) AS large_total,
             COALESCE(ct.small_total, 0) AS small_total,
             COALESCE(ct.poultry_total, 0) AS poultry_total,
@@ -94,6 +97,11 @@ def _query_household_records(cursor, role, user, state="", district="",
                           AND qv.districtID = pc.districtID
                           AND qv.townshipID = pc.townshipID
                           AND qv.QVID = pc.QVID
+        LEFT JOIN village AS vl ON vl.stateID = pc.stateID
+                               AND vl.districtID = pc.districtID
+                               AND vl.townshipID = pc.townshipID
+                               AND vl.QVID = pc.QVID
+                               AND vl.villageID = pc.WardName
         LEFT JOIN (
             SELECT formID,
                 SUM(CASE WHEN animalTypeID = 'atID01' THEN CAST(dataCount AS UNSIGNED) ELSE 0 END) AS large_total,
@@ -244,7 +252,8 @@ def _build_household_record(row, detail_rows):
         "district": row.get("district_name") or "",
         "township": row.get("township_name") or "",
         "village_tract": row.get("qv_name") or "",
-        "ward_village": row.get("WardName") or "",
+        # New records store villageID in WardName; old records stored the name.
+        "ward_village": row.get("village_name") or row.get("WardName") or "",
         "interview_date": str(row.get("interviewDate") or ""),
         "respondent": {
             "name": row.get("respondent_name") or "",
@@ -376,7 +385,7 @@ async def admin_filter_options(
 
     conn = get_db_connection(); cur = conn.cursor(dictionary=True)
     try:
-        where = ["QVID = %s"]; args = [qv]
+        where = ["QVID = %s", "status = 1"]; args = [qv]
         if state:    where.append("stateID = %s");    args.append(state)
         if district: where.append("districtID = %s"); args.append(district)
         if township: where.append("townshipID = %s"); args.append(township)

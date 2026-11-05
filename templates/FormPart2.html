@@ -146,6 +146,7 @@
 const SURVEY_PREFIX = {{ survey_prefix|default('/survey')|tojson }};
 </script>
 <script>
+
     let largeAnimalRowCount = 1;
     let smallAnimalRowCount = 1;
 
@@ -159,13 +160,12 @@ const SURVEY_PREFIX = {{ survey_prefix|default('/survey')|tojson }};
             backButton.classList.remove('d-none');
             backButton.onclick = function(event) {
                 event.preventDefault();
-                saveFormData();
+                saveFormDataforPart2();
                 window.location.href = `${SURVEY_PREFIX}/part1`;
             };
         }
         document.getElementById('submitBtn').classList.add('d-none');
-        loadFormData();
-
+        loadFormDataforPart2();
         const saved = document.querySelector('input[name="has_raised_animals"]:checked');
         if (saved && saved.value === 'yes') {
             document.getElementById('animalForms').classList.remove('d-none');
@@ -208,6 +208,155 @@ const SURVEY_PREFIX = {{ survey_prefix|default('/survey')|tojson }};
         }
     };
 
+function buildNumericInputs(prefix, index, data = {}) {
+        const structuralKeys = [
+            'u1_male', 'u1_castrated', 'u1_female', 
+            'm1_3_male', 'm1_3_castrated', 'm1_3_female', 
+            'o3_male', 'o3_castrated', 'o3_female'
+        ];
+        
+        return structuralKeys.map(k => `
+            <td>
+                <input type="number" name="${prefix}_animals[${index}][${k}]" 
+                    class="form-control form-control-sm count-input text-center" 
+                    placeholder="0" min="0" value="${data[k] !== undefined ? data[k] : ''}">
+            </td>
+        `).join('');
+    }
+
+window.addLargeAnimalRow = function (data = null) {
+        largeAnimalRowCount++;
+        const current = largeAnimalRowCount;
+        const tbody = document.getElementById('largeAnimalBody');
+        const tr = document.createElement('tr');
+        tr.id = 'largeRow_' + current;
+
+        tr.innerHTML = `
+            <td>
+                <select name="large_animals[${current}][breed]" class="form-select form-select-sm breed-select" 
+                        id="largeAnimalId_${current}" 
+                        onchange="loadLargeAnimalSpecies('largeAnimalId_${current}','largeAnimalSpeciesId_${current}')">
+                    <option value="">ရွေးချယ်ပါ...</option>
+                    ${animalOptions}
+                </select>
+            </td>
+            <td>
+                <select name="large_animals[${current}][species]" class="form-select form-select-sm species-select"
+                        id="largeAnimalSpeciesId_${current}">
+                     <option value="">ရွေးချယ်ပါ...</option>
+                </select>
+            </td>
+            ${buildNumericInputs('large', current, data || {})}
+            <td>
+                <input type="number" name="large_animals[${current}][total]" 
+                    class="form-control form-control-sm text-center fw-bold total-input" 
+                    placeholder="0" value="${data ? data.total : 0}" readonly style="background:#f3f4f6;">
+            </td>
+            <td class="text-center">
+                <button type="button" onclick="removeRow('largeRow_${current}')" class="btn btn-sm text-danger">
+                    <i class="bi bi-trash"></i>
+                </button>
+            </td>
+        `;
+        tbody.appendChild(tr);
+
+        const breedSelect = tr.querySelector('.breed-select');
+        const speciesSelect = tr.querySelector('.species-select');
+
+        if (data) {
+            breedSelect.value = data.breed;
+            // Execute cascading list trigger if parent element contains selected index properties
+            if (typeof loadLargeAnimalSpecies === 'function' && data.breed) {
+                loadLargeAnimalSpecies(`largeAnimalId_${current}`, `largeAnimalSpeciesId_${current}`);
+                
+                // Track child rendering nodes via standard mutation parameters
+                const observer = new MutationObserver((mutations, obs) => {
+                    if (speciesSelect.options.length > 1) {
+                        speciesSelect.value = data.species;
+                        obs.disconnect();
+                    }
+                });
+                observer.observe(speciesSelect, { childList: true });
+            }
+        }
+
+        // Attach layout monitoring hooks to rows
+        tr.querySelectorAll('.count-input').forEach(input => {
+            input.addEventListener('input', () => {
+                calculateRowTotal(tr);
+                window.saveFormDataforPart2();
+            });
+        });
+        breedSelect.addEventListener('change', window.saveFormDataforPart2);
+        speciesSelect.addEventListener('change', window.saveFormDataforPart2);
+    };
+
+    window.addSmallAnimalRow = function (data = null) {
+        smallAnimalRowCount++;
+        const current = smallAnimalRowCount;
+        const tbody = document.getElementById('smallAnimalBody');
+        const tr = document.createElement('tr');
+        tr.id = 'smallRow_' + current;
+
+        tr.innerHTML = `
+            <td>
+                <select name="small_animals[${current}][breed]" class="form-select form-select-sm breed-select" 
+                        id="smallAnimalId_${current}" 
+                        onchange="loadSmallAnimalSpecies('smallAnimalId_${current}','smallAnimalSpeciesId_${current}')">
+                    <option value="">ရွေးချယ်ပါ...</option>
+                    ${sanimalOptions}
+                </select>
+            </td>
+            <td>
+                <select name="small_animals[${current}][species]" class="form-select form-select-sm species-select"
+                        id="smallAnimalSpeciesId_${current}">
+                     <option value="">ရွေးချယ်ပါ...</option>
+                </select>
+            </td>
+            ${buildNumericInputs('small', current, data || {})}
+            <td>
+                <input type="number" name="small_animals[${current}][total]" 
+                    class="form-control form-control-sm text-center fw-bold total-input" 
+                    placeholder="0" value="${data ? data.total : 0}" readonly style="background:#f3f4f6;">
+            </td>
+            <td class="text-center">
+                <button type="button" onclick="removeRow('smallRow_${current}')" class="btn btn-sm text-danger">
+                    <i class="bi bi-trash"></i>
+                </button>
+            </td>
+        `;
+        tbody.appendChild(tr);
+
+        const breedSelect = tr.querySelector('.breed-select');
+        const speciesSelect = tr.querySelector('.species-select');
+
+        if (data) {
+            breedSelect.value = data.breed;
+            if (typeof loadSmallAnimalSpecies === 'function' && data.breed) {
+                loadSmallAnimalSpecies(`smallAnimalId_${current}`, `smallAnimalSpeciesId_${current}`);
+                
+                const observer = new MutationObserver((mutations, obs) => {
+                    if (speciesSelect.options.length > 1) {
+                        speciesSelect.value = data.species;
+                        obs.disconnect();
+                    }
+                });
+                observer.observe(speciesSelect, { childList: true });
+            }
+        }
+
+        tr.querySelectorAll('.count-input').forEach(input => {
+            input.addEventListener('input', () => {
+                calculateRowTotal(tr);
+                window.saveFormDataforPart2();
+            });
+        });
+        breedSelect.addEventListener('change', window.saveFormDataforPart2);
+        speciesSelect.addEventListener('change', window.saveFormDataforPart2);
+    };
+
+
+/*
     window.addLargeAnimalRow = function () {
         largeAnimalRowCount++;
         const tbody = document.getElementById('largeAnimalBody');
@@ -282,6 +431,7 @@ const SURVEY_PREFIX = {{ survey_prefix|default('/survey')|tojson }};
         tr.querySelectorAll('.count-input').forEach(input => input.addEventListener('input', () => calculateRowTotal(tr)));
     };
 
+    
     function calculateRowTotal(row) {
         const total = row.querySelector('.total-input');
         if (total.readOnly) {
@@ -295,7 +445,110 @@ const SURVEY_PREFIX = {{ survey_prefix|default('/survey')|tojson }};
         const r = document.getElementById(rowId);
         if (r) r.remove();
     };
+    */
+   window.calculateRowTotal = function(tr) {
+        let sum = 0;
+        tr.querySelectorAll('.count-input').forEach(inp => {
+            sum += parseInt(inp.value) || 0;
+        });
+        const totalEl = tr.querySelector('.total-input');
+        if (totalEl) totalEl.value = sum;
+    };
+
+    window.removeRow = function(rowId) {
+        const row = document.getElementById(rowId);
+        if(row) row.remove();
+        window.saveFormDataforPart2();
+    };
+
+ window.saveFormDataforPart2 = function() {
+        const data = {};
+        const radio = document.querySelector('input[name="has_raised_animals"]:checked');
+        if (radio) data['has_raised_animals'] = radio.value;
+
+        // Isolate Large Table fields mapping clean objects
+        const largeAnimals = [];
+        document.querySelectorAll('#largeAnimalBody tr').forEach(row => {
+            const rowData = {};
+            row.querySelectorAll('input, select').forEach(inp => {
+                const match = inp.name.match(/\[([^\]]+)\]$/);
+                if (match) rowData[match[1]] = inp.value;
+            });
+            if (Object.keys(rowData).length > 0) largeAnimals.push(rowData);
+        });
+        data['large_animals_clean_dataset'] = largeAnimals;
+
+        // Isolate Small Table fields
+        const smallAnimals = [];
+        document.querySelectorAll('#smallAnimalBody tr').forEach(row => {
+            const rowData = {};
+            row.querySelectorAll('input, select').forEach(inp => {
+                const match = inp.name.match(/\[([^\]]+)\]$/);
+                if (match) rowData[match[1]] = inp.value;
+            });
+            if (Object.keys(rowData).length > 0) smallAnimals.push(rowData);
+        });
+        data['small_animals_clean_dataset'] = smallAnimals;
+
+        const existing = JSON.parse(sessionStorage.getItem('lbvdFormData') || '{}');
+        Object.assign(existing, data);
+        sessionStorage.setItem('lbvdFormData', JSON.stringify(existing));
+    };
+
+window.loadFormDataforPart2 = function() {
+    const saved = sessionStorage.getItem('lbvdFormData');
+    if (!saved) return;
     
+    try {
+        const data = JSON.parse(saved);
+
+        // 1. Rehydrate the binary conditional radio buttons (Has animals or not)
+        if (data.has_raised_animals) {
+            const radio = document.querySelector(`input[name="has_raised_animals"][value="${data.has_raised_animals}"]`);
+            if (radio) {
+                radio.checked = true;
+                if (typeof window.toggleForms === 'function') {
+                    window.toggleForms(); 
+                }
+            }
+        }
+
+        // 2. Only attempt to build rows if the user raises animals
+        if (data.has_raised_animals === 'yes') {
+            
+            // Rehydrate Dynamic Rows for Large Animals
+            if (data.large_animals_clean_dataset && data.large_animals_clean_dataset.length > 0) {
+                const largeBody = document.getElementById('largeAnimalBody');
+                if (largeBody) {
+                    largeBody.innerHTML = ''; // Wipe default blank rows
+                    largeAnimalRowCount = 0;   // Reset row tracking index
+                    data.large_animals_clean_dataset.forEach(rowData => {
+                        if (typeof window.addLargeAnimalRow === 'function') {
+                            window.addLargeAnimalRow(rowData);
+                        }
+                    });
+                }
+            }
+
+            // Rehydrate Dynamic Rows for Small Animals
+            if (data.small_animals_clean_dataset && data.small_animals_clean_dataset.length > 0) {
+                const smallBody = document.getElementById('smallAnimalBody');
+                if (smallBody) {
+                    smallBody.innerHTML = ''; // Wipe default blank rows
+                    smallAnimalRowCount = 0;   // Reset row tracking index
+                    data.small_animals_clean_dataset.forEach(rowData => {
+                        if (typeof window.addSmallAnimalRow === 'function') {
+                            window.addSmallAnimalRow(rowData);
+                        }
+                    });
+                }
+            }
+        }
+    } catch (e) {
+        console.error("Error executing form rehydration routine inside loadFormData:", e);
+    }
+};
+
     async function loadLargeAnimalSpecies(largeAnimalId, largeAnimalSpeciesId, largeAnimalSpeciesSelected = "") {
         const lanimalSelect = document.getElementById(largeAnimalId);
         const laSpeciesSelect = document.getElementById(largeAnimalSpeciesId);

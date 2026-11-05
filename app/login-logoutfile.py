@@ -99,9 +99,10 @@ async def web_login(
             """
             SELECT userId AS id, loginName AS login_name, password,
                    userRole AS role_id, stateID, districtID, townshipID, status
-            FROM `user` WHERE loginName = %s LIMIT 1
+            FROM `user` WHERE loginName = %s
+                   AND CAST(loginName AS BINARY) = CAST(%s AS BINARY) LIMIT 1
             """,
-            (username,)
+            (username, username)
         )
         user = cursor.fetchone()
     except Exception:
@@ -168,9 +169,10 @@ async def mobile_login(
             """
             SELECT userId AS id, loginName AS login_name, password,
                    userRole AS role_id, stateID, districtID, townshipID, status
-            FROM `user` WHERE loginName = %s LIMIT 1
+            FROM `user` WHERE loginName = %s
+                   AND CAST(loginName AS BINARY) = CAST(%s AS BINARY) LIMIT 1
             """,
-            (username,)
+            (username, username)
         )
         user = cursor.fetchone()
     except Exception:

@@ -606,7 +606,7 @@
                     <th style="width:40px;">စဉ်</th>
                     <th>FormID / အိမ်ထောင်စု</th>
                     <th>အိမ်ထောင်ဦးစီး / ဖြေဆိုသူ</th>
-                    <th>တည်နေရာ (မြို့နယ်/ကျေးရွာအုပ်စု)</th>
+                    <th>တည်နေရာ (မြို့နယ်/ကျေးရွာအုပ်စု/ကျေးရွာ)</th>
                     <th class="text-center">တိရစ္ဆာန်အရေအတွက်</th>
                     <th>မေးမြန်းသည့်နေ့</th>
                     <th class="text-center" style="width:90px;">လုပ်ဆောင်ချက်</th>
@@ -887,8 +887,9 @@
                         <div class="text-muted" style="font-size:0.72rem;">${escapeHtml(respName)}</div>
                     </td>
                     <td>
-                        <div style="font-size:0.75rem;">${escapeHtml(r.township)}</div>
-                        <div class="text-muted" style="font-size:0.72rem;">${escapeHtml(r.ward_village || r.village_tract)}</div>
+                        <div style="font-size:0.75rem;">${escapeHtml(r.township || '-')}</div>
+                        <div class="text-muted" style="font-size:0.72rem;">${escapeHtml(r.village_tract || '-')}</div>
+                        <div class="text-muted" style="font-size:0.72rem;">${escapeHtml(r.ward_village || '-')}</div>
                     </td>
                     <td class="text-center">
                         <span class="fw-bold text-success" style="font-size:0.85rem;">${animalGrandTotal.toLocaleString()}</span>
@@ -1129,8 +1130,12 @@
                     <span class="info-val">${escapeHtml(r.township)}</span>
                 </div>
                 <div class="info-item">
-                    <span class="info-lbl">ကျေးရွာအုပ်စု / ကျေးရွာ</span>
-                    <span class="info-val">${escapeHtml(r.ward_village || r.village_tract)}</span>
+                    <span class="info-lbl">ကျေးရွာအုပ်စု</span>
+                    <span class="info-val">${escapeHtml(r.village_tract || '-')}</span>
+                </div>
+                <div class="info-item">
+                    <span class="info-lbl">ကျေးရွာ</span>
+                    <span class="info-val">${escapeHtml(r.ward_village || '-')}</span>
                 </div>
             </div>
 

@@ -1,7 +1,9 @@
 import logging
+from datetime import datetime
+from urllib.parse import urlencode
 
 from fastapi import APIRouter, HTTPException, Query, Request
-from fastapi.responses import HTMLResponse, RedirectResponse
+from fastapi.responses import HTMLResponse, RedirectResponse, StreamingResponse
 
 
 from app.constants import (
@@ -15,6 +17,13 @@ from app.database import get_db_connection
 from app.dependencies import get_signed_in_user
 from app.lookups import _get_user_state_name
 from app.templating import templates
+from app.district_report_excel import (
+    build_district_report_workbook,
+    report_date_line,
+    report_year_label,
+)
+from app.state_report_excel import build_state_report_workbook
+from app.township_report_excel import build_township_report_workbook
 from app.utils import _resolve_date_range
 
 logger = logging.getLogger("lbvd")
@@ -687,3 +696,1557 @@ async def report2_options(request: Request, animal_type: str = Query("atID01")):
     ages = _get_age_options(animal_type) if animal_type != "atID04" else []
     genders = _get_gender_options(animal_type)
     return {"species": species, "ages": ages, "genders": genders}
+
+
+# ============================================================
+# 🏘️ TOWNSHIP REPORT — village/ward household counts
+# ============================================================
+def _township_report_scope(user: dict) -> tuple[str, str, str]:
+    role = str(user.get("role") or "").strip().lower()
+    if role != "township":
+        raise HTTPException(
+            403,
+            "ဤစာမျက်နှာကို မြို့နယ်အသုံးပြုသူများသာ ကြည့်ခွင့်ရှိပါသည်။",
+        )
+
+    state_id = str(user.get("stateID") or "").strip()
+    district_id = str(user.get("districtID") or "").strip()
+    township_id = str(user.get("townshipID") or "").strip()
+    if not all((state_id, district_id, township_id)):
+        raise HTTPException(
+            403,
+            "သင့်အကောင့်တွင် သတ်မှတ်ထားသော နယ်မြေအချက်အလက် မပြည့်စုံပါ။",
+        )
+    return state_id, district_id, township_id
+
+
+def _query_township_village_report(cursor, state_id: str, district_id: str,
+                                   township_id: str, start_date: str = "",
+                                   end_date: str = "") -> list[dict]:
+    """One row per village that has matching completed household records.
+
+    Villages that only exist in the ``village`` table (with no matching
+    ``personcv`` records) are intentionally excluded.  ``personcv.WardName``
+    normally contains the villageID; the villageName comparison keeps older
+    rows (which stored the name) visible as well.
+    """
+    start, end = _resolve_date_range(start_date, end_date)
+    date_join = ""
+    params: list = []
+    if start and end:
+        date_join = " AND DATE(pc.interviewDate) BETWEEN %s AND %s"
+        params.extend([start, end])
+    params.extend([state_id, district_id, township_id])
+
+    cursor.execute(
+        f"""
+        SELECT v.QVID, v.villageID, v.villageName,
+               COALESCE(q.QVName, v.QVID) AS QVName,
+               COUNT(pc.formID) AS household_count
+        FROM village AS v
+        LEFT JOIN qv AS q
+               ON q.stateID = v.stateID
+              AND q.districtID = v.districtID
+              AND q.townshipID = v.townshipID
+              AND q.QVID = v.QVID
+        JOIN personcv AS pc
+               ON pc.stateID = v.stateID
+              AND pc.districtID = v.districtID
+              AND pc.townshipID = v.townshipID
+              AND pc.QVID = v.QVID
+              AND (pc.WardName = v.villageID OR pc.WardName = v.villageName)
+              AND pc.status = 1
+              {date_join}
+        WHERE v.stateID = %s
+          AND v.districtID = %s
+          AND v.townshipID = %s
+        GROUP BY v.QVID, v.villageID, v.villageName, q.QVName
+        ORDER BY COALESCE(q.QVName, v.QVID), v.villageName
+        """,
+        tuple(params),
+    )
+    return cursor.fetchall()
+
+
+def _get_township_report_place(cursor, state_id: str, district_id: str,
+                               township_id: str) -> tuple[str, str, str]:
+    cursor.execute(
+        """
+        SELECT st.stateName AS state_name,
+               dt.districtName AS district_name,
+               ts.townshipName AS township_name
+        FROM township AS ts
+        LEFT JOIN district AS dt
+               ON dt.stateID = ts.stateID
+              AND dt.districtID = ts.districtID
+        LEFT JOIN state AS st ON st.stateID = ts.stateID
+        WHERE ts.stateID = %s
+          AND ts.districtID = %s
+          AND ts.townshipID = %s
+        LIMIT 1
+        """,
+        (state_id, district_id, township_id),
+    )
+    place = cursor.fetchone() or {}
+    return (
+        place.get("state_name") or state_id,
+        place.get("district_name") or district_id,
+        place.get("township_name") or township_id,
+    )
+
+
+@router.get("/township/report", response_class=HTMLResponse)
+async def township_report_page(
+    request: Request,
+    start_date: str = Query(""), end_date: str = Query(""),
+):
+    try:
+        user = get_signed_in_user(request)
+    except HTTPException:
+        return RedirectResponse("/", status_code=303)
+
+    state_id, district_id, township_id = _township_report_scope(user)
+
+    villages: list[dict] = []
+    state_name = state_id
+    district_name = district_id
+    township_name = township_id
+    error = None
+
+    conn = cursor = None
+    try:
+        conn = get_db_connection()
+        cursor = conn.cursor(dictionary=True)
+
+        state_name, district_name, township_name = _get_township_report_place(
+            cursor, state_id, district_id, township_id,
+        )
+
+        villages = _query_township_village_report(
+            cursor, state_id, district_id, township_id, start_date, end_date,
+        )
+    except Exception:
+        logger.exception("Township report DB error")
+        error = "အစီရင်ခံစာ ရယူရာတွင် အမှားဖြစ်ပေါ်ပါသည်။ ခဏစောင့်ပြီး ပြန်လည်ကြိုးစားပါ။"
+        villages = []
+    finally:
+        if cursor:
+            cursor.close()
+        if conn:
+            conn.close()
+
+    total_households = sum(int(row.get("household_count") or 0) for row in villages)
+
+    return templates.TemplateResponse(request=request, name="townshipReport.html", context={
+        "active_page": "township_report",
+        "role": "township",
+        "user": user,
+        "state_id": state_id,
+        "district_id": district_id,
+        "township_id": township_id,
+        "state_name": state_name,
+        "district_name": district_name,
+        "township_name": township_name,
+        "region_name": township_name,
+        "villages": villages,
+        "total_villages": len(villages),
+        "total_households": total_households,
+        "filters": {"start_date": start_date, "end_date": end_date},
+        "error": error,
+    })
+
+
+@router.get("/township/report/export")
+async def township_report_export(
+    request: Request,
+    start_date: str = Query(""), end_date: str = Query(""),
+):
+    try:
+        user = get_signed_in_user(request)
+    except HTTPException:
+        return RedirectResponse("/", status_code=303)
+
+    state_id, district_id, township_id = _township_report_scope(user)
+
+    conn = cursor = None
+    try:
+        conn = get_db_connection()
+        cursor = conn.cursor(dictionary=True)
+        state_name, district_name, township_name = _get_township_report_place(
+            cursor, state_id, district_id, township_id,
+        )
+        villages = _query_township_village_report(
+            cursor, state_id, district_id, township_id, start_date, end_date,
+        )
+        output = build_township_report_workbook(
+            villages, state_name, district_name, township_name,
+            start_date, end_date,
+        )
+    except Exception:
+        logger.exception("Township report export error")
+        raise HTTPException(
+            500,
+            "Excel ဖိုင် ထုတ်ယူရာတွင် အမှားဖြစ်ပေါ်ပါသည်။ ခဏစောင့်ပြီး ပြန်လည်ကြိုးစားပါ။",
+        )
+    finally:
+        if cursor:
+            cursor.close()
+        if conn:
+            conn.close()
+
+    filename = "LBVD_Township_Report_" + datetime.now().strftime("%Y%m%d_%H%M%S") + ".xlsx"
+    return StreamingResponse(
+        output,
+        media_type="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+        headers={"Content-Disposition": f'attachment; filename="{filename}"'},
+    )
+
+
+# ============================================================
+# 🏛️ DISTRICT REPORT — township village counts + township summary
+# ============================================================
+def _district_report_scope(user: dict) -> tuple[str, str]:
+    role = str(user.get("role") or "").strip().lower()
+    if role != "district":
+        raise HTTPException(
+            403,
+            "ဤစာမျက်နှာကို ခရိုင်အသုံးပြုသူများသာ ကြည့်ခွင့်ရှိပါသည်။",
+        )
+
+    state_id = str(user.get("stateID") or "").strip()
+    district_id = str(user.get("districtID") or "").strip()
+    if not all((state_id, district_id)):
+        raise HTTPException(
+            403,
+            "သင့်အကောင့်တွင် သတ်မှတ်ထားသော နယ်မြေအချက်အလက် မပြည့်စုံပါ။",
+        )
+    return state_id, district_id
+
+
+def _get_district_report_place(cursor, state_id: str,
+                               district_id: str) -> tuple[str, str]:
+    cursor.execute(
+        """
+        SELECT st.stateName AS state_name,
+               dt.districtName AS district_name
+        FROM district AS dt
+        LEFT JOIN state AS st ON st.stateID = dt.stateID
+        WHERE dt.stateID = %s
+          AND dt.districtID = %s
+        LIMIT 1
+        """,
+        (state_id, district_id),
+    )
+    place = cursor.fetchone() or {}
+    return (
+        place.get("state_name") or state_id,
+        place.get("district_name") or district_id,
+    )
+
+
+def _get_district_report_townships(cursor, state_id: str,
+                                   district_id: str) -> list[dict]:
+    cursor.execute(
+        """
+        SELECT townshipID, townshipName
+        FROM township
+        WHERE stateID = %s AND districtID = %s
+        ORDER BY townshipName, townshipID
+        """,
+        (state_id, district_id),
+    )
+    return cursor.fetchall()
+
+
+def _resolve_district_township(townships: list[dict], requested: str) -> str:
+    requested = (requested or "").strip()
+    if requested:
+        for township in townships:
+            if str(township.get("townshipID") or "") == requested:
+                return requested
+    if townships:
+        return str(townships[0].get("townshipID") or "")
+    return ""
+
+
+def _query_district_township_summary(cursor, state_id: str, district_id: str,
+                                     start_date: str = "",
+                                     end_date: str = "",
+                                     township_id: str = "") -> list[dict]:
+    """One row per township, using only township and completed personcv rows.
+
+    A township is counted even when it has no completed survey records; its
+    three numeric columns are then zero.  The ward column counts distinct
+    QV IDs (wards/village tracts) and the village column counts distinct
+    WardName values stored by the survey.
+    """
+    start, end = _resolve_date_range(start_date, end_date)
+    date_join = ""
+    params: list = []
+    if start and end:
+        date_join = " AND DATE(pc.interviewDate) BETWEEN %s AND %s"
+        params.extend([start, end])
+    params.extend([state_id, district_id])
+    township_cond = ""
+    if township_id:
+        township_cond = " AND ts.townshipID = %s"
+        params.append(township_id)
+
+    cursor.execute(
+        f"""
+        SELECT ts.townshipID, ts.townshipName,
+               COUNT(DISTINCT pc.QVID) AS ward_count,
+               COUNT(DISTINCT NULLIF(TRIM(pc.WardName), '')) AS village_count,
+               COUNT(pc.formID) AS household_count
+        FROM township AS ts
+        LEFT JOIN personcv AS pc
+               ON pc.stateID = ts.stateID
+              AND pc.districtID = ts.districtID
+              AND pc.townshipID = ts.townshipID
+              AND pc.status = 1
+              {date_join}
+        WHERE ts.stateID = %s
+          AND ts.districtID = %s
+          {township_cond}
+        GROUP BY ts.townshipID, ts.townshipName
+        ORDER BY ts.townshipName, ts.townshipID
+        """,
+        tuple(params),
+    )
+    return cursor.fetchall()
+
+
+@router.get("/district/report", response_class=HTMLResponse)
+async def district_report_page(
+    request: Request,
+    view: str = Query("village"),
+    township: str = Query(""),
+    start_date: str = Query(""), end_date: str = Query(""),
+):
+    try:
+        user = get_signed_in_user(request)
+    except HTTPException:
+        return RedirectResponse("/", status_code=303)
+
+    state_id, district_id = _district_report_scope(user)
+    active_view = "summary" if str(view or "").strip().lower() == "summary" else "village"
+
+    state_name = state_id
+    district_name = district_id
+    townships: list[dict] = []
+    selected_township = ""
+    selected_township_name = ""
+    villages: list[dict] = []
+    summary_rows: list[dict] = []
+    summary_totals = {"ward_count": 0, "village_count": 0, "household_count": 0}
+    error = None
+
+    conn = cursor = None
+    try:
+        conn = get_db_connection()
+        cursor = conn.cursor(dictionary=True)
+
+        state_name, district_name = _get_district_report_place(
+            cursor, state_id, district_id,
+        )
+        townships = _get_district_report_townships(cursor, state_id, district_id)
+        selected_township = _resolve_district_township(townships, township)
+        if selected_township:
+            selected_township_name = next(
+                (str(row.get("townshipName") or selected_township)
+                 for row in townships
+                 if str(row.get("townshipID") or "") == selected_township),
+                selected_township,
+            )
+
+        if active_view == "village":
+            if selected_township:
+                villages = _query_township_village_report(
+                    cursor, state_id, district_id, selected_township,
+                    start_date, end_date,
+                )
+        else:
+            summary_rows = _query_district_township_summary(
+                cursor, state_id, district_id, start_date, end_date,
+            )
+            for row in summary_rows:
+                summary_totals["ward_count"] += int(row.get("ward_count") or 0)
+                summary_totals["village_count"] += int(row.get("village_count") or 0)
+                summary_totals["household_count"] += int(row.get("household_count") or 0)
+    except Exception:
+        logger.exception("District report DB error")
+        error = "အစီရင်ခံစာ ရယူရာတွင် အမှားဖြစ်ပေါ်ပါသည်။ ခဏစောင့်ပြီး ပြန်လည်ကြိုးစားပါ။"
+        villages = []
+        summary_rows = []
+    finally:
+        if cursor:
+            cursor.close()
+        if conn:
+            conn.close()
+
+    total_households = sum(int(row.get("household_count") or 0) for row in villages)
+
+    return templates.TemplateResponse(request=request, name="districtReport.html", context={
+        "active_page": "district_report",
+        "role": "district",
+        "user": user,
+        "view": active_view,
+        "state_id": state_id,
+        "district_id": district_id,
+        "township_id": selected_township,
+        "state_name": state_name,
+        "district_name": district_name,
+        "township_name": selected_township_name,
+        "region_name": district_name,
+        "townships": townships,
+        "selected_township": selected_township,
+        "villages": villages,
+        "summary_rows": summary_rows,
+        "summary_totals": summary_totals,
+        "total_villages": len(villages),
+        "total_households": total_households,
+        "report_year": report_year_label(start_date, end_date),
+        "report_date_line": report_date_line(start_date, end_date),
+        "filters": {
+            "start_date": start_date,
+            "end_date": end_date,
+            "township": selected_township,
+            "view": active_view,
+        },
+        "error": error,
+    })
+
+
+@router.get("/district/report/export")
+async def district_report_export(
+    request: Request,
+    township: str = Query(""),
+    start_date: str = Query(""), end_date: str = Query(""),
+):
+    try:
+        user = get_signed_in_user(request)
+    except HTTPException:
+        return RedirectResponse("/", status_code=303)
+
+    state_id, district_id = _district_report_scope(user)
+
+    conn = cursor = None
+    try:
+        conn = get_db_connection()
+        cursor = conn.cursor(dictionary=True)
+
+        townships = _get_district_report_townships(cursor, state_id, district_id)
+        selected_township = _resolve_district_township(townships, township)
+        if not selected_township:
+            raise HTTPException(400, "ခရိုင်အတွင်း မြို့နယ်များ မရှိပါ။")
+
+        _, _, township_name = _get_township_report_place(
+            cursor, state_id, district_id, selected_township,
+        )
+        state_name, district_name = _get_district_report_place(
+            cursor, state_id, district_id,
+        )
+        villages = _query_township_village_report(
+            cursor, state_id, district_id, selected_township,
+            start_date, end_date,
+        )
+        output = build_township_report_workbook(
+            villages, state_name, district_name, township_name,
+            start_date, end_date,
+        )
+    except HTTPException:
+        raise
+    except Exception:
+        logger.exception("District report export error")
+        raise HTTPException(
+            500,
+            "Excel ဖိုင် ထုတ်ယူရာတွင် အမှားဖြစ်ပေါ်ပါသည်။ ခဏစောင့်ပြီး ပြန်လည်ကြိုးစားပါ။",
+        )
+    finally:
+        if cursor:
+            cursor.close()
+        if conn:
+            conn.close()
+
+    filename = "LBVD_District_Report_" + datetime.now().strftime("%Y%m%d_%H%M%S") + ".xlsx"
+    return StreamingResponse(
+        output,
+        media_type="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+        headers={"Content-Disposition": f'attachment; filename="{filename}"'},
+    )
+
+
+@router.get("/district/report/summary/export")
+async def district_report_summary_export(
+    request: Request,
+    start_date: str = Query(""), end_date: str = Query(""),
+):
+    try:
+        user = get_signed_in_user(request)
+    except HTTPException:
+        return RedirectResponse("/", status_code=303)
+
+    state_id, district_id = _district_report_scope(user)
+
+    conn = cursor = None
+    try:
+        conn = get_db_connection()
+        cursor = conn.cursor(dictionary=True)
+
+        state_name, district_name = _get_district_report_place(
+            cursor, state_id, district_id,
+        )
+        summary_rows = _query_district_township_summary(
+            cursor, state_id, district_id, start_date, end_date,
+        )
+        output = build_district_report_workbook(
+            summary_rows, state_name, district_name,
+            start_date, end_date,
+        )
+    except Exception:
+        logger.exception("District summary report export error")
+        raise HTTPException(
+            500,
+            "Excel ဖိုင် ထုတ်ယူရာတွင် အမှားဖြစ်ပေါ်ပါသည်။ ခဏစောင့်ပြီး ပြန်လည်ကြိုးစားပါ။",
+        )
+    finally:
+        if cursor:
+            cursor.close()
+        if conn:
+            conn.close()
+
+    filename = "LBVD_District_Summary_" + datetime.now().strftime("%Y%m%d_%H%M%S") + ".xlsx"
+    return StreamingResponse(
+        output,
+        media_type="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+        headers={"Content-Disposition": f'attachment; filename="{filename}"'},
+    )
+
+
+# ============================================================
+# 🏛️ STATE REPORT — village, district summary, state summary
+# ============================================================
+def _state_report_scope(user: dict) -> str:
+    role = str(user.get("role") or "").strip().lower()
+    if role != "state":
+        raise HTTPException(
+            403,
+            "ဤစာမျက်နှာကို တိုင်းဒေသကြီး/ပြည်နယ်အသုံးပြုသူများသာ ကြည့်ခွင့်ရှိပါသည်။",
+        )
+
+    state_id = str(user.get("stateID") or "").strip()
+    if not state_id:
+        raise HTTPException(
+            403,
+            "သင့်အကောင့်တွင် သတ်မှတ်ထားသော နယ်မြေအချက်အလက် မပြည့်စုံပါ။",
+        )
+    return state_id
+
+
+def _get_state_report_place(cursor, state_id: str) -> str:
+    cursor.execute(
+        "SELECT stateName FROM state WHERE stateID = %s LIMIT 1",
+        (state_id,),
+    )
+    place = cursor.fetchone() or {}
+    return str(place.get("stateName") or state_id)
+
+
+def _get_state_report_districts(cursor, state_id: str) -> list[dict]:
+    cursor.execute(
+        """
+        SELECT districtID, districtName
+        FROM district
+        WHERE stateID = %s
+        ORDER BY districtName, districtID
+        """,
+        (state_id,),
+    )
+    return cursor.fetchall()
+
+
+def _get_state_report_townships(cursor, state_id: str = "",
+                                district_id: str = "") -> list[dict]:
+    state_cond = ""
+    district_cond = ""
+    params: list = []
+    if state_id:
+        state_cond = " AND ts.stateID = %s"
+        params.append(state_id)
+    if district_id:
+        district_cond = " AND ts.districtID = %s"
+        params.append(district_id)
+
+    cursor.execute(
+        f"""
+        SELECT ts.townshipID, ts.townshipName, ts.districtID, ts.stateID,
+               COALESCE(dt.districtName, ts.districtID) AS districtName
+        FROM township AS ts
+        LEFT JOIN district AS dt
+               ON dt.stateID = ts.stateID
+              AND dt.districtID = ts.districtID
+        WHERE 1=1
+          {state_cond}
+          {district_cond}
+        ORDER BY dt.districtName, ts.townshipName, ts.townshipID
+        """,
+        tuple(params),
+    )
+    return cursor.fetchall()
+
+
+def _resolve_state_district(districts: list[dict], requested: str) -> str:
+    requested = (requested or "").strip()
+    if requested:
+        for district in districts:
+            if str(district.get("districtID") or "") == requested:
+                return requested
+    if districts:
+        return str(districts[0].get("districtID") or "")
+    return ""
+
+
+def _resolve_state_township(townships: list[dict], requested: str,
+                            default_first: bool = False) -> str:
+    requested = (requested or "").strip()
+    if requested:
+        for township in townships:
+            if str(township.get("townshipID") or "") == requested:
+                return requested
+    if default_first and townships:
+        return str(townships[0].get("townshipID") or "")
+    return ""
+
+
+def _query_state_township_summary(cursor, state_id: str, district_id: str = "",
+                                  township_id: str = "", start_date: str = "",
+                                  end_date: str = "") -> list[dict]:
+    """One row per township across the state, including zero-count townships."""
+    start, end = _resolve_date_range(start_date, end_date)
+    date_join = ""
+    params: list = []
+    if start and end:
+        date_join = " AND DATE(pc.interviewDate) BETWEEN %s AND %s"
+        params.extend([start, end])
+
+    conds = ["ts.stateID = %s"]
+    params.append(state_id)
+    if district_id:
+        conds.append("ts.districtID = %s")
+        params.append(district_id)
+    if township_id:
+        conds.append("ts.townshipID = %s")
+        params.append(township_id)
+    where_clause = " AND ".join(conds)
+
+    cursor.execute(
+        f"""
+        SELECT ts.districtID,
+               COALESCE(dt.districtName, ts.districtID) AS districtName,
+               ts.townshipID, ts.townshipName,
+               COUNT(DISTINCT pc.QVID) AS ward_count,
+               COUNT(DISTINCT NULLIF(TRIM(pc.WardName), '')) AS village_count,
+               COUNT(pc.formID) AS household_count
+        FROM township AS ts
+        LEFT JOIN district AS dt
+               ON dt.stateID = ts.stateID
+              AND dt.districtID = ts.districtID
+        LEFT JOIN personcv AS pc
+               ON pc.stateID = ts.stateID
+              AND pc.districtID = ts.districtID
+              AND pc.townshipID = ts.townshipID
+              AND pc.status = 1
+              {date_join}
+        WHERE {where_clause}
+        GROUP BY ts.districtID, dt.districtName,
+                 ts.townshipID, ts.townshipName
+        ORDER BY dt.districtName, ts.townshipName, ts.townshipID
+        """,
+        tuple(params),
+    )
+    return cursor.fetchall()
+
+
+def _state_report_link(view: str, district: str = "", township: str = "",
+                       start_date: str = "", end_date: str = "") -> str:
+    params = {"view": view}
+    if district:
+        params["district"] = district
+    if township:
+        params["township"] = township
+    if start_date:
+        params["start_date"] = start_date
+    if end_date:
+        params["end_date"] = end_date
+    return "/state/report?" + urlencode(params)
+
+
+@router.get("/state/report", response_class=HTMLResponse)
+async def state_report_page(
+    request: Request,
+    view: str = Query("village"),
+    district: str = Query(""),
+    township: str = Query(""),
+    start_date: str = Query(""), end_date: str = Query(""),
+):
+    try:
+        user = get_signed_in_user(request)
+    except HTTPException:
+        return RedirectResponse("/", status_code=303)
+
+    state_id = _state_report_scope(user)
+    active_view = str(view or "").strip().lower()
+    if active_view not in ("village", "district", "state"):
+        active_view = "village"
+
+    state_name = state_id
+    district_name = ""
+    township_name = ""
+    districts: list[dict] = []
+    townships: list[dict] = []
+    filter_townships: list[dict] = []
+    selected_district = ""
+    selected_township = ""
+    villages: list[dict] = []
+    summary_rows: list[dict] = []
+    summary_totals = {"ward_count": 0, "village_count": 0, "household_count": 0}
+    error = None
+
+    conn = cursor = None
+    try:
+        conn = get_db_connection()
+        cursor = conn.cursor(dictionary=True)
+
+        state_name = _get_state_report_place(cursor, state_id)
+        districts = _get_state_report_districts(cursor, state_id)
+
+        if active_view == "state":
+            selected_district = _resolve_state_district(districts, district) \
+                if (district or "").strip() else ""
+        else:
+            selected_district = _resolve_state_district(districts, district)
+
+        filter_townships = _get_state_report_townships(cursor, state_id)
+        townships = [
+            row for row in filter_townships
+            if selected_district
+            and str(row.get("districtID") or "") == selected_district
+        ]
+
+        if active_view == "village":
+            selected_township = _resolve_state_township(
+                townships, township, default_first=True,
+            )
+        elif not selected_district:
+            selected_township = ""
+        else:
+            selected_township = _resolve_state_township(townships, township)
+
+        selected_district_row = next(
+            (row for row in districts
+             if str(row.get("districtID") or "") == selected_district),
+            None,
+        )
+        if selected_district_row:
+            district_name = str(
+                selected_district_row.get("districtName") or selected_district
+            )
+        elif active_view == "state":
+            district_name = "ခရိုင်အားလုံး"
+
+        selected_township_row = next(
+            (row for row in townships
+             if str(row.get("townshipID") or "") == selected_township),
+            None,
+        )
+        if selected_township_row:
+            township_name = str(
+                selected_township_row.get("townshipName") or selected_township
+            )
+        elif active_view in ("district", "state"):
+            township_name = "မြို့နယ်အားလုံး"
+
+        if active_view == "village":
+            if selected_district and selected_township:
+                villages = _query_township_village_report(
+                    cursor, state_id, selected_district, selected_township,
+                    start_date, end_date,
+                )
+        elif active_view == "district":
+            if selected_district:
+                summary_rows = _query_district_township_summary(
+                    cursor, state_id, selected_district,
+                    start_date, end_date, selected_township,
+                )
+        else:
+            summary_rows = _query_state_township_summary(
+                cursor, state_id, selected_district, selected_township,
+                start_date, end_date,
+            )
+
+        if active_view != "village":
+            for row in summary_rows:
+                summary_totals["ward_count"] += int(row.get("ward_count") or 0)
+                summary_totals["village_count"] += int(row.get("village_count") or 0)
+                summary_totals["household_count"] += int(row.get("household_count") or 0)
+    except Exception:
+        logger.exception("State report DB error")
+        error = "အစီရင်ခံစာ ရယူရာတွင် အမှားဖြစ်ပေါ်ပါသည်။ ခဏစောင့်ပြီး ပြန်လည်ကြိုးစားပါ။"
+        villages = []
+        summary_rows = []
+    finally:
+        if cursor:
+            cursor.close()
+        if conn:
+            conn.close()
+
+    total_households = sum(int(row.get("household_count") or 0) for row in villages)
+    summary_district_count = len({
+        str(row.get("districtID") or "") for row in summary_rows
+    })
+    summary_township_count = len(summary_rows)
+
+    first_district = str(districts[0].get("districtID") or "") if districts else ""
+    village_district = selected_district
+    if not village_district and selected_township:
+        selected_township_scope = next(
+            (row for row in townships
+             if str(row.get("townshipID") or "") == selected_township),
+            None,
+        )
+        if selected_township_scope:
+            village_district = str(selected_township_scope.get("districtID") or "")
+    if not village_district:
+        village_district = first_district
+
+    village_township = selected_township
+    if not village_township:
+        village_township = next(
+            (str(row.get("townshipID") or "") for row in filter_townships
+             if str(row.get("districtID") or "") == village_district),
+            "",
+        )
+
+    district_tab = selected_district or first_district
+    view_links = {
+        "village": _state_report_link(
+            "village", village_district, village_township,
+            start_date, end_date,
+        ),
+        "district": _state_report_link(
+            "district", district_tab, "", start_date, end_date,
+        ),
+        "state": _state_report_link(
+            "state",
+            selected_district if active_view == "state" else "",
+            selected_township if active_view == "state" else "",
+            start_date, end_date,
+        ),
+    }
+
+    return templates.TemplateResponse(request=request, name="stateReport.html", context={
+        "active_page": "state_report",
+        "role": "state",
+        "user": user,
+        "view": active_view,
+        "state_id": state_id,
+        "district_id": selected_district,
+        "township_id": selected_township,
+        "state_name": state_name,
+        "district_name": district_name,
+        "township_name": township_name,
+        "region_name": state_name,
+        "districts": districts,
+        "townships": townships,
+        "filter_townships": filter_townships,
+        "selected_district": selected_district,
+        "selected_township": selected_township,
+        "villages": villages,
+        "summary_rows": summary_rows,
+        "summary_totals": summary_totals,
+        "summary_district_count": summary_district_count,
+        "summary_township_count": summary_township_count,
+        "total_villages": len(villages),
+        "total_households": total_households,
+        "report_year": report_year_label(start_date, end_date),
+        "report_date_line": report_date_line(start_date, end_date),
+        "filters": {
+            "start_date": start_date,
+            "end_date": end_date,
+            "district": selected_district,
+            "township": selected_township,
+            "view": active_view,
+        },
+        "view_links": view_links,
+        "error": error,
+    })
+
+
+def _get_all_states(cursor) -> list[dict]:
+    cursor.execute(
+        """
+        SELECT stateID, stateName
+        FROM state
+        ORDER BY stateName, stateID
+        """
+    )
+    return cursor.fetchall()
+
+
+def _get_all_districts(cursor) -> list[dict]:
+    cursor.execute(
+        """
+        SELECT districtID, districtName, stateID
+        FROM district
+        ORDER BY stateID, districtName, districtID
+        """
+    )
+    return cursor.fetchall()
+
+
+def _resolve_state_report_state(states: list[dict], requested: str) -> str:
+    requested = (requested or "").strip()
+    if requested:
+        for st in states:
+            if str(st.get("stateID") or "") == requested:
+                return requested
+    if states:
+        return str(states[0].get("stateID") or "")
+    return ""
+
+
+@router.get("/union/report", response_class=HTMLResponse)
+async def union_report_page(
+    request: Request,
+    view: str = Query("village"),
+    state: str = Query(""),
+    district: str = Query(""),
+    township: str = Query(""),
+    start_date: str = Query(""), end_date: str = Query(""),
+):
+    try:
+        user = get_signed_in_user(request)
+    except HTTPException:
+        return RedirectResponse("/", status_code=303)
+
+    role = str(user.get("role") or "").strip().lower()
+    if role != "union":
+        raise HTTPException(
+            403,
+            "This report page is for union users only.",
+        )
+
+    active_view = str(view or "").strip().lower()
+    if active_view not in ("village", "district", "state"):
+        active_view = "village"
+
+    conn = cursor = None
+    try:
+        conn = get_db_connection()
+        cursor = conn.cursor(dictionary=True)
+
+        states = _get_all_states(cursor)
+        selected_state = _resolve_state_report_state(states, state)
+
+        state_name = ""
+        state_row = next(
+            (st for st in states if str(st.get("stateID") or "") == selected_state),
+            None,
+        )
+        if state_row:
+            state_name = str(state_row.get("stateName") or selected_state)
+        elif states:
+            state_name = str(states[0].get("stateName") or states[0].get("stateID"))
+
+        districts = _get_state_report_districts(cursor, selected_state) if selected_state else []
+        all_districts = _get_all_districts(cursor)
+        filter_townships = _get_state_report_townships(cursor)
+
+        if active_view == "state":
+            selected_district = _resolve_state_district(districts, district) \
+                if (district or "").strip() else ""
+        else:
+            selected_district = _resolve_state_district(districts, district)
+
+        townships = [
+            row for row in filter_townships
+            if selected_district and str(row.get("districtID") or "") == selected_district
+            and str(row.get("stateID") or "") == selected_state
+        ]
+
+        if active_view == "village":
+            selected_township = _resolve_state_township(
+                townships, township, default_first=True,
+            )
+        elif not selected_district:
+            selected_township = ""
+        else:
+            selected_township = _resolve_state_township(townships, township)
+
+        selected_district_row = next(
+            (row for row in districts if str(row.get("districtID") or "") == selected_district),
+            None,
+        )
+        if selected_district_row:
+            district_name = str(
+                selected_district_row.get("districtName") or selected_district
+            )
+        elif active_view == "state":
+            district_name = "ခရိုင်အားလုံး"
+        else:
+            district_name = ""
+
+        selected_township_row = next(
+            (row for row in townships if str(row.get("townshipID") or "") == selected_township),
+            None,
+        )
+        if selected_township_row:
+            township_name = str(
+                selected_township_row.get("townshipName") or selected_township
+            )
+        elif active_view in ("district", "state"):
+            township_name = "မြို့နယ်အားလုံး"
+        else:
+            township_name = ""
+
+        villages: list[dict] = []
+        summary_rows: list[dict] = []
+        summary_totals = {"ward_count": 0, "village_count": 0, "household_count": 0}
+        error = None
+
+        if active_view == "village":
+            if selected_state and selected_district and selected_township:
+                villages = _query_township_village_report(
+                    cursor, selected_state, selected_district, selected_township,
+                    start_date, end_date,
+                )
+        elif active_view == "district":
+            if selected_state and selected_district:
+                summary_rows = _query_district_township_summary(
+                    cursor, selected_state, selected_district,
+                    start_date, end_date, selected_township,
+                )
+        else:
+            if selected_state:
+                summary_rows = _query_state_township_summary(
+                    cursor, selected_state, selected_district, selected_township,
+                    start_date, end_date,
+                )
+
+        if active_view != "village":
+            for row in summary_rows:
+                summary_totals["ward_count"] += int(row.get("ward_count") or 0)
+                summary_totals["village_count"] += int(row.get("village_count") or 0)
+                summary_totals["household_count"] += int(row.get("household_count") or 0)
+    except HTTPException:
+        raise
+    except Exception:
+        logger.exception("Union report DB error")
+        error = "Unable to load the union report. Please try again later."
+        villages = []
+        summary_rows = []
+    finally:
+        if cursor:
+            cursor.close()
+        if conn:
+            conn.close()
+
+    total_households = sum(int(row.get("household_count") or 0) for row in villages)
+    summary_district_count = len({str(row.get("districtID") or "") for row in summary_rows})
+    summary_township_count = len(summary_rows)
+
+    first_district = str(districts[0].get("districtID") or "") if districts else ""
+    village_district = selected_district or first_district
+    village_township = selected_township
+    if not village_township and selected_state:
+        village_township = next(
+            (str(row.get("townshipID") or "") for row in filter_townships
+             if str(row.get("districtID") or "") == village_district),
+            "",
+        )
+
+    def _union_report_link(view_name: str, state_id: str = "", district_id: str = "",
+                           township_id: str = "", start_date: str = "", end_date: str = "") -> str:
+        params = {"view": view_name, "state": state_id}
+        if district_id:
+            params["district"] = district_id
+        if township_id:
+            params["township"] = township_id
+        if start_date:
+            params["start_date"] = start_date
+        if end_date:
+            params["end_date"] = end_date
+        return "/union/report?" + urlencode(params)
+
+    district_tab = selected_district or first_district
+    view_links = {
+        "village": _union_report_link(
+            "village", selected_state, village_district, village_township,
+            start_date, end_date,
+        ),
+        "district": _union_report_link(
+            "district", selected_state, district_tab, "", start_date, end_date,
+        ),
+        "state": _union_report_link(
+            "state",
+            selected_state if active_view == "state" else "",
+            selected_district if active_view == "state" else "",
+            selected_township if active_view == "state" else "",
+            start_date, end_date,
+        ),
+    }
+
+    return templates.TemplateResponse(request=request, name="stateReport.html", context={
+        "active_page": "union_report",
+        "role": "union",
+        "user": user,
+        "view": active_view,
+        "state_id": selected_state,
+        "district_id": selected_district,
+        "township_id": selected_township,
+        "state_name": state_name,
+        "district_name": district_name,
+        "township_name": township_name,
+        "region_name": state_name,
+        "states": states,
+        "selected_state": selected_state,
+        "districts": districts,
+        "townships": townships,
+        "filter_townships": filter_townships,
+        "selected_district": selected_district,
+        "selected_township": selected_township,
+        "villages": villages,
+        "summary_rows": summary_rows,
+        "summary_totals": summary_totals,
+        "summary_district_count": summary_district_count,
+        "summary_township_count": summary_township_count,
+        "total_villages": len(villages),
+        "total_households": total_households,
+        "report_year": report_year_label(start_date, end_date),
+        "report_date_line": report_date_line(start_date, end_date),
+        "filters": {
+            "start_date": start_date,
+            "end_date": end_date,
+            "state": selected_state,
+            "district": selected_district,
+            "township": selected_township,
+            "view": active_view,
+        },
+        "view_links": view_links,
+        "form_action": "/union/report",
+        "state_filterable": True,
+        "all_districts": all_districts,
+        "error": error,
+    })
+
+
+@router.get("/union/report/export")
+async def union_report_export(
+    request: Request,
+    state: str = Query(""),
+    district: str = Query(""), township: str = Query(""),
+    start_date: str = Query(""), end_date: str = Query(""),
+):
+    try:
+        user = get_signed_in_user(request)
+    except HTTPException:
+        return RedirectResponse("/", status_code=303)
+
+    role = str(user.get("role") or "").strip().lower()
+    if role != "union":
+        raise HTTPException(
+            403,
+            "This report page is for union users only.",
+        )
+
+    conn = cursor = None
+    try:
+        conn = get_db_connection()
+        cursor = conn.cursor(dictionary=True)
+
+        states = _get_all_states(cursor)
+        selected_state = _resolve_state_report_state(states, state)
+        if not selected_state:
+            raise HTTPException(400, "State is required.")
+
+        districts = _get_state_report_districts(cursor, selected_state)
+        selected_district = _resolve_state_district(districts, district)
+        if not selected_district:
+            raise HTTPException(400, "ခရိုင်များ မရှိပါ။")
+
+        townships = _get_state_report_townships(
+            cursor, selected_state, selected_district,
+        )
+        selected_township = _resolve_state_township(
+            townships, township, default_first=True,
+        )
+        if not selected_township:
+            raise HTTPException(400, "မြို့နယ်များ မရှိပါ။")
+
+        state_name = _get_state_report_place(cursor, selected_state)
+        _, district_name, township_name = _get_township_report_place(
+            cursor, selected_state, selected_district, selected_township,
+        )
+        villages = _query_township_village_report(
+            cursor, selected_state, selected_district, selected_township,
+            start_date, end_date,
+        )
+        output = build_township_report_workbook(
+            villages, state_name, district_name, township_name,
+            start_date, end_date,
+        )
+    except HTTPException:
+        raise
+    except Exception:
+        logger.exception("Union village report export error")
+        raise HTTPException(
+            500,
+            "Unable to export union village report. Please try again later.",
+        )
+    finally:
+        if cursor:
+            cursor.close()
+        if conn:
+            conn.close()
+
+    filename = "LBVD_Union_Village_Report_" + datetime.now().strftime("%Y%m%d_%H%M%S") + ".xlsx"
+    return StreamingResponse(
+        output,
+        media_type="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+        headers={"Content-Disposition": f'attachment; filename="{filename}"'},
+    )
+
+
+@router.get("/union/report/district/export")
+async def union_report_district_export(
+    request: Request,
+    state: str = Query(""),
+    district: str = Query(""), township: str = Query(""),
+    start_date: str = Query(""), end_date: str = Query(""),
+):
+    try:
+        user = get_signed_in_user(request)
+    except HTTPException:
+        return RedirectResponse("/", status_code=303)
+
+    role = str(user.get("role") or "").strip().lower()
+    if role != "union":
+        raise HTTPException(
+            403,
+            "This report page is for union users only.",
+        )
+
+    conn = cursor = None
+    try:
+        conn = get_db_connection()
+        cursor = conn.cursor(dictionary=True)
+
+        states = _get_all_states(cursor)
+        selected_state = _resolve_state_report_state(states, state)
+        if not selected_state:
+            raise HTTPException(400, "State is required.")
+
+        districts = _get_state_report_districts(cursor, selected_state)
+        selected_district = _resolve_state_district(districts, district)
+        if not selected_district:
+            raise HTTPException(400, "ခရိုင်များ မရှိပါ။")
+
+        townships = _get_state_report_townships(
+            cursor, selected_state, selected_district,
+        )
+        selected_township = _resolve_state_township(townships, township)
+
+        state_name = _get_state_report_place(cursor, selected_state)
+        district_name = next(
+            (str(row.get("districtName") or selected_district)
+             for row in districts
+             if str(row.get("districtID") or "") == selected_district),
+            selected_district,
+        )
+        summary_rows = _query_district_township_summary(
+            cursor, selected_state, selected_district, start_date, end_date,
+            selected_township,
+        )
+        output = build_district_report_workbook(
+            summary_rows, state_name, district_name,
+            start_date, end_date,
+        )
+    except HTTPException:
+        raise
+    except Exception:
+        logger.exception("Union district summary export error")
+        raise HTTPException(
+            500,
+            "Unable to export union district summary. Please try again later.",
+        )
+    finally:
+        if cursor:
+            cursor.close()
+        if conn:
+            conn.close()
+
+    filename = "LBVD_Union_District_Summary_" + datetime.now().strftime("%Y%m%d_%H%M%S") + ".xlsx"
+    return StreamingResponse(
+        output,
+        media_type="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+        headers={"Content-Disposition": f'attachment; filename="{filename}"'},
+    )
+
+
+@router.get("/union/report/state/export")
+async def union_report_state_export(
+    request: Request,
+    state: str = Query(""),
+    district: str = Query(""), township: str = Query(""),
+    start_date: str = Query(""), end_date: str = Query(""),
+):
+    try:
+        user = get_signed_in_user(request)
+    except HTTPException:
+        return RedirectResponse("/", status_code=303)
+
+    role = str(user.get("role") or "").strip().lower()
+    if role != "union":
+        raise HTTPException(
+            403,
+            "This report page is for union users only.",
+        )
+
+    conn = cursor = None
+    try:
+        conn = get_db_connection()
+        cursor = conn.cursor(dictionary=True)
+
+        states = _get_all_states(cursor)
+        selected_state = _resolve_state_report_state(states, state)
+        if not selected_state:
+            raise HTTPException(400, "State is required.")
+
+        districts = _get_state_report_districts(cursor, selected_state)
+        selected_district = _resolve_state_district(districts, district) \
+            if (district or "").strip() else ""
+
+        townships = _get_state_report_townships(
+            cursor, selected_state, selected_district,
+        )
+        selected_township = _resolve_state_township(townships, township)
+
+        state_name = _get_state_report_place(cursor, selected_state)
+        summary_rows = _query_state_township_summary(
+            cursor, selected_state, selected_district, selected_township,
+            start_date, end_date,
+        )
+        output = build_state_report_workbook(
+            summary_rows, state_name, start_date, end_date,
+        )
+    except HTTPException:
+        raise
+    except Exception:
+        logger.exception("Union state summary export error")
+        raise HTTPException(
+            500,
+            "Unable to export union state summary. Please try again later.",
+        )
+    finally:
+        if cursor:
+            cursor.close()
+        if conn:
+            conn.close()
+
+    filename = "LBVD_Union_State_Summary_" + datetime.now().strftime("%Y%m%d_%H%M%S") + ".xlsx"
+    return StreamingResponse(
+        output,
+        media_type="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+        headers={"Content-Disposition": f'attachment; filename="{filename}"'},
+    )
+
+
+
+@router.get("/state/report/export")
+async def state_report_export(
+    request: Request,
+    district: str = Query(""), township: str = Query(""),
+    start_date: str = Query(""), end_date: str = Query(""),
+):
+    try:
+        user = get_signed_in_user(request)
+    except HTTPException:
+        return RedirectResponse("/", status_code=303)
+
+    state_id = _state_report_scope(user)
+
+    conn = cursor = None
+    try:
+        conn = get_db_connection()
+        cursor = conn.cursor(dictionary=True)
+
+        districts = _get_state_report_districts(cursor, state_id)
+        selected_district = _resolve_state_district(districts, district)
+        if not selected_district:
+            raise HTTPException(400, "ခရိုင်များ မရှိပါ။")
+
+        townships = _get_state_report_townships(
+            cursor, state_id, selected_district,
+        )
+        selected_township = _resolve_state_township(
+            townships, township, default_first=True,
+        )
+        if not selected_township:
+            raise HTTPException(400, "မြို့နယ်များ မရှိပါ။")
+
+        state_name = _get_state_report_place(cursor, state_id)
+        _, district_name, township_name = _get_township_report_place(
+            cursor, state_id, selected_district, selected_township,
+        )
+        villages = _query_township_village_report(
+            cursor, state_id, selected_district, selected_township,
+            start_date, end_date,
+        )
+        output = build_township_report_workbook(
+            villages, state_name, district_name, township_name,
+            start_date, end_date,
+        )
+    except HTTPException:
+        raise
+    except Exception:
+        logger.exception("State village report export error")
+        raise HTTPException(
+            500,
+            "Excel ဖိုင် ထုတ်ယူရာတွင် အမှားဖြစ်ပေါ်ပါသည်။ ခဏစောင့်ပြီး ပြန်လည်ကြိုးစားပါ။",
+        )
+    finally:
+        if cursor:
+            cursor.close()
+        if conn:
+            conn.close()
+
+    filename = "LBVD_State_Village_Report_" + datetime.now().strftime("%Y%m%d_%H%M%S") + ".xlsx"
+    return StreamingResponse(
+        output,
+        media_type="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+        headers={"Content-Disposition": f'attachment; filename="{filename}"'},
+    )
+
+
+@router.get("/state/report/district/export")
+async def state_report_district_export(
+    request: Request,
+    district: str = Query(""), township: str = Query(""),
+    start_date: str = Query(""), end_date: str = Query(""),
+):
+    try:
+        user = get_signed_in_user(request)
+    except HTTPException:
+        return RedirectResponse("/", status_code=303)
+
+    state_id = _state_report_scope(user)
+
+    conn = cursor = None
+    try:
+        conn = get_db_connection()
+        cursor = conn.cursor(dictionary=True)
+
+        districts = _get_state_report_districts(cursor, state_id)
+        selected_district = _resolve_state_district(districts, district)
+        if not selected_district:
+            raise HTTPException(400, "ခရိုင်များ မရှိပါ။")
+
+        townships = _get_state_report_townships(
+            cursor, state_id, selected_district,
+        )
+        selected_township = _resolve_state_township(townships, township)
+
+        state_name = _get_state_report_place(cursor, state_id)
+        district_name = next(
+            (str(row.get("districtName") or selected_district)
+             for row in districts
+             if str(row.get("districtID") or "") == selected_district),
+            selected_district,
+        )
+        summary_rows = _query_district_township_summary(
+            cursor, state_id, selected_district, start_date, end_date,
+            selected_township,
+        )
+        output = build_district_report_workbook(
+            summary_rows, state_name, district_name,
+            start_date, end_date,
+        )
+    except HTTPException:
+        raise
+    except Exception:
+        logger.exception("State district summary export error")
+        raise HTTPException(
+            500,
+            "Excel ဖိုင် ထုတ်ယူရာတွင် အမှားဖြစ်ပေါ်ပါသည်။ ခဏစောင့်ပြီး ပြန်လည်ကြိုးစားပါ။",
+        )
+    finally:
+        if cursor:
+            cursor.close()
+        if conn:
+            conn.close()
+
+    filename = "LBVD_State_District_Summary_" + datetime.now().strftime("%Y%m%d_%H%M%S") + ".xlsx"
+    return StreamingResponse(
+        output,
+        media_type="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+        headers={"Content-Disposition": f'attachment; filename="{filename}"'},
+    )
+
+
+@router.get("/state/report/state/export")
+async def state_report_state_export(
+    request: Request,
+    district: str = Query(""), township: str = Query(""),
+    start_date: str = Query(""), end_date: str = Query(""),
+):
+    try:
+        user = get_signed_in_user(request)
+    except HTTPException:
+        return RedirectResponse("/", status_code=303)
+
+    state_id = _state_report_scope(user)
+
+    conn = cursor = None
+    try:
+        conn = get_db_connection()
+        cursor = conn.cursor(dictionary=True)
+
+        districts = _get_state_report_districts(cursor, state_id)
+        selected_district = (district or "").strip()
+        if selected_district and not any(
+            str(row.get("districtID") or "") == selected_district
+            for row in districts
+        ):
+            selected_district = ""
+
+        townships = _get_state_report_townships(
+            cursor, state_id, selected_district,
+        )
+        selected_township = _resolve_state_township(townships, township)
+
+        state_name = _get_state_report_place(cursor, state_id)
+        summary_rows = _query_state_township_summary(
+            cursor, state_id, selected_district, selected_township,
+            start_date, end_date,
+        )
+        output = build_state_report_workbook(
+            summary_rows, state_name, start_date, end_date,
+        )
+    except Exception:
+        logger.exception("State summary export error")
+        raise HTTPException(
+            500,
+            "Excel ဖိုင် ထုတ်ယူရာတွင် အမှားဖြစ်ပေါ်ပါသည်။ ခဏစောင့်ပြီး ပြန်လည်ကြိုးစားပါ။",
+        )
+    finally:
+        if cursor:
+            cursor.close()
+        if conn:
+            conn.close()
+
+    filename = "LBVD_State_Summary_" + datetime.now().strftime("%Y%m%d_%H%M%S") + ".xlsx"
+    return StreamingResponse(
+        output,
+        media_type="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+        headers={"Content-Disposition": f'attachment; filename="{filename}"'},
+    )

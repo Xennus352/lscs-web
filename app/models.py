@@ -3,7 +3,7 @@
 Keep the physical MySQL column/table names exact (including case) because
 this project may run on a case-sensitive MySQL/MariaDB host.
 """
-from sqlalchemy import CheckConstraint, Column, Integer, String
+from sqlalchemy import CheckConstraint, Column, Integer, String, Text
 from app.database import Base
 
 
@@ -66,3 +66,14 @@ class QV(Base):
     stateID = Column(String(100), nullable=False)
     districtID = Column(String(100), nullable=False)
     townshipID = Column(String(100), nullable=False)
+
+
+class Village(Base):
+    __tablename__ = "village"
+
+    stateID = Column(String(30), primary_key=True)
+    districtID = Column(String(30), primary_key=True)
+    townshipID = Column(String(30), primary_key=True)
+    QVID = Column(String(30), primary_key=True)
+    villageID = Column(String(30), primary_key=True)
+    villageName = Column(Text)

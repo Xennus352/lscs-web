@@ -1329,40 +1329,69 @@
         // ============================================================
         // FORM DATA (sessionStorage)
         // ============================================================
-        window.saveFormData = function() {
+           window.saveFormData = function() {
             const form = document.getElementById('livestockForm');
             if (!form) return;
             const data = {};
             new FormData(form).forEach((val, key) => {
+                
                 data[key] = val;
+                
             });
             const regionEl = document.getElementById('regionState');
             if (regionEl && regionEl.value) data['region_state'] = regionEl.value;
             const existing = JSON.parse(sessionStorage.getItem('lbvdFormData') || '{}');
             Object.assign(existing, data);
             sessionStorage.setItem('lbvdFormData', JSON.stringify(existing));
+           
         };
 
-        window.loadFormData = function() {
-            const saved = sessionStorage.getItem('lbvdFormData');
-            if (!saved) return;
-            try {
-                const data = JSON.parse(saved);
-                Object.keys(data).forEach(key => {
-                    const el = document.querySelector('[name="' + key + '"]');
-                    if (!el) return;
-                    if (el.type === 'radio') {
-                        document.querySelectorAll('[name="' + key + '"]').forEach(r => {
-                            if (r.value === data[key]) r.checked = true;
-                        });
-                    } else {
-                        el.value = data[key];
-                    }
+    window.loadFormData = function() {
+    const saved = sessionStorage.getItem('lbvdFormData');
+    if (!saved) return;
+    try {
+        const data = JSON.parse(saved);
+        
+        Object.keys(data).forEach(key => {
+            
+            const el = document.querySelector('[name="' + key + '"]');
+            if (!el) return;
+            
+            if (el.type === 'radio') {
+                document.querySelectorAll('[name="' + key + '"]').forEach(r => {
+                    if (r.value === data[key]) r.checked = true;
                 });
-            } catch (e) {
-                console.error(e);
             }
-        };
+            else if (el.tagName === 'SELECT') {
+                const savedValue = data[key];
+
+                // Check if the options are already loaded
+                const matchingOption = Array.from(el.options).find(opt => opt.value == savedValue || opt.text === savedValue);
+                
+                if (matchingOption) {
+                    el.value = matchingOption.value;
+                    el.dispatchEvent(new Event('change', { bubbles: true }));
+                } else {
+                    // FIX: If options are missing (still loading via AJAX), wait for them to appear
+                    const observer = new MutationObserver((mutations, obs) => {
+                        const lateOption = Array.from(el.options).find(opt => opt.value == savedValue || opt.text === savedValue);
+                        if (lateOption) {
+                            el.value = lateOption.value;
+                            el.dispatchEvent(new Event('change', { bubbles: true }));
+                            obs.disconnect(); // Stop watching once found
+                        }
+                    });
+                    observer.observe(el, { childList: true });
+                }
+            } 
+            else {
+                el.value = data[key];
+            }
+        });
+    } catch (e) {
+        console.error(e);
+    }
+};
 
         window.clearFormData = function() {
             sessionStorage.removeItem('lbvdFormData');
@@ -1379,13 +1408,13 @@
         });
 
 /// ==================================================
-// ⭐ Web Inactivity Auto-Logout (၁၀ မိနစ်)
+// ⭐ Web Inactivity Auto-Logout (၂၀ မိနစ်)
 // ==================================================
 (function() {
     const isMobileApp = /Mobile|Android|iPhone|iPad/i.test(navigator.userAgent);
     if (isMobileApp) return;
 
-    const INACTIVITY_LIMIT = 10 * 60 * 1000; // ၁၀ မိနစ် (Milliseconds)
+    const INACTIVITY_LIMIT = 20 * 60 * 1000; // ၂၀ မိနစ် (Milliseconds)
     let timeoutId;
 
     function resetTimer() {

@@ -26,6 +26,86 @@ def _get_user_state_name(user):
         return ""
 
 
+# ============================================================
+# 👤 SESSION USER HEADER (rank label + location)
+# ============================================================
+USER_RANK_LABELS = {
+    "union": "ပြည်ထောင်စုအဆင့်အသုံးပြုသူ",
+    "state": "တိုင်း/ပြည်နယ်အဆင့်အသုံးပြုသူ",
+    "district": "ခရိုင်အဆင့်အသုံးပြုသူ",
+    "township": "မြို့နယ်အဆင့်အသုံးပြုသူ",
+}
+
+USER_RANK_ICONS = {
+    "union": "bi-globe2",
+    "state": "bi-map",
+    "district": "bi-geo-alt",
+    "township": "bi-pin-map",
+}
+
+
+def _get_user_location_names(user):
+    """Return the district/township display names for a session user."""
+    names = {"district": "", "township": ""}
+    if not user or not user.get("stateID") or not user.get("districtID"):
+        return names
+
+    state_id = str(user.get("stateID") or "").strip()
+    district_id = str(user.get("districtID") or "").strip()
+    township_id = str(user.get("townshipID") or "").strip()
+    try:
+        conn = get_db_connection(); cur = conn.cursor(dictionary=True)
+        try:
+            cur.execute(
+                "SELECT districtName FROM district "
+                "WHERE stateID = %s AND districtID = %s",
+                (state_id, district_id),
+            )
+            row = cur.fetchone()
+            if row:
+                names["district"] = row.get("districtName") or ""
+
+            if township_id:
+                cur.execute(
+                    "SELECT townshipName FROM township "
+                    "WHERE stateID = %s AND districtID = %s AND townshipID = %s",
+                    (state_id, district_id, township_id),
+                )
+                row = cur.fetchone()
+                if row:
+                    names["township"] = row.get("townshipName") or ""
+        finally:
+            cur.close(); conn.close()
+    except Exception as e:
+        logger.warning(f"User location lookup failed: {e}")
+    return names
+
+
+def get_user_header_info(user):
+    """Role label and location line shown in the shared top bar."""
+    if not user:
+        return {"role": "", "rank_label": "", "icon": "", "location_line": ""}
+
+    role = str(user.get("role") or "").strip().lower()
+    rank_label = USER_RANK_LABELS.get(role, "")
+    icon = USER_RANK_ICONS.get(role, "")
+    location_line = ""
+
+    if role == "district":
+        location_line = _get_user_location_names(user).get("district") or ""
+    elif role == "township":
+        names = _get_user_location_names(user)
+        parts = [part for part in (names.get("district"), names.get("township")) if part]
+        location_line = "၊".join(parts)
+
+    return {
+        "role": role,
+        "rank_label": rank_label,
+        "icon": icon,
+        "location_line": location_line,
+    }
+
+
 def _get_all_states():
     try:
         conn = get_db_connection(); cur = conn.cursor(dictionary=True)

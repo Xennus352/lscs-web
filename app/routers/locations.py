@@ -11,6 +11,7 @@ async def get_locations(
     state_id: str = Query(None),
     district_id: str = Query(None),
     township_id: str = Query(None),
+    qv_id: str = Query(None),
 ):
     try:
         user = get_signed_in_user(request)
@@ -47,6 +48,14 @@ async def get_locations(
             cur.execute("SELECT DISTINCT townshipID, townshipName FROM township "
                         "WHERE stateID = %s AND districtID = %s ORDER BY townshipName",
                         (state_id, district_id))
+            return cur.fetchall()
+        if qv_id:
+            cur.execute(
+                "SELECT villageID, villageName FROM village "
+                "WHERE stateID = %s AND districtID = %s AND townshipID = %s AND QVID = %s "
+                "ORDER BY villageName",
+                (state_id, district_id, township_id, qv_id),
+            )
             return cur.fetchall()
         cur.execute("SELECT DISTINCT QVID, QVName FROM qv "
                     "WHERE stateID = %s AND districtID = %s AND townshipID = %s ORDER BY QVName",

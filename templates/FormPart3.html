@@ -90,7 +90,7 @@
     document.addEventListener('DOMContentLoaded', function () {
         updateProgress(60, 'အပိုင်း (၃) / ၅ - ကြက်၊ ဘဲ၊ ငုံး စာရင်း');
         document.getElementById('backBtn').classList.remove('d-none');
-        loadFormData();
+        loadFormDataforPart3();
 
                 const backButton = document.getElementById('backBtn');
 
@@ -144,110 +144,212 @@
         return true;
     }
 
-    window.togglePoultryForms = function () {
-        const pf = document.getElementById('poultryForms');
-        const hp = document.querySelector('input[name="has_poultry"]:checked');
-        if (hp && hp.value === 'yes') {
-            pf.classList.remove('d-none');
-            if (document.getElementById('poultryBody').children.length === 0) addPoultryRow();
-        } else {
-            pf.classList.add('d-none');
-        }
-    };
 
-    window.addPoultryRow = function () {
-        poultryRowCount++;
-        const tbody = document.getElementById('poultryBody');
-        const tr = document.createElement('tr');
-        tr.id = 'poultryRow_' + poultryRowCount;
-        tr.innerHTML = `
-            <td>
-        <select name="poultry[${poultryRowCount}][breed]" 
-                class="form-select form-select-sm poultry-type-select" 
-                id="poultryId_${poultryRowCount}" 
-                onchange="togglePoultryAgeColumns(this); loadLiveStockSpecies('poultryId_${poultryRowCount}','poultrySpeciesId_${poultryRowCount}')">
-            <option value="">ရွေးချယ်ပါ...</option>
-            ${animalOptions}
-        </select>
-    </td>
-    <td>
-        <select name="poultry[${poultryRowCount}][species]" 
-                class="form-select form-select-sm"
-                id="poultrySpeciesId_${poultryRowCount}">
-             <!-- Species options go here -->
-        </select></td>
-            <td><input type="number" name="poultry[${poultryRowCount}][total]" class="form-control form-control-sm text-center fw-bold total-input" placeholder="0" readonly style="background:#f3f4f6;"></td>
-            <td class="text-center"><button type="button" onclick="removeRow('poultryRow_${poultryRowCount}')" class="btn btn-sm text-danger"><i class="bi bi-trash"></i></button></td>
-        `;
-        tbody.appendChild(tr);
-        togglePoultryAgeColumns(tr.querySelector('.poultry-type-select'));
-    };
-
-    function poultryAgeFields(animalID) {
-        if (animalID === 'lsID02' || animalID === 'lsID05') {
-            return [{ name: 'combined', span: 6, age: '', gender: '', label: 'ကောင်ရေ' }];
-        }
-        if (animalID === 'lsID03') {
-            return [
-                { name: 'young_combined', span: 4, age: 'ageID10', gender: '', label: 'ငယ် / လတ် စုစုပေါင်း' },
-                { name: 'adult_male', span: 1, age: 'ageID11', gender: 'g01', label: 'ကြီး အထီး' },
-                { name: 'adult_female', span: 1, age: 'ageID11', gender: 'g03', label: 'ကြီး အမ' }
-            ];
-        }
-        const ages = animalID === 'lsID04'
-            ? ['ageID12', 'ageID13', 'ageID14']
-            : animalID === 'lsID07'
-                ? ['ageID15', 'ageID16', 'ageID17']
-                : ['ageID07', 'ageID08', 'ageID09'];
-        return ['young', 'medium', 'adult'].flatMap((age, index) => [
-            { name: `${age}_male`, span: 1, age: ages[index], gender: 'g01', label: `${age} အထီး` },
-            { name: `${age}_female`, span: 1, age: ages[index], gender: 'g03', label: `${age} အမ` }
-        ]);
+window.togglePoultryForms = function () {
+    const pf = document.getElementById('poultryForms');
+    const hp = document.querySelector('input[name="has_poultry"]:checked');
+    if (hp && hp.value === 'yes') {
+        pf.classList.remove('d-none');
+        if (document.getElementById('poultryBody').children.length === 0) addPoultryRow();
+    } else {
+        pf.classList.add('d-none');
     }
+};
 
-    window.togglePoultryAgeColumns = function (sel) {
-        const row = sel.closest('tr');
-        // Repeated species loads must not erase counts for the selected animal.
-        if (row.dataset.ageAnimal === sel.value) return;
-        row.dataset.ageAnimal = sel.value;
-        row.querySelectorAll('.poultry-age-cell').forEach(cell => cell.remove());
-        const total = row.querySelector('.total-input');
-        const namePrefix = sel.name.replace(/\[breed\]$/, '');
-        poultryAgeFields(sel.value).forEach(field => {
-            const cell = document.createElement('td');
-            cell.className = 'poultry-age-cell';
-            cell.colSpan = field.span;
-            const input = document.createElement('input');
-            input.type = 'number';
-            input.name = `${namePrefix}[${field.name}]`;
-            input.className = 'form-control form-control-sm count-input';
-            input.placeholder = '0';
-            input.min = '0';
-            input.step = '1';
-            input.dataset.ageId = field.age;
-            input.dataset.genderId = field.gender;
-            input.setAttribute('aria-label', field.label);
-            input.addEventListener('input', () => calculateRowTotal(row));
-            cell.appendChild(input);
-            row.insertBefore(cell, total.closest('td'));
-        });
-        calculateRowTotal(row);
-    };
-
-    function calculateRowTotal(row) {
-        const total = row.querySelector('.total-input');
-        if (total.readOnly) {
-            let sum = 0;
-            row.querySelectorAll('.count-input').forEach(i => { if (!i.disabled) sum += Number(i.value) || 0; });
-            total.value = sum;
-        }
-    }
-
-    window.removeRow = function (rowId) {
-        const r = document.getElementById(rowId);
-        if (r) r.remove();
-    };
+// ပြင်ဆင်ချက်: rowData object အား parameter အဖြစ်လက်ခံနိုင်ရန် လုပ်ဆောင်ထားသည်
+window.addPoultryRow = function (rowData = null) {
+    poultryRowCount++;
+    const currentCount = poultryRowCount;
+    const tbody = document.getElementById('poultryBody');
+    const tr = document.createElement('tr');
+    tr.id = 'poultryRow_' + currentCount;
     
+    tr.innerHTML = `
+        <td>
+            <select name="poultry[${currentCount}][breed]" 
+                    class="form-select form-select-sm poultry-type-select" 
+                    id="poultryId_${currentCount}" 
+                    onchange="togglePoultryAgeColumns(this); loadLiveStockSpecies('poultryId_${currentCount}','poultrySpeciesId_${currentCount}')">
+                <option value="">ရွေးချယ်ပါ...</option>
+                ${animalOptions}
+            </select>
+        </td>
+        <td>
+            <select name="poultry[${currentCount}][species]" 
+                    class="form-select form-select-sm poultry-species-select"
+                    id="poultrySpeciesId_${currentCount}">
+                 <option value="">ရွေးချယ်ပါ...</option>
+            </select>
+        </td>
+        <td><input type="number" name="poultry[${currentCount}][total]" class="form-control form-control-sm text-center fw-bold total-input" placeholder="0" readonly style="background:#f3f4f6;"></td>
+        <td class="text-center"><button type="button" onclick="removeRow('poultryRow_${currentCount}')" class="btn btn-sm text-danger"><i class="bi bi-trash"></i></button></td>
+    `;
+    tbody.appendChild(tr);
+
+    const breedSelect = tr.querySelector('.poultry-type-select');
+    const speciesSelect = tr.querySelector('.poultry-species-select');
+
+    
+    if (rowData) {
+        breedSelect.value = rowData.breed || '';
+        
+       
+        togglePoultryAgeColumns(breedSelect, rowData);
+
+        if (typeof loadLiveStockSpecies === 'function' && rowData.breed) {
+            loadLiveStockSpecies(`poultryId_${currentCount}`, `poultrySpeciesId_${currentCount}`);
+            
+            // Asynchronous ဖြင့် ဒုတိယ Dropdown ဒေတာများ ဝင်လာချိန်ကို စောင့်ဖမ်းပြီး select ပေးခြင်း
+            const observer = new MutationObserver((mutations, obs) => {
+                if (speciesSelect.options.length > 1) {
+                    speciesSelect.value = rowData.species || '';
+                    obs.disconnect();
+                }
+            });
+            observer.observe(speciesSelect, { childList: true });
+        }
+    } else {
+        togglePoultryAgeColumns(breedSelect);
+    }
+
+
+    breedSelect.addEventListener('change', saveFormDataforPart3);
+    speciesSelect.addEventListener('change', saveFormDataforPart3);
+};
+
+function poultryAgeFields(animalID) {
+    if (animalID === 'lsID02' || animalID === 'lsID05') {
+        return [{ name: 'combined', span: 6, age: '', gender: '', label: 'ကောင်ရေ' }];
+    }
+    if (animalID === 'lsID03') {
+        return [
+            { name: 'young_combined', span: 4, age: 'ageID10', gender: '', label: 'ငယ် / လတ် စုစုပေါင်း' },
+            { name: 'adult_male', span: 1, age: 'ageID11', gender: 'g01', label: 'ကြီး အထီး' },
+            { name: 'adult_female', span: 1, age: 'ageID11', gender: 'g03', label: 'ကြီး အမ' }
+        ];
+    }
+    const ages = animalID === 'lsID04' ? ['ageID12', 'ageID13', 'ageID14'] : animalID === 'lsID07' ? ['ageID15', 'ageID16', 'ageID17'] : ['ageID07', 'ageID08', 'ageID09'];
+    return ['young', 'medium', 'adult'].flatMap((age, index) => [
+        { name: `${age}_male`, span: 1, age: ages[index], gender: 'g01', label: `${age} အထီး` },
+        { name: `${age}_female`, span: 1, age: ages[index], gender: 'g03', label: `${age} အမ` }
+    ]);
+}
+
+
+window.togglePoultryAgeColumns = function (sel, rowData = null) {
+    const row = sel.closest('tr');
+    if (!rowData && row.dataset.ageAnimal === sel.value) return;
+    row.dataset.ageAnimal = sel.value;
+    
+    row.querySelectorAll('.poultry-age-cell').forEach(cell => cell.remove());
+    const total = row.querySelector('.total-input');
+    const namePrefix = sel.name.replace(/\[breed\]$/, '');
+    
+    poultryAgeFields(sel.value).forEach(field => {
+        const cell = document.createElement('td');
+        cell.className = 'poultry-age-cell';
+        cell.colSpan = field.span;
+        
+        const input = document.createElement('input');
+        input.type = 'number';
+        input.name = `${namePrefix}[${field.name}]`;
+        input.className = 'form-control form-control-sm count-input';
+        input.placeholder = '0';
+        input.min = '0';
+        input.step = '1';
+        input.dataset.ageId = field.age;
+        input.dataset.genderId = field.gender;
+        input.setAttribute('aria-label', field.label);
+        
+        // အကယ်၍ ယခင်ဖြည့်ထားသော data (ကောင်ရေ) ရှိပါက ၎င်း input ထဲသို့ ထည့်ပေးမည်
+        if (rowData && rowData[field.name] !== undefined) {
+            input.value = rowData[field.name];
+        }
+
+        input.addEventListener('input', () => {
+            calculateRowTotal(row);
+           saveFormDataforPart3()
+        });
+        
+        cell.appendChild(input);
+        row.insertBefore(cell, total.closest('td'));
+    });
+    
+    calculateRowTotal(row);
+    if (!rowData) saveFormDataforPart3();
+};
+
+function calculateRowTotal(row) {
+    const total = row.querySelector('.total-input');
+    if (total && total.readOnly) {
+        let sum = 0;
+        row.querySelectorAll('.count-input').forEach(i => { if (!i.disabled) sum += Number(i.value) || 0; });
+        total.value = sum;
+    }
+}
+
+window.removeRow = function (rowId) {
+    const r = document.getElementById(rowId);
+    if (r) r.remove();
+    saveFormDataforPart3();
+};
+
+
+function saveFormDataforPart3 () {
+    const data = {};
+    const radio = document.querySelector('input[name="has_poultry"]:checked');
+    if (radio) data['has_poultry'] = radio.value;
+
+    const poultryRows = [];
+    document.querySelectorAll('#poultryBody tr').forEach(row => {
+        const rowData = {};
+        row.querySelectorAll('input, select').forEach(inp => {
+            
+            const match = inp.name.match(/\[([^\]]+)\]$/);
+            if (match) {
+                rowData[match[1]] = inp.value;
+            }
+        });
+        if (Object.keys(rowData).length > 0) poultryRows.push(rowData);
+    });
+    data['poultry_table_dataset'] = poultryRows;
+
+    const existing = JSON.parse(sessionStorage.getItem('lbvdFormData') || '{}');
+    Object.assign(existing, data);
+    sessionStorage.setItem('lbvdFormData', JSON.stringify(existing));
+};
+
+function loadFormDataforPart3() {
+    const saved = sessionStorage.getItem('lbvdFormData');
+    if (!saved) return;
+    try {
+        const data = JSON.parse(saved);
+
+        if (data.has_poultry) {
+            const radio = document.querySelector(`input[name="has_poultry"][value="${data.has_poultry}"]`);
+            if (radio) {
+                radio.checked = true;
+                window.togglePoultryForms(); 
+            }
+        }
+
+        if (data.has_poultry === 'yes' && data.poultry_table_dataset && data.poultry_table_dataset.length > 0) {
+            const tbody = document.getElementById('poultryBody');
+            if (tbody) {
+                tbody.innerHTML = ''; 
+                poultryRowCount = 0;  
+                data.poultry_table_dataset.forEach(rowData => {
+                    window.addPoultryRow(rowData);
+                });
+            }
+        }
+    } catch (e) {
+        console.error("Error context on rehydrating poultry tables: ", e);
+    }
+};
+
+
+
     const formID = {{ form_id | tojson | safe }};
     
     // ⭐ နောက်စာမျက်နှာသို့ သွားရန် ခလုတ်တွင် Validate စစ်ဆေးမှု ထည့်သွင်းခြင်း

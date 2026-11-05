@@ -93,8 +93,13 @@ def _fetch_user_by_login(username: str):
         cursor.execute(
             "SELECT userId AS id, loginName AS login_name, password, "
             "userRole AS role_id, stateID, districtID, townshipID, status "
-            "FROM `user` WHERE loginName = %s LIMIT 1",
-            (username,),
+            "FROM `user` "
+            # loginName uses a case-insensitive unicode collation.  The binary
+            # comparison makes login case-sensitive without changing the schema.
+            "WHERE loginName = %s "
+            "AND CAST(loginName AS BINARY) = CAST(%s AS BINARY) "
+            "LIMIT 1",
+            (username, username),
         )
         return cursor.fetchone(), None
     except Exception:
@@ -109,7 +114,7 @@ def _fetch_user_by_login(username: str):
 # 🔑 WEB LOGIN
 # ============================================================
 @router.post("/api/login")
-@limiter.limit("30/10 minute")
+@limiter.limit("40/10 minute")
 async def web_login(request: Request, username: str = Form(...), password: str = Form(...)):
     username = username.strip()
     ip = _get_client_ip(request)
@@ -160,7 +165,7 @@ async def web_login(request: Request, username: str = Form(...), password: str =
 # 📱 MOBILE LOGIN (JWT)
 # ============================================================
 @router.post("/api/mobile/login")
-@limiter.limit("5/10 minute")
+@limiter.limit("40/10 minute")
 async def mobile_login(request: Request, username: str = Form(...), password: str = Form(...)):
     username = username.strip()
     ip = _get_client_ip(request)

@@ -554,14 +554,14 @@
 
     <script>
     // ==================================================
-    // ⭐ Web Inactivity Auto-Logout (၁၀ မိနစ်)
+    // ⭐ Web Inactivity Auto-Logout (၂၀ မိနစ်)
     // ==================================================
     (function() {
         // Mobile App ဖြစ်နေရင် ဒီ Script ကို လုံးဝ မလုပ်ဆောင်ပါဘူး
         const isMobileApp = /Mobile|Android|iPhone|iPad/i.test(navigator.userAgent);
         if (isMobileApp) return;
 
-        const INACTIVITY_LIMIT = 10 * 60 * 1000; // ၁၀ မိနစ် (Milliseconds)
+        const INACTIVITY_LIMIT = 20 * 60 * 1000; // ၂၀ မိနစ် (Milliseconds)
         let timeoutId;
 
         function resetTimer() {

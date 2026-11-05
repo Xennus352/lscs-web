@@ -281,6 +281,37 @@
             font-size: 0.82rem;
             line-height: 1.2;
         }
+        .topbar-rank {
+            position: absolute;
+            left: 50%;
+            transform: translateX(-50%);
+            text-align: center;
+            line-height: 1.25;
+            pointer-events: none;
+        }
+        .topbar-rank .rank-label {
+            color: #047857;
+            font-weight: 700;
+            font-size: 0.85rem;
+            white-space: nowrap;
+        }
+        .topbar-rank .rank-icon {
+            color: #10b981;
+            font-size: 0.95rem;
+            margin-right: 5px;
+            vertical-align: -1px;
+        }
+        .topbar-rank .rank-location {
+            color: #6b7280;
+            font-size: 0.72rem;
+            font-weight: 500;
+            white-space: nowrap;
+        }
+
+        /* Keep the centered rank clear of the page title on narrower desktops. */
+        @media (min-width: 768px) and (max-width: 1199.98px) {
+            .topbar.has-rank .topbar-title { display: none !important; }
+        }
         .topbar-user .user-role {
             color: #6b7280;
             font-size: 0.7rem;
@@ -417,6 +448,7 @@
             </div>
 
             <nav class="sidebar-menu">
+                {% set _role = role|default('') %}
 
                 <div class="menu-section-title">အဓိကစာမျက်နှာများ</div>
 
@@ -435,6 +467,33 @@
                     <span>ဖြည့်သွင်းပုံစံအလိုက်<br>အချက်အလက်များကြည့်ရှုခြင်း</span>
                 </a>
 
+                {% if _role == 'township' %}
+                <a href="/township/report" class="sidebar-link {% if active_page == 'township_report' %}active{% endif %}">
+                    <i class="bi bi-file-earmark-bar-graph"></i>
+                    <span>အစီရင်ခံစာများ</span>
+                </a>
+                <a href="/township/villages" class="sidebar-link {% if active_page == 'township_villages' %}active{% endif %}">
+                    <i class="bi bi-house-add"></i>
+                    <span>ကျေးရွာများထည့်သွင်းရန်</span>
+                </a>
+                {% elif _role == 'district' %}
+                <a href="/district/report" class="sidebar-link {% if active_page == 'district_report' %}active{% endif %}">
+                    <i class="bi bi-file-earmark-bar-graph"></i>
+                    <span>အစီရင်ခံစာများ</span>
+                </a>
+                {% elif _role == 'state' %}
+                <a href="/state/report" class="sidebar-link {% if active_page == 'state_report' %}active{% endif %}">
+                    <i class="bi bi-file-earmark-bar-graph"></i>
+                    <span>အစီရင်ခံစာများ</span>
+                </a>
+                
+                {% elif _role == 'union' %}
+                <a href="/union/report" class="sidebar-link {% if active_page == 'union_report' %}active{% endif %}">
+                    <i class="bi bi-file-earmark-bar-graph"></i>
+                    <span>အစီရင်ခံစာများ</span>
+                </a>
+{% endif %}
+
                 <div class="menu-section-title">အနှစ်ချုပ်စာရင်းများ</div>
 
                 <!-- <a href="/report/1" class="sidebar-link {% if active_page == 'report1' %}active{% endif %}">
@@ -446,7 +505,6 @@
                     <i class="bi bi-tags"></i>
                     <span>တိရစ္စာန်အမျိုးအစားအလိုက်</span>
                 </a> -->
-                {% set _role = role|default('') %}
                 {% if _role in ['admin', 'union', 'state', 'district', 'township'] %}
                     <a href="/admin/households" class="sidebar-link {% if active_page == 'household_summary' %}active{% endif %}">
                         <i class="bi bi-house-door"></i>
@@ -494,7 +552,10 @@
         <div id="mainContent" class="flex-grow-1" style="min-height: 100vh;">
 
             <!-- TOPBAR -->
-            <div class="topbar d-flex align-items-center justify-content-between">
+            {# Session user is available even on pages that do not pass `user` explicitly. #}
+            {% set session_user = (user if user is defined and user else (request.session.get('user') if request is defined and request.session is defined else {})) or {} %}
+            {% set header_info = get_user_header_info(session_user) %}
+            <div class="topbar d-flex align-items-center justify-content-between{% if header_info.rank_label %} has-rank{% endif %}">
                 <div class="d-flex align-items-center gap-3">
                     <button class="toggle-btn" onclick="toggleSidebar()">
                     <i class="bi bi-list"></i>
@@ -504,10 +565,21 @@
                     </h5>
                 </div>
 
+                {% if header_info.rank_label %}
+                <div class="topbar-rank d-none d-md-flex flex-column align-items-center">
+                    <div class="rank-label">
+                        {% if header_info.icon %}<i class="bi {{ header_info.icon }} rank-icon"></i>{% endif %}{{ header_info.rank_label }}
+                    </div>
+                    {% if header_info.location_line %}
+                    <div class="rank-location">{{ header_info.location_line }}</div>
+                    {% endif %}
+                </div>
+                {% endif %}
+
                 <!-- ⭐ အသုံးပြုသူ အပိုင်း -->
                 <div class="topbar-user">
 
-                    {% set sid = user_state_id if user_state_id else (user.stateID if user and user.stateID else '') %} 
+                    {% set sid = user_state_id if user_state_id else (session_user.stateID if session_user and session_user.stateID else '') %} 
                     
                     {# ⭐ Default အနေနဲ့ မြန်မာနိုင်ငံတော်အလံနဲ့ နာမည်ကို သတ်မှတ်ထားပါတယ် #}
                     {% set img_file = 'myanmar.jpg' %} 
@@ -535,7 +607,6 @@
                     <div class="d-none d-md-block">
                         <!-- ⭐ ဒီနေရာမှာ တိုင်းနာမည်ကို ပြပေးသွားမှာပါ -->
                         <div class="user-name">{{ region_name }}</div>
-
                     </div>
                 </div>
             </div>
@@ -583,14 +654,14 @@
     <script>
         
     // ==================================================
-    // ⭐ Web Inactivity Auto-Logout (၁၀ မိနစ်)
+    // ⭐ Web Inactivity Auto-Logout (၂၀ မိနစ်)
     // ==================================================
     (function() {
         // Mobile App ဖြစ်နေရင် ဒီ Script ကို လုံးဝ မလုပ်ဆောင်ပါဘူး
         const isMobileApp = /Mobile|Android|iPhone|iPad/i.test(navigator.userAgent);
         if (isMobileApp) return;
 
-        const INACTIVITY_LIMIT = 10 * 60 * 1000; // ၁၀ မိနစ် (Milliseconds)
+        const INACTIVITY_LIMIT = 20 * 60 * 1000; // ၂၀ မိနစ် (Milliseconds)
         let timeoutId;
 
         function resetTimer() {

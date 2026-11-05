@@ -2,6 +2,8 @@ import logging, os
 from pathlib import Path
 from fastapi.templating import Jinja2Templates
 
+from app.lookups import get_user_header_info
+
 logger = logging.getLogger("lbvd")
 
 HERE         = Path(__file__).resolve().parent
@@ -26,3 +28,6 @@ def to_locale_string(value, default=0):
 
 templates.env.filters["toLocaleString"] = to_locale_string
 templates.env.filters["format_number"]  = to_locale_string
+
+# Role label + district/township line for the shared top bar.
+templates.env.globals["get_user_header_info"] = get_user_header_info

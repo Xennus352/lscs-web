@@ -1,0 +1,710 @@
+{% extends 'reportBase.html' %}
+{% set active_page = 'township_report' %}
+
+{% block title %}အစီရင်ခံစာများ - LBVD{% endblock %}
+
+{% block topbar_title %}<i class="bi bi-file-earmark-bar-graph me-2"></i>အစီရင်ခံစာများ{% endblock %}
+
+{% block extra_css %}
+<style>
+    .township-report-page {
+        --tr-green: #047857;
+        --tr-green-dark: #064e3b;
+        --tr-green-soft: #ecfdf5;
+        --tr-border: #e2ebe6;
+    }
+
+    /* ================= HERO ================= */
+    .report-hero {
+        position: relative;
+        overflow: hidden;
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        flex-wrap: wrap;
+        gap: 14px;
+        padding: 18px 20px;
+        border: 1px solid #6ee7b7;
+        border-bottom-width: 2px;
+        border-radius: 16px;
+        color: #064e3b;
+        background: linear-gradient(135deg, rgba(209, 250, 229, 0.65) 0%, rgba(167, 243, 208, 0.65) 100%);
+        box-shadow: 0 8px 22px rgba(4, 120, 87, 0.10);
+    }
+    .report-hero::before,
+    .report-hero::after {
+        content: "";
+        position: absolute;
+        border-radius: 50%;
+        background: rgba(255, 255, 255, 0.34);
+        pointer-events: none;
+    }
+    .report-hero::before { width: 220px; height: 220px; right: -70px; top: -130px; }
+    .report-hero::after { width: 130px; height: 130px; right: 150px; bottom: -95px; }
+
+    .hero-main {
+        display: flex;
+        align-items: center;
+        gap: 14px;
+        min-width: 0;
+        position: relative;
+        z-index: 1;
+    }
+    .hero-icon {
+        width: 50px;
+        height: 50px;
+        border-radius: 14px;
+        flex-shrink: 0;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        background: #ffffff;
+        border: 1px solid #6ee7b7;
+        color: #047857;
+        font-size: 1.35rem;
+        box-shadow: 0 4px 12px rgba(4, 120, 87, 0.10);
+    }
+    .hero-title {
+        font-size: 1.12rem;
+        font-weight: 800;
+        line-height: 1.35;
+        margin: 0 0 3px;
+        color: #064e3b;
+    }
+    .hero-sub {
+        font-size: 0.74rem;
+        color: #047857;
+        margin: 0;
+        line-height: 1.45;
+        font-weight: 600;
+    }
+
+    .hero-stats {
+        display: flex;
+        align-items: stretch;
+        gap: 9px;
+        position: relative;
+        z-index: 1;
+    }
+    .hero-stat {
+        min-width: 118px;
+        padding: 8px 13px;
+        border-radius: 12px;
+        background: rgba(255, 255, 255, 0.58);
+        border: 1px solid rgba(110, 231, 183, 0.9);
+    }
+    .hero-stat-label {
+        display: block;
+        font-size: 0.62rem;
+        color: #047857;
+        font-weight: 700;
+        margin-bottom: 2px;
+    }
+    .hero-stat-value {
+        display: block;
+        font-size: 1.15rem;
+        font-weight: 800;
+        line-height: 1.15;
+        color: #064e3b;
+    }
+
+    /* ================= FILTER ================= */
+    .filter-card {
+        position: relative;
+        border: 1px solid var(--tr-border);
+        border-radius: 14px;
+        box-shadow: 0 4px 16px rgba(2, 44, 34, 0.05);
+        background: #ffffff;
+        overflow: hidden;
+    }
+    .filter-card::before {
+        content: "";
+        position: absolute;
+        inset: 0 0 auto 0;
+        height: 2px;
+        background: linear-gradient(90deg, #10b981, #34d399 45%, #a7f3d0);
+    }
+    .filter-card-head {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        padding: 9px 14px;
+        background: linear-gradient(180deg, #f7fdfa 0%, #ffffff 100%);
+        border-bottom: 1px solid #eef2f0;
+    }
+    .filter-head-icon {
+        width: 30px;
+        height: 30px;
+        border-radius: 9px;
+        flex-shrink: 0;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        background: linear-gradient(135deg, #059669, #34d399);
+        color: #ffffff;
+        font-size: 0.82rem;
+        box-shadow: 0 3px 8px rgba(5, 150, 105, 0.25);
+    }
+    .filter-title {
+        font-size: 0.82rem;
+        font-weight: 800;
+        color: var(--tr-green-dark);
+        line-height: 1.3;
+    }
+    .filter-sub {
+        font-size: 0.67rem;
+        color: #64748b;
+        line-height: 1.4;
+        margin-top: 1px;
+    }
+    .filter-body { padding: 10px 14px 12px; }
+    .filter-grid {
+        display: grid;
+        grid-template-columns: repeat(6, minmax(0, 1fr));
+        gap: 8px 12px;
+        align-items: end;
+    }
+    .filter-field {
+        min-width: 0;
+        grid-column: span 2;
+    }
+    .filter-label {
+        font-size: 0.65rem;
+        font-weight: 600;
+        color: #475569;
+        margin-bottom: 3px;
+        display: flex;
+        align-items: center;
+        gap: 4px;
+        line-height: 1.25;
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
+    }
+    .filter-label i { color: #10b981; font-size: 0.66rem; flex-shrink: 0; }
+    .filter-card .form-control {
+        font-size: 0.74rem;
+        border: 1px solid #e2e8f0;
+        border-radius: 8px;
+        padding: 5px 9px;
+        color: #0f172a;
+        font-weight: 500;
+        background-color: #ffffff;
+        min-height: 34px;
+        box-shadow: 0 1px 1px rgba(15, 23, 42, 0.02);
+        transition: border-color 0.15s ease, box-shadow 0.15s ease, background-color 0.15s ease;
+    }
+    .filter-card .form-control:focus {
+        border-color: #10b981;
+        box-shadow: 0 0 0 3px rgba(16, 185, 129, 0.12);
+        background-color: #ffffff;
+    }
+    .filter-card .form-control[readonly] {
+        background-color: #f1f5f3;
+        color: #475569;
+        border-color: #e8eeeb;
+        cursor: default;
+    }
+    .filter-actions {
+        display: flex;
+        align-items: center;
+        justify-content: flex-end;
+        gap: 6px;
+        flex-shrink: 0;
+        grid-column: span 2;
+    }
+    .btn-filter-submit,
+    .btn-filter-reset {
+        min-width: 136px;
+        padding: 6px 12px;
+        border-radius: 8px;
+        font-size: 0.71rem;
+        font-weight: 700;
+        line-height: 1.35;
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        gap: 5px;
+        white-space: nowrap;
+        transition: all 0.16s ease;
+        text-decoration: none;
+    }
+    .btn-filter-submit {
+        background: linear-gradient(135deg, #6ee7b7, #a7f3d0);
+        color: #064e3b;
+        border: 1px solid #6ee7b7;
+        box-shadow: 0 3px 10px rgba(16, 185, 129, 0.16);
+    }
+    .btn-filter-submit:hover {
+        background: linear-gradient(135deg, #34d399, #6ee7b7);
+        border-color: #34d399;
+        color: #064e3b;
+        box-shadow: 0 5px 14px rgba(16, 185, 129, 0.24);
+    }
+    .btn-filter-reset {
+        background: #ffffff;
+        color: #475569;
+        border: 1px solid #dbe3e0;
+    }
+    .btn-filter-reset:hover {
+        background: #f8fafc;
+        border-color: #94a3b8;
+        color: #0f172a;
+    }
+    .filter-note {
+        display: flex;
+        align-items: flex-start;
+        gap: 6px;
+        margin-top: 9px;
+        padding-top: 9px;
+        border-top: 1px dashed #e2ebe6;
+        color: #64748b;
+        font-size: 0.66rem;
+        line-height: 1.5;
+    }
+    .filter-note i { color: #0ea5e9; margin-top: 1px; flex-shrink: 0; }
+
+    /* ================= TABLE ================= */
+    .table-section {
+        border: 1px solid var(--tr-border);
+        border-radius: 14px;
+        box-shadow: 0 4px 16px rgba(2, 44, 34, 0.05);
+        overflow: hidden;
+        background: #ffffff;
+    }
+    .table-section .sec-header {
+        background: #ecfdf5;
+        color: #065f46;
+        padding: 12px 18px;
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        flex-wrap: wrap;
+        gap: 8px;
+        border-bottom: 1px solid #a7f3d0;
+    }
+    .table-section .sec-header h6 {
+        font-size: 0.9rem;
+        font-weight: 700;
+        margin: 0;
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        color: #065f46;
+    }
+    .table-section .sec-header h6 i { color: #10b981; }
+    .badge-count {
+        font-size: 0.7rem;
+        font-weight: 700;
+        background: #ffffff;
+        color: #047857;
+        padding: 3px 10px;
+        border-radius: 999px;
+        box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+    }
+    .table-head-actions {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        flex-wrap: wrap;
+    }
+    .btn-export-excel {
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        gap: 6px;
+        border: 1px solid #059669;
+        border-radius: 9px;
+        padding: 5px 12px;
+        background: #ffffff;
+        color: #047857;
+        font-size: 0.72rem;
+        font-weight: 700;
+        line-height: 1.35;
+        white-space: nowrap;
+        transition: all 0.16s ease;
+    }
+    .btn-export-excel:hover {
+        background: #059669;
+        border-color: #059669;
+        color: #ffffff;
+        box-shadow: 0 4px 10px rgba(5, 150, 105, 0.25);
+        transform: translateY(-1px);
+    }
+    .btn-export-excel i { font-size: 0.86rem; }
+
+    /* ================= EXPORT CONFIRM MODAL ================= */
+    #townshipExportModal .modal-dialog {
+        max-width: 420px;
+        width: calc(100% - 32px);
+    }
+    #townshipExportModal .modal-content {
+        border: 0;
+        border-radius: 18px;
+        overflow: hidden;
+        box-shadow: 0 24px 60px rgba(6, 78, 59, 0.22);
+    }
+    #townshipExportModal .export-accent {
+        height: 5px;
+        background: linear-gradient(90deg, #059669, #34d399, #a7f3d0);
+    }
+    #townshipExportModal .modal-body { padding: 1.4rem 1.5rem 1.15rem; }
+    .export-modal-icon {
+        width: 58px;
+        height: 58px;
+        border-radius: 50%;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        margin: 0 auto 12px;
+        background: #ecfdf5;
+        border: 1px solid #a7f3d0;
+        color: #047857;
+        font-size: 1.55rem;
+    }
+    #townshipExportModal .modal-title {
+        font-size: 1rem;
+        font-weight: 800;
+        color: #064e3b;
+    }
+    #townshipExportModal .export-subtitle {
+        font-size: 0.78rem;
+        color: #64748b;
+        line-height: 1.6;
+        margin: 7px 0 12px;
+    }
+    .export-filter-summary {
+        text-align: left;
+        background: #f8fafc;
+        border: 1px solid #e2e8f0;
+        border-radius: 10px;
+        padding: 9px 11px;
+        font-size: 0.73rem;
+        color: #475569;
+        line-height: 1.65;
+    }
+    .export-filter-summary strong { color: #064e3b; }
+    #townshipExportModal .modal-footer { border-top: 0; padding: 0 1.5rem 1.35rem; }
+    #townshipExportModal .btn {
+        border-radius: 9px;
+        font-size: 0.78rem;
+        font-weight: 700;
+        padding: 7px 12px;
+    }
+    #townshipExportModal .btn-light {
+        background: #f8fafc;
+        border-color: #e2e8f0;
+        color: #475569;
+    }
+    #townshipExportModal .btn-export-confirm {
+        background: #059669;
+        border-color: #059669;
+        color: #ffffff;
+    }
+    #townshipExportModal .btn-export-confirm:hover {
+        background: #047857;
+        border-color: #047857;
+        color: #ffffff;
+        box-shadow: 0 5px 14px rgba(5, 150, 105, 0.28);
+    }
+
+    .report-table {
+        width: 100%;
+        min-width: 760px;
+        border-collapse: collapse;
+        font-size: 0.78rem;
+        margin: 0;
+    }
+    .report-table thead th {
+        background: #f8fafc;
+        color: #065f46;
+        font-weight: 700;
+        font-size: 0.7rem;
+        letter-spacing: 0.2px;
+        padding: 10px 8px;
+        text-align: center;
+        border: 1px solid #e2e8f0;
+        vertical-align: middle;
+    }
+    .report-table tbody td {
+        padding: 9px 10px;
+        border: 1px solid #e5e7eb;
+        color: #374151;
+        font-weight: 600;
+        vertical-align: middle;
+    }
+    .report-table tbody tr:nth-child(even) td { background: #fbfefc; }
+    .report-table tbody tr:hover td { background: #f0fdf4; }
+    .report-table .sr-cell {
+        width: 58px;
+        text-align: center;
+        color: #047857;
+        font-weight: 800;
+    }
+    .report-table .village-name {
+        text-align: left;
+        color: #064e3b;
+        font-weight: 700;
+        padding-left: 14px;
+    }
+    .report-table .code-cell {
+        width: 190px;
+        text-align: center;
+        color: #64748b;
+    }
+    .report-table .count-cell {
+        width: 180px;
+        text-align: center;
+        color: #047857;
+        font-weight: 800;
+        font-size: 0.86rem;
+    }
+    .report-table .remark-cell {
+        width: 160px;
+        text-align: left;
+    }
+    .report-table .empty-row td {
+        text-align: center;
+        color: #9ca3af;
+        font-style: italic;
+        padding: 22px;
+    }
+
+    .report-alert {
+        display: flex;
+        align-items: flex-start;
+        gap: 8px;
+        border-radius: 10px;
+        padding: 10px 14px;
+        margin-bottom: 12px;
+        font-size: 0.78rem;
+        color: #92400e;
+        background: #fffbeb;
+        border: 1px solid #fde68a;
+    }
+    .report-alert i { color: #f59e0b; margin-top: 2px; flex-shrink: 0; }
+
+    @media (max-width: 1199.98px) {
+        .filter-grid { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+        .filter-field { grid-column: span 1; }
+        .filter-grid .filter-actions { grid-column: 1 / -1; }
+    }
+    @media (max-width: 767.98px) {
+        .filter-grid { grid-template-columns: 1fr; }
+        .filter-field { grid-column: span 1; }
+        .filter-grid .filter-actions { display: grid; grid-template-columns: 1fr 1fr; grid-column: 1 / -1; }
+        .btn-filter-submit,
+        .btn-filter-reset { min-width: 0; width: 100%; }
+    }
+    @media (max-width: 575.98px) {
+        .hero-stats { width: 100%; }
+        .hero-stat { flex: 1 1 0; min-width: 0; }
+        .report-table { font-size: 0.72rem; min-width: 680px; }
+        .report-table thead th { font-size: 0.64rem; padding: 8px 5px; }
+        .report-table tbody td { padding: 7px 6px; }
+    }
+</style>
+{% endblock %}
+
+{% block page_content %}
+<div class="township-report-page">
+
+    {% if error %}
+    <div class="report-alert" role="alert">
+        <i class="bi bi-exclamation-triangle-fill"></i>
+        <span>{{ error }}</span>
+    </div>
+    {% endif %}
+
+    <div class="report-hero mb-3">
+        <div class="hero-main">
+            <div class="hero-icon"><i class="bi bi-file-earmark-bar-graph"></i></div>
+            <div>
+                <h4 class="hero-title">{{ township_name }} — ကျေးရွာအုပ်စု/ကျေးရွာအလိုက် အိမ်ထောင်စုစာရင်း</h4>
+                <p class="hero-sub">သင့်အကောင့်၏ မြို့နယ်အတွင်း ကျေးရွာများအလိုက် စာရင်းကောက်ယူပြီးသော အိမ်ထောင်စုအရေအတွက်</p>
+            </div>
+        </div>
+        <div class="hero-stats">
+            <div class="hero-stat">
+                <span class="hero-stat-label">ကျေးရွာအုပ်စု/ကျေးရွာ</span>
+                <span class="hero-stat-value">{{ total_villages }}</span>
+            </div>
+            <div class="hero-stat">
+                <span class="hero-stat-label">အိမ်ထောင်စု စုစုပေါင်း</span>
+                <span class="hero-stat-value">{{ total_households }}</span>
+            </div>
+        </div>
+    </div>
+
+    <form method="GET" action="/township/report" id="townshipReportFilter">
+        <div class="filter-card mb-3">
+            <div class="filter-card-head">
+                <div class="filter-head-icon"><i class="bi bi-calendar-range-fill"></i></div>
+                <div>
+                    <div class="filter-title">အစီရင်ခံစာ ကြည့်ရှုရန်</div>
+                    <div class="filter-sub">တိုင်း/ခရိုင်/မြို့နယ်ကို သင့်အကောင့်အလိုက် သတ်မှတ်ထားပြီး ရက်စွဲဖြင့် စစ်ထုတ်နိုင်ပါသည်။</div>
+                </div>
+            </div>
+
+            <div class="filter-body">
+                <div class="filter-grid">
+                    <div class="filter-field">
+                        <label class="filter-label" for="reportState">
+                            <i class="bi bi-geo-alt-fill"></i>တိုင်းဒေသကြီး/ပြည်နယ်
+                        </label>
+                        <input type="text" id="reportState" class="form-control"
+                               value="{{ state_name }}" readonly>
+                    </div>
+                    <div class="filter-field">
+                        <label class="filter-label" for="reportDistrict">
+                            <i class="bi bi-signpost-split-fill"></i>ခရိုင်
+                        </label>
+                        <input type="text" id="reportDistrict" class="form-control"
+                               value="{{ district_name }}" readonly>
+                    </div>
+                    <div class="filter-field">
+                        <label class="filter-label" for="reportTownship">
+                            <i class="bi bi-building-fill"></i>မြို့နယ်
+                        </label>
+                        <input type="text" id="reportTownship" class="form-control"
+                               value="{{ township_name }}" readonly>
+                    </div>
+                    <div class="filter-field">
+                        <label class="filter-label" for="reportStartDate">
+                            <i class="bi bi-calendar-event-fill"></i>စတင်သည့်ရက်
+                        </label>
+                        <input type="date" id="reportStartDate" name="start_date"
+                               class="form-control" value="{{ filters.start_date or '' }}">
+                    </div>
+                    <div class="filter-field">
+                        <label class="filter-label" for="reportEndDate">
+                            <i class="bi bi-calendar-check-fill"></i>ပြီးဆုံးသည့်ရက်
+                        </label>
+                        <input type="date" id="reportEndDate" name="end_date"
+                               class="form-control" value="{{ filters.end_date or '' }}">
+                    </div>
+                    <div class="filter-actions">
+                        <a href="/township/report" class="btn-filter-reset">
+                            <i class="bi bi-arrow-counterclockwise"></i> ပြန်လည်သတ်မှတ်မည်
+                        </a>
+                        <button type="submit" class="btn-filter-submit">
+                            <i class="bi bi-search"></i> ကြည့်ရှုမည်
+                        </button>
+                    </div>
+                </div>
+                <div class="filter-note">
+                    <i class="bi bi-lock-fill"></i>
+                    <span>တိုင်းဒေသကြီး/ပြည်နယ်၊ ခရိုင်နှင့် မြို့နယ်တို့ကို သင့်အကောင့်၏ နယ်မြေအလိုက် အလိုအလျောက် သတ်မှတ်ထားပါသည်။</span>
+                </div>
+            </div>
+        </div>
+    </form>
+
+    <div class="table-section">
+        <div class="sec-header">
+            <h6><i class="bi bi-table"></i> ကျေးရွာအုပ်စု/ကျေးရွာအလိုက် အိမ်ထောင်စုစာရင်း</h6>
+            <div class="table-head-actions">
+                <span class="badge-count">{{ total_villages }} ရွာ</span>
+                <button type="button" class="btn-export-excel"
+                        data-bs-toggle="modal" data-bs-target="#townshipExportModal">
+                    <i class="bi bi-file-earmark-excel-fill"></i> Excel ထုတ်ယူမည်
+                </button>
+            </div>
+        </div>
+        <div class="table-responsive">
+            <table class="report-table">
+                <thead>
+                    <tr>
+                        <th style="width:58px;">စဉ်</th>
+                        <th>စာရင်းကောက်ယူသောကျေးရွာရပ် ကွက်အမည်</th>
+                        <th style="width:190px;">Village/Ward P-code</th>
+                        <th style="width:180px;">အိမ်ထောင်စုအရေအတွက်</th>
+                        <th style="width:160px;">မှတ်ချက်</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for row in villages %}
+                    <tr>
+                        <td class="sr-cell">{{ loop.index }}</td>
+                        <td class="village-name">{{ row.villageName or '' }}</td>
+                        <td class="code-cell">-</td>
+                        <td class="count-cell">{{ row.household_count|int }}</td>
+                        <td class="remark-cell"></td>
+                    </tr>
+                    {% else %}
+                    <tr class="empty-row">
+                        <td colspan="5">ဤကာလအတွင်း မှတ်တမ်းရှိသော ကျေးရွာအုပ်စု/ကျေးရွာ မရှိပါ</td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+
+    <!-- ==================== EXCEL EXPORT CONFIRM MODAL ==================== -->
+    <div class="modal fade" id="townshipExportModal" tabindex="-1"
+         aria-labelledby="townshipExportModalLabel" aria-hidden="true">
+        <div class="modal-dialog modal-dialog-centered">
+            <div class="modal-content">
+                <div class="export-accent"></div>
+                <div class="modal-body text-center">
+                    <div class="export-modal-icon">
+                        <i class="bi bi-file-earmark-excel-fill"></i>
+                    </div>
+                    <h5 class="modal-title" id="townshipExportModalLabel">Excel ဖိုင် ထုတ်ယူရန် သေချာပါသလား?</h5>
+                    <p class="export-subtitle">
+                        လက်ရှိ စစ်ထုတ်ထားသော အချက်အလက်များအတိုင်း Excel ဖိုင်ကို ထုတ်ယူပါမည်။
+                    </p>
+                    <div class="export-filter-summary">
+                        <div><span>တိုင်းဒေသကြီး/ပြည်နယ်</span> - <strong>{{ state_name }}</strong></div>
+                        <div><span>ခရိုင်</span> - <strong>{{ district_name }}</strong></div>
+                        <div><span>မြို့နယ်</span> - <strong>{{ township_name }}</strong></div>
+                        <div>
+                            <span>ရက်စွဲ</span> -
+                            <strong>
+                                {% if filters.start_date and filters.end_date %}
+                                    {{ filters.start_date }} မှ {{ filters.end_date }} ထိ
+                                {% elif filters.start_date %}
+                                    {{ filters.start_date }} မှ ထိ
+                                {% elif filters.end_date %}
+                                    မှ {{ filters.end_date }} ထိ
+                                {% else %}
+                                    အားလုံး
+                                {% endif %}
+                            </strong>
+                        </div>
+                        <div><span>ကျေးရွာအုပ်စု/ကျေးရွာ</span> - <strong>{{ total_villages }}</strong> ရွာ</div>
+                        <div><span>အိမ်ထောင်စု စုစုပေါင်း</span> - <strong>{{ total_households }}</strong></div>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-light flex-fill" data-bs-dismiss="modal">
+                        <i class="bi bi-x-lg me-1"></i> မလုပ်တော့ပါ
+                    </button>
+                    <a id="townshipExportConfirm"
+                       href="/township/report/export?start_date={{ (filters.start_date or '')|urlencode }}&amp;end_date={{ (filters.end_date or '')|urlencode }}"
+                       class="btn btn-export-confirm flex-fill">
+                        <i class="bi bi-download me-1"></i> ထုတ်ယူမည်
+                    </a>
+                </div>
+            </div>
+        </div>
+    </div>
+
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+    document.addEventListener('DOMContentLoaded', function () {
+        const modalEl = document.getElementById('townshipExportModal');
+        const confirmLink = document.getElementById('townshipExportConfirm');
+        if (!modalEl || !confirmLink) return;
+
+        confirmLink.addEventListener('click', function () {
+            const modal = bootstrap.Modal.getInstance(modalEl);
+            if (modal) modal.hide();
+        });
+    });
+</script>
+{% endblock %}

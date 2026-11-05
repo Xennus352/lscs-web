@@ -31,6 +31,39 @@ logger = logging.getLogger("lbvd")
 router = APIRouter(tags=["survey"])
 
 
+def _resolve_village_id(db, state_id, district_id, township_id, qv_id, value):
+    """Return the villageID for a submitted village value.
+
+    New forms submit villageID, but older pages/clients may still submit the
+    village name. Normalise both to the ID so personcv always stores IDs.
+    """
+    value = str(value or "").strip()
+    if not value or not all((state_id, district_id, township_id, qv_id)):
+        return value
+    try:
+        row = db.execute(
+            text("""
+                SELECT villageID
+                FROM village
+                WHERE stateID = :state_id AND districtID = :district_id
+                  AND townshipID = :township_id AND QVID = :qv_id
+                  AND (villageID = :value OR LOWER(TRIM(villageName)) = LOWER(:value))
+                LIMIT 1
+            """),
+            {
+                "state_id": state_id,
+                "district_id": district_id,
+                "township_id": township_id,
+                "qv_id": qv_id,
+                "value": value,
+            },
+        ).mappings().first()
+    except Exception as e:
+        logger.warning("Village ID lookup failed for %r: %s", value, e)
+        return value
+    return row["villageID"] if row else value
+
+
 class AnimalDataCompat(BaseModel):
     formID: str
     animalTypeID: str
@@ -136,6 +169,8 @@ async def compat_process_step_1(
         state_id = _compat_session_state_id(request)
         if not state_id:
             raise HTTPException(400, "ပြည်နယ်/တိုင်းကို အရင်ရွေးချယ်ပါ။")
+
+    wardName = _resolve_village_id(db, state_id, districtID, townshipID, qvID, wardName)
 
     if collection_status not in ("0", "1"):
         raise HTTPException(400, "ကောက်ယူမှုအခြေအနေ မမှန်ကန်ပါ။")
@@ -325,6 +360,13 @@ async def compat_submit_survey(formID: str, request: Request, db: Session = Depe
 
     if not state_id or not step1:
         raise HTTPException(400, "Survey အချက်အလက် မပြည့်စုံပါ။")
+
+    # Also normalise sessions that were started before the form switched to
+    # submitting villageID (e.g. an in-progress draft).
+    step1["wardName"] = _resolve_village_id(
+        db, state_id, step1.get("districtID"), step1.get("townshipID"),
+        step1.get("qvID"), step1.get("wardName"),
+    )
 
     collecting = step1.get("status", 1) == 1
     interviewer = request.session.get("interviewer") if collecting else ""

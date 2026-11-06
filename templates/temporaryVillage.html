@@ -1,0 +1,2015 @@
+{% extends 'reportBase.html' %}
+{% set active_page = 'temporary_village' %}
+
+{% block title %}ကျေးရွာများထည့်သွင်းရန် - LBVD{% endblock %}
+
+{% block topbar_title %}<i class="bi bi-house-add me-2"></i>ကျေးရွာများထည့်သွင်းရန်{% endblock %}
+
+{% block extra_css %}
+<style>
+    .village-page {
+        --v-green: #047857;
+        --v-green-dark: #064e3b;
+        --v-green-soft: #ecfdf5;
+        --v-border: #e2ebe6;
+    }
+
+    /* ================= HERO ================= */
+    .village-hero {
+        position: relative;
+        overflow: hidden;
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        flex-wrap: wrap;
+        gap: 14px;
+        padding: 18px 20px;
+        border: 1px solid #6ee7b7;
+        border-bottom-width: 2px;
+        border-radius: 16px;
+        color: #064e3b;
+        background: linear-gradient(135deg, rgba(209, 250, 229, 0.6) 0%, rgba(167, 243, 208, 0.6) 100%);
+        box-shadow: 0 8px 22px rgba(4, 120, 87, 0.10);
+    }
+    .village-hero::before,
+    .village-hero::after {
+        content: "";
+        position: absolute;
+        border-radius: 50%;
+        background: rgba(255, 255, 255, 0.34);
+        pointer-events: none;
+    }
+    .village-hero::before { width: 220px; height: 220px; right: -70px; top: -130px; }
+    .village-hero::after { width: 130px; height: 130px; right: 150px; bottom: -95px; }
+
+    .hero-main { display: flex; align-items: center; gap: 14px; min-width: 0; position: relative; z-index: 1; }
+    .hero-icon {
+        width: 50px; height: 50px; border-radius: 14px; flex-shrink: 0;
+        display: flex; align-items: center; justify-content: center;
+        background: #ffffff;
+        border: 1px solid #6ee7b7;
+        color: #047857;
+        font-size: 1.35rem;
+        box-shadow: 0 4px 12px rgba(4, 120, 87, 0.10);
+    }
+    .hero-title { font-size: 1.12rem; font-weight: 800; line-height: 1.35; margin: 0 0 3px; color: #064e3b; }
+    .hero-sub { font-size: 0.74rem; color: #047857; margin: 0; line-height: 1.45; font-weight: 600; }
+
+    .hero-stats { display: flex; align-items: stretch; gap: 9px; position: relative; z-index: 1; }
+    .hero-stat {
+        min-width: 108px; padding: 8px 13px; border-radius: 12px;
+        background: rgba(255, 255, 255, 0.58);
+        border: 1px solid rgba(110, 231, 183, 0.9);
+    }
+    .hero-stat-label { display: block; font-size: 0.62rem; color: #047857; font-weight: 700; margin-bottom: 2px; }
+    .hero-stat-value { display: block; font-size: 1.15rem; font-weight: 800; line-height: 1.15; color: #064e3b; }
+
+    /* ================= FILTER ================= */
+    .filter-card {
+        position: relative;
+        border: 1px solid var(--v-border); border-radius: 14px;
+        box-shadow: 0 4px 16px rgba(2, 44, 34, 0.05);
+        background: #ffffff; overflow: hidden;
+    }
+    .filter-card::before {
+        content: ""; position: absolute; inset: 0 0 auto 0; height: 2px;
+        background: linear-gradient(90deg, #10b981, #34d399 45%, #a7f3d0);
+    }
+    .filter-card-head {
+        display: flex; align-items: center; gap: 10px;
+        padding: 9px 14px;
+        background: linear-gradient(180deg, #f7fdfa 0%, #ffffff 100%);
+        border-bottom: 1px solid #eef2f0;
+    }
+    .filter-head-icon {
+        width: 30px; height: 30px; border-radius: 9px; flex-shrink: 0;
+        display: flex; align-items: center; justify-content: center;
+        background: linear-gradient(135deg, #059669, #34d399);
+        color: #ffffff; font-size: 0.82rem;
+        box-shadow: 0 3px 8px rgba(5, 150, 105, 0.25);
+    }
+    .filter-title { font-size: 0.82rem; font-weight: 800; color: var(--v-green-dark); line-height: 1.3; }
+    .filter-sub { font-size: 0.67rem; color: #64748b; line-height: 1.4; margin-top: 1px; }
+    .filter-body { padding: 10px 14px 12px; }
+    .filter-grid {
+        display: grid;
+        grid-template-columns: repeat(4, minmax(0, 1fr)) auto;
+        gap: 8px 12px;
+        align-items: end;
+    }
+    .filter-field { min-width: 0; }
+    .filter-label {
+        font-size: 0.65rem; font-weight: 600; color: #475569;
+        margin-bottom: 3px; display: flex; align-items: center; gap: 4px;
+        line-height: 1.25; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+    }
+    .filter-label i { color: #10b981; font-size: 0.66rem; flex-shrink: 0; }
+    .filter-card .form-select {
+        font-size: 0.74rem; border: 1px solid #e2e8f0; border-radius: 8px;
+        padding: 5px 28px 5px 9px; color: #0f172a; font-weight: 500;
+        background-color: #ffffff; min-height: 34px;
+        box-shadow: 0 1px 1px rgba(15, 23, 42, 0.02);
+        transition: border-color 0.15s ease, box-shadow 0.15s ease;
+    }
+    .filter-card .form-select:focus {
+        border-color: #10b981; box-shadow: 0 0 0 3px rgba(16, 185, 129, 0.12);
+    }
+    .filter-card .form-select:disabled {
+        background-color: #f1f5f3; color: #64748b; border-color: #e8eeeb;
+        cursor: not-allowed; opacity: 1;
+    }
+    .filter-actions {
+        display: flex; align-items: center; justify-content: flex-end;
+        gap: 6px; flex-shrink: 0;
+    }
+    .btn-filter-submit,
+    .btn-filter-reset {
+        min-width: 136px; padding: 6px 12px; border-radius: 8px;
+        font-size: 0.71rem; font-weight: 700; line-height: 1.35;
+        display: inline-flex; align-items: center; justify-content: center; gap: 5px;
+        white-space: nowrap; transition: all 0.16s ease; text-decoration: none;
+    }
+    .btn-filter-submit {
+        background: linear-gradient(135deg, #6ee7b7, #a7f3d0);
+        color: #064e3b; border: 1px solid #6ee7b7;
+        box-shadow: 0 3px 10px rgba(16, 185, 129, 0.16);
+    }
+    .btn-filter-submit:hover {
+        background: linear-gradient(135deg, #34d399, #6ee7b7);
+        border-color: #34d399; color: #064e3b;
+        box-shadow: 0 5px 14px rgba(16, 185, 129, 0.24);
+    }
+    .btn-filter-reset { background: #ffffff; color: #475569; border: 1px solid #dbe3e0; }
+    .btn-filter-reset:hover { background: #f8fafc; border-color: #94a3b8; color: #0f172a; }
+
+    /* ================= PANELS ================= */
+    .panel-card {
+        height: 100%;
+        background: #ffffff;
+        border: 1px solid var(--v-border);
+        border-radius: 14px;
+        box-shadow: 0 4px 16px rgba(2, 44, 34, 0.05);
+        overflow: hidden;
+    }
+    .panel-head {
+        display: flex; align-items: center; justify-content: space-between;
+        gap: 10px; padding: 12px 15px;
+        border-bottom: 1px solid #eef2f0;
+        background: linear-gradient(180deg, #fbfefd 0%, #ffffff 100%);
+    }
+    .panel-head h6 {
+        display: flex; align-items: center; gap: 7px;
+        font-size: 0.84rem; font-weight: 800; color: var(--v-green-dark);
+        margin: 0; line-height: 1.35;
+    }
+    .panel-head h6 i { color: #10b981; }
+    .panel-body { padding: 15px; }
+
+    .count-badge {
+        display: inline-flex; align-items: center; gap: 4px;
+        border-radius: 999px; padding: 3px 9px;
+        background: var(--v-green-soft); color: var(--v-green);
+        border: 1px solid #a7f3d0;
+        font-size: 0.66rem; font-weight: 800; white-space: nowrap;
+    }
+
+    /* ================= ADD FORM ================= */
+    .add-card-accent {
+        width: 38px; height: 38px; border-radius: 11px; flex-shrink: 0;
+        display: flex; align-items: center; justify-content: center;
+        background: linear-gradient(135deg, #a7f3d0, #6ee7b7);
+        color: #064e3b; font-size: 1rem;
+        box-shadow: 0 4px 11px rgba(16, 185, 129, 0.16);
+    }
+    .panel-head h6 .add-card-accent i { color: #064e3b; }
+    .add-intro {
+        font-size: 0.72rem; line-height: 1.6; color: #64748b;
+        background: #f8fafc; border: 1px dashed #dbe7e1;
+        border-radius: 9px; padding: 8px 10px; margin-bottom: 14px;
+    }
+    .add-intro i { color: #10b981; margin-right: 3px; }
+    .add-form .form-label {
+        font-size: 0.72rem; font-weight: 700; color: #334155;
+        margin-bottom: 5px; display: flex; align-items: center; gap: 4px;
+    }
+    .add-form .form-label .req { color: #ef4444; }
+    .add-form .form-select,
+    .add-form .form-control {
+        border: 1px solid #dfe8e4; border-radius: 9px;
+        font-size: 0.8rem; color: #0f172a; min-height: 40px;
+        padding: 7px 11px; background-color: #fff;
+        box-shadow: 0 1px 2px rgba(15, 23, 42, 0.02);
+    }
+    .add-form .form-select:focus,
+    .add-form .form-control:focus {
+        border-color: #10b981;
+        box-shadow: 0 0 0 3px rgba(16, 185, 129, 0.12);
+    }
+    .add-form .form-control::placeholder { color: #9aa7a1; font-weight: 400; }
+    .name-hint {
+        display: flex; align-items: flex-start; gap: 5px;
+        margin-top: 6px; font-size: 0.66rem; color: #7b8b83; line-height: 1.45;
+    }
+    .name-hint i { color: #10b981; margin-top: 1px; flex-shrink: 0; }
+
+    .btn-add-village {
+        width: 100%; border: 0; border-radius: 9px; min-height: 40px;
+        padding: 8px 14px; margin-top: 14px;
+        display: flex; align-items: center; justify-content: center; gap: 6px;
+        background: linear-gradient(135deg, #34d399, #6ee7b7);
+        color: #064e3b; font-size: 0.78rem; font-weight: 800;
+        box-shadow: 0 5px 14px rgba(16, 185, 129, 0.18);
+        transition: transform 0.16s ease, box-shadow 0.16s ease, opacity 0.16s ease;
+    }
+    .btn-add-village:hover:not(:disabled) {
+        transform: translateY(-1px);
+        box-shadow: 0 8px 18px rgba(16, 185, 129, 0.24);
+    }
+    .btn-add-village:disabled { opacity: 0.65; cursor: not-allowed; }
+
+    .id-note {
+        display: flex; align-items: flex-start; gap: 7px;
+        margin-top: 13px; padding-top: 12px;
+        border-top: 1px dashed #e2ebe6;
+        font-size: 0.66rem; color: #64748b; line-height: 1.55;
+    }
+    .id-note i { color: #0ea5e9; margin-top: 1px; flex-shrink: 0; }
+
+    /* ================= EXCEL IMPORT ================= */
+    .excel-actions {
+        display: flex; flex-wrap: wrap; gap: 8px;
+        margin-top: 10px;
+    }
+    .btn-import-excel {
+        flex: 1 1 150px; border: 1px solid #bfe8d5; border-radius: 9px; min-height: 38px;
+        padding: 7px 12px;
+        display: flex; align-items: center; justify-content: center; gap: 6px;
+        background: #ecfdf5; color: #047857; font-size: 0.74rem; font-weight: 800;
+        transition: background-color 0.16s ease, border-color 0.16s ease, transform 0.16s ease;
+    }
+    .btn-import-excel:hover:not(:disabled) {
+        background: #d1fae5; border-color: #6ee7b7; transform: translateY(-1px);
+    }
+    .btn-import-excel:disabled { opacity: 0.6; cursor: not-allowed; }
+    .btn-sample-excel {
+        flex: 1 1 150px; border: 1px dashed #cbd5e1; border-radius: 9px; min-height: 38px;
+        padding: 7px 12px;
+        display: flex; align-items: center; justify-content: center; gap: 6px;
+        background: #ffffff; color: #475569;
+        font-size: 0.73rem; font-weight: 700; text-decoration: none;
+        transition: background-color 0.16s ease, border-color 0.16s ease, color 0.16s ease;
+    }
+    .btn-sample-excel:hover { background: #f8fafc; border-color: #94a3b8; color: #0f172a; }
+    .excel-guide {
+        margin-top: 14px; padding-top: 12px; border-top: 1px dashed #e2ebe6;
+    }
+    .excel-guide-title {
+        display: flex; align-items: center; gap: 5px;
+        font-size: 0.7rem; font-weight: 800; color: #334155; margin-bottom: 6px;
+    }
+    .excel-guide-title i { color: #10b981; }
+    .excel-guide ul {
+        margin: 0; padding-left: 18px;
+        font-size: 0.66rem; line-height: 1.6; color: #64748b;
+    }
+    .excel-guide li { margin-bottom: 3px; }
+    .excel-guide code {
+        background: #f1f5f3; color: #047857; border-radius: 4px;
+        padding: 1px 4px; font-size: 0.65rem;
+    }
+    .import-result {
+        margin-top: 12px; border-radius: 9px; border: 1px solid #fde68a;
+        background: #fffbeb; padding: 9px 10px; font-size: 0.7rem; color: #78350f;
+    }
+    .import-result-title {
+        display: flex; align-items: center; gap: 6px;
+        font-weight: 800; margin-bottom: 5px;
+    }
+    .import-result ul { margin: 0; padding-left: 18px; line-height: 1.6; }
+    .import-result li { overflow-wrap: anywhere; margin-bottom: 2px; }
+
+    .village-alert {
+        display: flex; align-items: flex-start; gap: 7px;
+        font-size: 0.72rem; line-height: 1.5;
+        border-radius: 9px; padding: 8px 10px; margin-top: 12px;
+        overflow-wrap: anywhere;
+    }
+    .village-alert i { margin-top: 2px; flex-shrink: 0; }
+
+    .page-alert {
+        display: flex; align-items: flex-start; gap: 8px;
+        border-radius: 10px; padding: 10px 13px;
+        font-size: 0.76rem; line-height: 1.5;
+    }
+    .page-alert i { margin-top: 2px; flex-shrink: 0; }
+
+    /* ================= TABLE ================= */
+    .list-card .table-responsive { max-height: 600px; }
+    .village-table { width: 100%; min-width: 420px; margin: 0; border-collapse: separate; border-spacing: 0; }
+    .village-table thead th {
+        position: sticky; top: 0; z-index: 2;
+        background: #f8fafc;
+        color: #475569;
+        font-size: 0.65rem; font-weight: 800;
+        letter-spacing: 0.25px; text-transform: uppercase;
+        padding: 9px 12px; text-align: left;
+        border-bottom: 1px solid #e5ebe8;
+        white-space: nowrap;
+    }
+    .village-table thead th:first-child { width: 48px; text-align: center; }
+    .village-table tbody td {
+        padding: 10px 12px;
+        border-bottom: 1px solid #f0f4f2;
+        font-size: 0.77rem; color: #334155;
+        vertical-align: middle;
+    }
+    .village-table tbody td:first-child { text-align: center; }
+    .village-table tbody tr:last-child td { border-bottom: 0; }
+    .village-table tbody tr { transition: background-color 0.12s ease; }
+    .village-table tbody tr:hover { background: #f7fdfa; }
+
+    .row-number {
+        display: inline-flex; align-items: center; justify-content: center;
+        min-width: 23px; height: 23px; padding: 0 5px;
+        border-radius: 7px; background: #f1f5f3;
+        color: #64748b; font-size: 0.65rem; font-weight: 700;
+    }
+    .village-name {
+        font-weight: 700; color: #1f2937;
+        overflow-wrap: anywhere;
+    }
+    .qv-name {
+        display: inline-flex; align-items: center; gap: 5px;
+        color: #64748b; font-size: 0.72rem; font-weight: 500;
+        line-height: 1.45;
+    }
+    .qv-name i { color: #10b981; font-size: 0.7rem; flex-shrink: 0; }
+
+    .table-state { text-align: center; padding: 34px 16px !important; }
+    .empty-state { display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 3px; }
+    .empty-icon {
+        width: 50px; height: 50px; border-radius: 15px;
+        display: flex; align-items: center; justify-content: center;
+        background: #f1f5f3; color: #94a3b8;
+        font-size: 1.3rem; margin-bottom: 5px;
+    }
+    .empty-title { font-size: 0.8rem; font-weight: 800; color: #475569; }
+    .empty-text { font-size: 0.69rem; color: #94a3b8; line-height: 1.5; }
+    .table-error { color: #b91c1c !important; font-size: 0.74rem !important; }
+
+    /* ================= PAGINATION ================= */
+    .panel-foot {
+        display: flex; align-items: center; justify-content: space-between;
+        gap: 10px; flex-wrap: wrap;
+        padding: 10px 14px;
+        border-top: 1px solid #eef2f0;
+        background: #fbfefd;
+    }
+    .pager-info {
+        font-size: 0.68rem; color: #64748b; font-weight: 600;
+        line-height: 1.4;
+    }
+    .village-pager .page-link {
+        min-width: 30px; padding: 5px 8px;
+        display: inline-flex; align-items: center; justify-content: center;
+        border: 1px solid #dbe7e1; border-radius: 7px;
+        background: #ffffff; color: #047857;
+        font-size: 0.69rem; font-weight: 700;
+        line-height: 1.25; box-shadow: none;
+        transition: background-color 0.15s ease, border-color 0.15s ease, color 0.15s ease;
+    }
+    .village-pager .page-item:not(:last-child) .page-link { margin-right: 4px; }
+    .village-pager .page-link:hover {
+        background: #ecfdf5; border-color: #a7f3d0; color: #065f46;
+    }
+    .village-pager .page-link:focus {
+        box-shadow: 0 0 0 3px rgba(16, 185, 129, 0.12);
+    }
+    .village-pager .page-item.active .page-link {
+        background: #d1fae5; border-color: #6ee7b7; color: #065f46;
+    }
+    .village-pager .page-item.disabled .page-link {
+        background: #ffffff; border-color: #eef2f0; color: #cbd5e1;
+        cursor: not-allowed;
+    }
+
+    .btn-icon {
+        width: 31px; height: 31px; border-radius: 8px; flex-shrink: 0;
+        display: inline-flex; align-items: center; justify-content: center;
+        border: 1px solid #dbe7e1; background: #ffffff; color: #047857;
+        font-size: 0.77rem; transition: all 0.15s ease;
+    }
+    .btn-icon:hover { background: #ecfdf5; border-color: #a7f3d0; color: #065f46; }
+    .btn-icon:disabled { opacity: 0.55; cursor: wait; }
+
+    .row-actions {
+        display: flex; align-items: center; justify-content: center;
+        gap: 6px; white-space: nowrap;
+    }
+    .btn-row-action {
+        height: 30px; border-radius: 8px;
+        display: inline-flex; align-items: center; justify-content: center; gap: 5px;
+        border: 1px solid #dbe7e1; background: #ffffff; color: #047857;
+        font-size: 0.7rem; font-weight: 700; transition: all 0.15s ease;
+        padding: 0 9px; line-height: 1; white-space: nowrap;
+    }
+    .btn-row-action:hover { background: #ecfdf5; border-color: #a7f3d0; color: #065f46; }
+    .btn-row-action:focus-visible { outline: none; box-shadow: 0 0 0 3px rgba(16, 185, 129, 0.18); }
+    .btn-row-action:disabled { opacity: 0.55; cursor: wait; }
+    .btn-row-action.btn-row-danger { color: #b91c1c; }
+    .btn-row-action.btn-row-danger:hover { background: #fef2f2; border-color: #fecaca; color: #991b1b; }
+
+    .delete-village-name {
+        display: block; padding: 8px 10px; border-radius: 8px;
+        background: #fef2f2; border: 1px solid #fecaca;
+        color: #991b1b; font-weight: 700; font-size: 0.82rem;
+        overflow-wrap: anywhere;
+    }
+    .delete-warning { font-size: 0.7rem; color: #b91c1c; margin-top: 8px; }
+
+    /* ================= RESPONSIVE ================= */
+    @media (max-width: 1199.98px) {
+        .filter-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+        .filter-grid .filter-actions { grid-column: 1 / -1; justify-content: flex-end; }
+    }
+    @media (max-width: 575.98px) {
+        .village-hero { padding: 15px; }
+        .hero-main { gap: 10px; }
+        .hero-icon { width: 42px; height: 42px; font-size: 1.1rem; }
+        .hero-title { font-size: 1rem; }
+        .hero-stats { width: 100%; }
+        .hero-stat { flex: 1 1 0; min-width: 0; padding: 7px 10px; }
+        .hero-stat-value { font-size: 1rem; }
+        .filter-grid { grid-template-columns: 1fr; gap: 7px; }
+        .filter-grid .filter-actions {
+            display: grid; grid-template-columns: 1fr 1fr; gap: 7px;
+        }
+        .btn-filter-submit, .btn-filter-reset { min-width: 0; width: 100%; }
+        .filter-head-text .filter-sub { display: none; }
+        .panel-body { padding: 13px; }
+    }
+</style>
+{% endblock %}
+
+{% block page_content %}
+<div class="village-page">
+
+    <div class="village-hero mb-3">
+        <div class="hero-main">
+            <div class="hero-icon"><i class="bi bi-house-add-fill"></i></div>
+            <div>
+                <h5 class="hero-title">ကျေးရွာများထည့်သွင်းရန်</h5>
+                <p class="hero-sub">
+                    {{ township_name }}{% if district_name %} • {{ district_name }}{% endif %}{% if state_name %} • {{ state_name }}{% endif %}
+                </p>
+            </div>
+        </div>
+        <div class="hero-stats">
+            <div class="hero-stat">
+                <span class="hero-stat-label">ကျေးရွာ စုစုပေါင်း</span>
+                <span class="hero-stat-value" id="heroTotal">{{ total_villages }}</span>
+            </div>
+            <div class="hero-stat">
+                <span class="hero-stat-label">ကျေးရွာအုပ်စု</span>
+                <span class="hero-stat-value" id="heroQvCount">{{ qv_count }}</span>
+            </div>
+        </div>
+    </div>
+
+    {% if error %}
+    <div class="page-alert alert alert-danger mb-3" role="alert">
+        <i class="bi bi-exclamation-triangle-fill"></i>
+        <span>{{ error }}</span>
+    </div>
+    {% endif %}
+
+    {% if location_error %}
+    <div class="page-alert alert alert-warning mb-3" role="alert">
+        <i class="bi bi-info-circle-fill"></i>
+        <span>{{ location_error }}</span>
+    </div>
+    {% endif %}
+
+    <form method="GET" action="/township/temporary-village" id="villageFilterForm">
+        <div class="filter-card mb-3">
+            <div class="filter-card-head">
+                <div class="filter-head-icon"><i class="bi bi-funnel-fill"></i></div>
+                <div class="filter-head-text">
+                    <div class="filter-title">ခရိုင် / မြို့နယ် / ကျေးရွာအုပ်စု အလိုက် ကျေးရွာများ ကြည့်ရှုရန်</div>
+                    <div class="filter-sub">ခရိုင်၊ မြို့နယ်နှင့် ကျေးရွာအုပ်စု တစ်ခုကို ရွေးချယ်ပြီး ကျေးရွာစာရင်းကို စစ်ထုတ်နိုင်ပါသည်။</div>
+                </div>
+            </div>
+
+            <div class="filter-body">
+                <div class="filter-grid">
+                    <div class="filter-field">
+                        <label class="filter-label" for="filterState"><i class="bi bi-geo-alt-fill"></i>တိုင်းဒေသကြီး/ပြည်နယ်</label>
+                        <select id="filterState" class="form-select form-select-sm" disabled>
+                            <option>{{ state_name }}</option>
+                        </select>
+                    </div>
+                    <div class="filter-field">
+                        <label class="filter-label" for="filterDistrict"><i class="bi bi-signpost-split-fill"></i>ခရိုင်</label>
+                        <select id="filterDistrict" name="district" class="form-select form-select-sm" {% if not districts %}disabled{% endif %}>
+                            {% for item in districts %}
+                            <option value="{{ item.districtID }}" {% if item.districtID == selected_district %}selected{% endif %}>{{ item.districtName or item.districtID }}</option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                    <div class="filter-field">
+                        <label class="filter-label" for="filterTownship"><i class="bi bi-building-fill"></i>မြို့နယ်</label>
+                        <select id="filterTownship" name="township" class="form-select form-select-sm" {% if not townships %}disabled{% endif %}>
+                            {% for item in townships %}
+                            <option value="{{ item.townshipID }}" {% if item.townshipID == selected_township %}selected{% endif %}>{{ item.townshipName or item.townshipID }}</option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                    <div class="filter-field">
+                        <label class="filter-label" for="filterQv"><i class="bi bi-house-fill"></i>ကျေးရွာအုပ်စု</label>
+                        <select id="filterQv" name="qv" class="form-select form-select-sm">
+                            <option value="">အားလုံး</option>
+                            {% for item in qvs %}
+                            <option value="{{ item.QVID }}" {% if item.QVID == selected_qv %}selected{% endif %}>{{ item.QVName or item.QVID }}</option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                    <div class="filter-actions">
+                        <a href="/township/temporary-village" class="btn-filter-reset">
+                            <i class="bi bi-arrow-counterclockwise"></i> ပြန်လည်ရွေးချယ်မည်
+                        </a>
+                        <button type="submit" class="btn-filter-submit" id="btnFilterSubmit">
+                            <i class="bi bi-search"></i> ကြည့်ရှုမည်
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </form>
+
+    <div class="row g-3">
+        <div class="col-xl-4 col-lg-5">
+            <div class="panel-card">
+                <div class="panel-head">
+                    <h6><span class="add-card-accent"><i class="bi bi-plus-lg"></i></span> ကျေးရွာအသစ် ထည့်သွင်းရန်</h6>
+                </div>
+                <div class="panel-body">
+                    <div class="add-intro">
+                        <i class="bi bi-info-circle-fill"></i>
+                        ကျေးရွာအသစ် ထည့်သွင်းရန် ခရိုင်၊ မြို့နယ်နှင့် ကျေးရွာအုပ်စု ရွေးချယ်ပြီး ကျေးရွာအမည်ကို ဖြည့်ပါ။
+                    </div>
+
+                    <form class="add-form" id="addVillageForm" autocomplete="off">
+                        <div class="mb-3">
+                            <label class="form-label" for="addDistrict"><i class="bi bi-signpost-split-fill"></i>ခရိုင် <span class="req">*</span></label>
+                            <select id="addDistrict" class="form-select" required {% if not districts %}disabled{% endif %}>
+                                <option value="">— ခရိုင် ရွေးချယ်ပါ —</option>
+                                {% for item in districts %}
+                                <option value="{{ item.districtID }}" {% if item.districtID == selected_district %}selected{% endif %}>{{ item.districtName or item.districtID }}</option>
+                                {% endfor %}
+                            </select>
+                        </div>
+
+                        <div class="mb-3">
+                            <label class="form-label" for="addTownship"><i class="bi bi-building-fill"></i>မြို့နယ် <span class="req">*</span></label>
+                            <select id="addTownship" class="form-select" required {% if not townships %}disabled{% endif %}>
+                                <option value="">— မြို့နယ် ရွေးချယ်ပါ —</option>
+                                {% for item in townships %}
+                                <option value="{{ item.townshipID }}" {% if item.townshipID == selected_township %}selected{% endif %}>{{ item.townshipName or item.townshipID }}</option>
+                                {% endfor %}
+                            </select>
+                        </div>
+
+                        <div class="mb-3">
+                            <label class="form-label" for="addQv"><i class="bi bi-diagram-3-fill"></i>ကျေးရွာအုပ်စု <span class="req">*</span></label>
+                            <select id="addQv" class="form-select" required>
+                                <option value="">— ကျေးရွာအုပ်စု ရွေးချယ်ပါ —</option>
+                                {% for item in qvs %}
+                                <option value="{{ item.QVID }}" {% if item.QVID == selected_qv %}selected{% endif %}>{{ item.QVName or item.QVID }}</option>
+                                {% endfor %}
+                            </select>
+                        </div>
+
+                        <div class="mb-0">
+                            <label class="form-label" for="villageName"><i class="bi bi-house-fill"></i>ကျေးရွာအမည် <span class="req">*</span></label>
+                            <input type="text" id="villageName" name="villageName" class="form-control"
+                                   maxlength="150" placeholder="ဥပမာ - ကန်ရိုးကျေးရွာ" required
+                                   {% if not qvs %}disabled{% endif %}>
+                            <div class="name-hint">
+                                <i class="bi bi-translate"></i>
+                                <span>မြန်မာစာ သို့မဟုတ် English ဖြင့် ရေးသားနိုင်ပါသည်။ ကျေးရွာအမည် ထပ်နေပါက စနစ်မှ လက်မခံပါ။</span>
+                            </div>
+                        </div>
+
+                        <div id="addAlert" class="village-alert d-none" role="alert" aria-live="polite"></div>
+
+                        <button type="submit" class="btn-add-village" id="btnAddVillage" {% if not qvs %}disabled{% endif %}>
+                            <i class="bi bi-plus-circle"></i>
+                            ကျေးရွာ ထည့်သွင်းမည်
+                        </button>
+                    </form>
+
+                    <div class="id-note">
+                        <!-- <i class="bi bi-upc-scan"></i> -->
+                        <span></span>
+                    </div>
+
+                    <div class="excel-actions">
+                        <button type="button" class="btn-import-excel" id="btnOpenImportExcel" {% if not qvs %}disabled{% endif %}>
+                            <i class="bi bi-upload"></i> Excel ဖိုင်ဖြင့် ထည့်သွင်းမည်
+                        </button>
+                        <a class="btn-sample-excel" href="/api/township/temporary-villages/sample-excel">
+                            <i class="bi bi-download"></i> နမူနာ Excel ဖိုင်
+                        </a>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-xl-8 col-lg-7">
+            <div class="panel-card list-card">
+                <div class="panel-head">
+                    <h6>
+                        <i class="bi bi-table"></i>
+                        ကျေးရွာစာရင်း
+                        <span class="count-badge" id="listCountBadge">{{ filtered_total }} ရွာ</span>
+                    </h6>
+                    <button type="button" class="btn-icon" id="refreshBtn" title="ပြန်လည်ရယူရန်">
+                        <i class="bi bi-arrow-clockwise"></i>
+                    </button>
+                </div>
+                <div class="table-responsive">
+                    <table class="village-table">
+                        <thead>
+                            <tr>
+                                <th>စဉ်</th>
+                                <th>ကျေးရွာအမည်</th>
+                                <th>ကျေးရွာအုပ်စု</th>
+                                <th class="text-center">လုပ်ဆောင်ချက်များ</th>
+                            </tr>
+                        </thead>
+                        <tbody id="villageTbody">
+                            <tr>
+                                <td colspan="4" class="table-state">
+                                    <div class="empty-state">
+                                        <div class="empty-icon"><i class="bi bi-house"></i></div>
+                                        <div class="empty-title">ကျေးရွာစာရင်း ဖွင့်နေသည်…</div>
+                                    </div>
+                                </td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+                <div class="panel-foot d-none" id="villagePager">
+                    <span class="pager-info" id="pagerStatus"></span>
+                    <nav class="village-pager" aria-label="ကျေးရွာစာရင်း စာမျက်နှာ">
+                        <ul class="pagination pagination-sm mb-0" id="pagerList"></ul>
+                    </nav>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="modal fade" id="villageEditModal" tabindex="-1" aria-labelledby="villageEditModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content">
+            <form id="villageEditForm" autocomplete="off">
+                <div class="modal-header">
+                    <h5 class="modal-title" id="villageEditModalLabel">
+                        <i class="bi bi-pencil-square me-2"></i>ကျေးရွာ အချက်အလက် ပြင်ဆင်ရန်
+                    </h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="ပိတ်မည်"></button>
+                </div>
+                <div class="modal-body">
+                    <div class="mb-3">
+                        <label class="form-label" for="editQv"><i class="bi bi-diagram-3-fill"></i>ကျေးရွာအုပ်စု <span class="req">*</span></label>
+                        <select id="editQv" class="form-select" required>
+                            {% for item in qvs %}
+                            <option value="{{ item.QVID }}">{{ item.QVName or item.QVID }}</option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                    <div class="mb-0">
+                        <label class="form-label" for="editVillageName"><i class="bi bi-house-fill"></i>ကျေးရွာအမည် <span class="req">*</span></label>
+                        <input type="text" id="editVillageName" class="form-control" maxlength="150" required>
+                    </div>
+                    <div id="editAlert" class="village-alert d-none" role="alert" aria-live="polite"></div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-light border" data-bs-dismiss="modal">မလုပ်တော့ပါ</button>
+                    <button type="submit" class="btn btn-success" id="btnSaveVillageEdit">
+                        <i class="bi bi-check2-circle"></i> သိမ်းဆည်းမည်
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<div class="modal fade" id="villageDeleteModal" tabindex="-1" aria-labelledby="villageDeleteModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered modal-sm">
+        <div class="modal-content">
+            <div class="modal-header border-0 pb-0">
+                <h5 class="modal-title" id="villageDeleteModalLabel">
+                    <i class="bi bi-exclamation-triangle-fill text-danger me-2"></i>ကျေးရွာ ဖျက်ရန်
+                </h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="ပိတ်မည်"></button>
+            </div>
+            <div class="modal-body">
+                <p class="mb-2">အောက်ပါကျေးရွာကို ဖျက်ရန် သေချာပါသလား?</p>
+                <div class="delete-village-name" id="deleteVillageName"></div>
+                <p class="delete-warning mb-0">ဖျက်ပြီးပါက ပြန်လည်ရယူနိုင်မည် မဟုတ်ပါ။</p>
+                <div id="deleteAlert" class="village-alert d-none" role="alert" aria-live="polite"></div>
+            </div>
+            <div class="modal-footer border-0 pt-0">
+                <button type="button" class="btn btn-light border" data-bs-dismiss="modal">မလုပ်တော့ပါ</button>
+                <button type="button" class="btn btn-danger" id="btnConfirmDeleteVillage">
+                    <i class="bi bi-trash"></i> ဖျက်မည်
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="modal fade" id="villageImportModal" tabindex="-1" aria-labelledby="villageImportModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content">
+            <form id="villageImportForm" autocomplete="off">
+                <div class="modal-header">
+                    <h5 class="modal-title" id="villageImportModalLabel">
+                        <i class="bi bi-file-earmark-excel-fill me-2"></i>Excel ဖိုင်ဖြင့် ကျေးရွာ ထည့်သွင်းရန်
+                    </h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="ပိတ်မည်"></button>
+                </div>
+                <div class="modal-body">
+                    <div class="mb-3">
+                        <label class="form-label" for="importDistrict"><i class="bi bi-signpost-split-fill"></i>ခရိုင် <span class="req">*</span></label>
+                        <select id="importDistrict" class="form-select" required {% if not districts %}disabled{% endif %}>
+                            <option value="">— ခရိုင် ရွေးချယ်ပါ —</option>
+                            {% for item in districts %}
+                            <option value="{{ item.districtID }}" {% if item.districtID == selected_district %}selected{% endif %}>{{ item.districtName or item.districtID }}</option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label" for="importTownship"><i class="bi bi-building-fill"></i>မြို့နယ် <span class="req">*</span></label>
+                        <select id="importTownship" class="form-select" required {% if not townships %}disabled{% endif %}>
+                            <option value="">— မြို့နယ် ရွေးချယ်ပါ —</option>
+                            {% for item in townships %}
+                            <option value="{{ item.townshipID }}" {% if item.townshipID == selected_township %}selected{% endif %}>{{ item.townshipName or item.townshipID }}</option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label" for="importQv"><i class="bi bi-diagram-3-fill"></i>ကျေးရွာအုပ်စု <span class="req">*</span></label>
+                        <select id="importQv" class="form-select" required>
+                            <option value="">— ကျေးရွာအုပ်စု ရွေးချယ်ပါ —</option>
+                            {% for item in qvs %}
+                            <option value="{{ item.QVID }}" {% if item.QVID == selected_qv %}selected{% endif %}>{{ item.QVName or item.QVID }}</option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                    <div class="mb-0">
+                        <label class="form-label" for="importFile"><i class="bi bi-file-earmark-excel-fill"></i>Excel ဖိုင် (.xlsx) <span class="req">*</span></label>
+                        <input type="file" id="importFile" class="form-control" accept=".xlsx" required {% if not qvs %}disabled{% endif %}>
+                        <div class="name-hint">
+                            <i class="bi bi-info-circle"></i>
+                            <span>ရွေးချယ်ထားသော ကျေးရွာအုပ်စုအောက်တွင် Excel ဖိုင်၏ ကျေးရွာအမည်များကို ထည့်သွင်းပါမည်။</span>
+                        </div>
+                    </div>
+
+                    <div class="excel-guide">
+                        <div class="excel-guide-title"><i class="bi bi-list-check"></i> Excel ဖိုင် ပြင်ဆင်ပုံ</div>
+                        <ul>
+                            <li>ဖိုင်တွင် စာမျက်နှာ (sheet) တစ်ခုတည်း ပါဝင်ရမည်။</li>
+                            <li>ကော်လံ နှစ်ခုထက် မပိုရပါ။ ကော်လံ တစ်ခု (<code>villageName</code>) သို့မဟုတ် ကော်လံ နှစ်ခု (<code>No.</code> နှင့် <code>villageName</code>) ပါဝင်နိုင်သည်။</li>
+                            <li>ကော်လံ နှစ်ခုဖြစ်ပါက ပထမကော်လံမှာ <code>No.</code> (ကျေးရွာ အရေအတွက်) ဖြစ်ရမည်။</li>
+                            <li>ဒုတိယကော်လံမှာ <code>villageName</code> အတိအကျ ဖြစ်ရမည်။</li>
+                            <li>ကျေးရွာအမည် ကော်လံတွင် ဗလာ မထားရပါ။</li>
+                            <li>ကျေးရွာအုပ်စုအတွင်း ရှိပြီးသား ကျေးရွာအမည်များကို ကျော်လွှားမည်။</li>
+                            <li>ပထမတန်းသည် ကော်လံခေါင်းစဉ် ဖြစ်ရမည်။</li>
+                        </ul>
+                    </div>
+
+                    <div id="importAlert" class="village-alert d-none" role="alert" aria-live="polite"></div>
+                    <div id="importResult" class="import-result d-none" aria-live="polite"></div>
+                </div>
+                <div class="modal-footer">
+                    <a class="btn btn-light border me-auto" href="/api/township/temporary-villages/sample-excel">
+                        <i class="bi bi-download"></i> နမူနာဖိုင်
+                    </a>
+                    <button type="button" class="btn btn-light border" data-bs-dismiss="modal">မလုပ်တော့ပါ</button>
+                    <button type="submit" class="btn btn-success" id="btnImportVillages">
+                        <i class="bi bi-upload"></i> ထည့်သွင်းမည်
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<div id="villagePageData"
+     data-selected-district="{{ selected_district }}"
+     data-selected-township="{{ selected_township }}"
+     data-selected-qv="{{ selected_qv }}"
+     data-total-villages="{{ total_villages }}"
+     data-filtered-total="{{ filtered_total }}"
+     data-page="{{ page }}"
+     data-pages="{{ pages }}"
+     data-page-size="{{ page_size }}"
+     data-initial-villages='{{ villages|tojson }}'
+     hidden></div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+(function () {
+    'use strict';
+
+    const dataEl = document.getElementById('villagePageData');
+    const filterForm = document.getElementById('villageFilterForm');
+    const filterDistrict = document.getElementById('filterDistrict');
+    const filterTownship = document.getElementById('filterTownship');
+    const filterQv = document.getElementById('filterQv');
+    const addForm = document.getElementById('addVillageForm');
+    const addDistrict = document.getElementById('addDistrict');
+    const addTownship = document.getElementById('addTownship');
+    const addQv = document.getElementById('addQv');
+    const nameInput = document.getElementById('villageName');
+    const addAlert = document.getElementById('addAlert');
+    const addBtn = document.getElementById('btnAddVillage');
+    const tbody = document.getElementById('villageTbody');
+    const listCountBadge = document.getElementById('listCountBadge');
+    const heroTotal = document.getElementById('heroTotal');
+    const heroQvCount = document.getElementById('heroQvCount');
+    const refreshBtn = document.getElementById('refreshBtn');
+    const pager = document.getElementById('villagePager');
+    const pagerStatus = document.getElementById('pagerStatus');
+    const pagerList = document.getElementById('pagerList');
+    const editModalEl = document.getElementById('villageEditModal');
+    const editForm = document.getElementById('villageEditForm');
+    const editQv = document.getElementById('editQv');
+    const editVillageName = document.getElementById('editVillageName');
+    const editAlert = document.getElementById('editAlert');
+    const editSaveBtn = document.getElementById('btnSaveVillageEdit');
+    const deleteModalEl = document.getElementById('villageDeleteModal');
+    const deleteNameEl = document.getElementById('deleteVillageName');
+    const deleteAlert = document.getElementById('deleteAlert');
+    const deleteConfirmBtn = document.getElementById('btnConfirmDeleteVillage');
+    const importModalEl = document.getElementById('villageImportModal');
+    const importForm = document.getElementById('villageImportForm');
+    const importDistrict = document.getElementById('importDistrict');
+    const importTownship = document.getElementById('importTownship');
+    const importQv = document.getElementById('importQv');
+    const importFile = document.getElementById('importFile');
+    const importAlert = document.getElementById('importAlert');
+    const importResult = document.getElementById('importResult');
+    const importBtn = document.getElementById('btnImportVillages');
+    const openImportBtn = document.getElementById('btnOpenImportExcel');
+
+    let totalVillages = Number(dataEl.dataset.totalVillages || 0);
+    let totalFiltered = Number(dataEl.dataset.filteredTotal || 0);
+    let pageSize = Math.max(1, Number(dataEl.dataset.pageSize || 10));
+    let totalPages = Math.max(1, Number(dataEl.dataset.pages || 1));
+    let currentPage = Math.max(1, Number(dataEl.dataset.page || 1));
+    let activeDistrict = dataEl.dataset.selectedDistrict || '';
+    let activeTownship = dataEl.dataset.selectedTownship || '';
+    let activeQv = dataEl.dataset.selectedQv || '';
+    let initialVillages = [];
+    try {
+        initialVillages = JSON.parse(dataEl.dataset.initialVillages || '[]');
+    } catch (err) {
+        initialVillages = [];
+    }
+
+    let editingVillage = null;
+    let pendingDelete = null;
+
+    const ADD_BUTTON_HTML = '<i class="bi bi-plus-circle"></i> ကျေးရွာ ထည့်သွင်းမည်';
+    const ADD_BUTTON_BUSY = '<span class="spinner-border spinner-border-sm" role="status" aria-hidden="true"></span> ထည့်သွင်းနေသည်…';
+    const IMPORT_BUTTON_HTML = '<i class="bi bi-upload"></i> ထည့်သွင်းမည်';
+    const IMPORT_BUTTON_BUSY = '<span class="spinner-border spinner-border-sm" role="status" aria-hidden="true"></span> ထည့်သွင်းနေသည်…';
+    const DELETE_BUTTON_HTML = '<i class="bi bi-trash"></i> ဖျက်မည်';
+    const DELETE_BUTTON_BUSY = '<span class="spinner-border spinner-border-sm" role="status" aria-hidden="true"></span> ဖျက်နေသည်…';
+
+    function fillOptions(select, items, valueKey, labelKey, placeholder, selectedValue) {
+        if (!select) return;
+        const previous = selectedValue !== undefined && selectedValue !== null
+            ? String(selectedValue)
+            : select.value;
+
+        select.replaceChildren();
+        if (placeholder !== null) {
+            const empty = document.createElement('option');
+            empty.value = '';
+            empty.textContent = placeholder;
+            select.appendChild(empty);
+        }
+
+        (items || []).forEach(function (item) {
+            const option = document.createElement('option');
+            option.value = item[valueKey] || '';
+            option.textContent = item[labelKey] || item[valueKey] || '';
+            select.appendChild(option);
+        });
+
+        if (previous) {
+            const matched = Array.from(select.options).some(function (option) {
+                return option.value === previous;
+            });
+            if (matched) select.value = previous;
+        }
+    }
+
+    async function fetchLocationOptions(district, township) {
+        const params = new URLSearchParams();
+        if (district) params.set('district', district);
+        if (township) params.set('township', township);
+
+        const response = await fetch(
+            '/api/township/temporary-villages/options?' + params.toString(),
+            { credentials: 'same-origin', headers: { 'Accept': 'application/json' } }
+        );
+
+        let payload = {};
+        try { payload = await response.json(); } catch (err) { payload = {}; }
+        if (!response.ok) {
+            throw new Error(payload.detail || 'နယ်မြေ အချက်အလက် ရယူမရပါ။');
+        }
+        return payload;
+    }
+
+    async function populateTownships(district, townshipSelect, qvSelect, selectedTownship) {
+        const payload = await fetchLocationOptions(district, '');
+        const townships = payload.townships || [];
+        const hasSelected = selectedTownship && townships.some(function (item) {
+            return String(item.townshipID) === String(selectedTownship);
+        });
+        const fallback = hasSelected
+            ? selectedTownship
+            : ((townships[0] && townships[0].townshipID) || '');
+        fillOptions(
+            townshipSelect, townships, 'townshipID', 'townshipName',
+            '— မြို့နယ် ရွေးချယ်ပါ —', fallback
+        );
+        fillOptions(qvSelect, [], 'QVID', 'QVName', '— ကျေးရွာအုပ်စု ရွေးချယ်ပါ —', '');
+        return townships;
+    }
+
+    async function populateQvs(district, township, qvSelect, selectedQv, allowAll) {
+        const placeholder = allowAll ? 'အားလုံး' : '— ကျေးရွာအုပ်စု ရွေးချယ်ပါ —';
+        if (!district || !township) {
+            fillOptions(qvSelect, [], 'QVID', 'QVName', placeholder, '');
+            return [];
+        }
+        const payload = await fetchLocationOptions(district, township);
+        const qvs = payload.qvs || [];
+        const hasSelected = selectedQv && qvs.some(function (item) {
+            return String(item.QVID) === String(selectedQv);
+        });
+        let fallback = '';
+        if (hasSelected) {
+            fallback = selectedQv;
+        } else if (selectedQv !== '' || !allowAll) {
+            fallback = (qvs[0] && qvs[0].QVID) || '';
+        }
+        fillOptions(qvSelect, qvs, 'QVID', 'QVName', placeholder, fallback);
+        return qvs;
+    }
+
+    async function switchFilterToLocation(district, township, qv) {
+        if (!district) return;
+        if (filterDistrict) filterDistrict.value = district;
+
+        if (filterTownship) {
+            try {
+                await populateTownships(district, filterTownship, filterQv, township);
+            } catch (err) {
+                // Keep the existing township options when the lookup fails.
+            }
+            if (township) filterTownship.value = township;
+        }
+
+        if (filterQv) {
+            try {
+                await populateQvs(district, township, filterQv, qv, true);
+            } catch (err) {
+                filterQv.value = qv || '';
+            }
+        }
+    }
+
+    function updateTotal(value) {
+        totalVillages = Math.max(0, Number(value) || 0);
+        if (heroTotal) heroTotal.textContent = totalVillages.toLocaleString();
+    }
+
+    function updateListCount(value) {
+        if (!listCountBadge) return;
+        listCountBadge.textContent = Number(value || 0).toLocaleString() + ' ရွာ';
+    }
+
+    function tableStateRow(iconClass, title, text, extraClass) {
+        const tr = document.createElement('tr');
+        const td = document.createElement('td');
+        td.colSpan = 4;
+        td.className = 'table-state ' + (extraClass || '');
+
+        const wrap = document.createElement('div');
+        wrap.className = 'empty-state';
+
+        const icon = document.createElement('div');
+        icon.className = 'empty-icon';
+        icon.innerHTML = '<i class="' + iconClass + '"></i>';
+
+        const h = document.createElement('div');
+        h.className = 'empty-title';
+        h.textContent = title;
+
+        wrap.appendChild(icon);
+        wrap.appendChild(h);
+
+        if (text) {
+            const p = document.createElement('div');
+            p.className = 'empty-text';
+            p.textContent = text;
+            wrap.appendChild(p);
+        }
+
+        td.appendChild(wrap);
+        tr.appendChild(td);
+        return tr;
+    }
+
+    function showTableLoading() {
+        tbody.replaceChildren(tableStateRow(
+            'bi bi-arrow-repeat',
+            'ကျေးရွာစာရင်း ရယူနေသည်…',
+            ''
+        ));
+        if (listCountBadge) listCountBadge.textContent = '…';
+    }
+
+    function showTableError(message) {
+        tbody.replaceChildren(tableStateRow(
+            'bi bi-exclamation-triangle',
+            'ကျေးရွာစာရင်း ရယူမရပါ',
+            message || 'ခဏစောင့်ပြီး ပြန်လည်ကြိုးစားပါ။',
+            'table-error'
+        ));
+        updateListCount(0);
+        if (pager) pager.classList.add('d-none');
+    }
+
+    function renderVillages(rows, page, size) {
+        tbody.replaceChildren();
+
+        if (!Array.isArray(rows) || rows.length === 0) {
+            tbody.appendChild(tableStateRow(
+                'bi bi-house',
+                'ကျေးရွာများ မရှိသေးပါ',
+                'အပေါ်ရှိ ခရိုင် / မြို့နယ် / ကျေးရွာအုပ်စု စစ်ထုတ်မှုကို ပြောင်းကြည့်ပါ သို့မဟုတ် ကျေးရွာအသစ် ထည့်သွင်းပါ။'
+            ));
+            updateListCount(0);
+            return;
+        }
+
+        const currentSize = Math.max(1, Number(size) || 10);
+        const firstNumber = (Math.max(1, Number(page) || 1) - 1) * currentSize;
+        const fragment = document.createDocumentFragment();
+
+        rows.forEach(function (row, index) {
+            const tr = document.createElement('tr');
+
+            const noTd = document.createElement('td');
+            const noSpan = document.createElement('span');
+            noSpan.className = 'row-number';
+            noSpan.textContent = String(firstNumber + index + 1);
+            noTd.appendChild(noSpan);
+
+            const nameTd = document.createElement('td');
+            const nameSpan = document.createElement('span');
+            nameSpan.className = 'village-name';
+            nameSpan.textContent = row.villageName || '—';
+            nameTd.appendChild(nameSpan);
+
+            const qvTd = document.createElement('td');
+            const qvSpan = document.createElement('span');
+            qvSpan.className = 'qv-name';
+            const qvText = document.createElement('span');
+            qvText.textContent = row.QVName || row.QVID || '—';
+            qvSpan.appendChild(qvText);
+            qvTd.appendChild(qvSpan);
+
+            const actionTd = document.createElement('td');
+            actionTd.className = 'row-actions';
+
+            const editBtn = document.createElement('button');
+            editBtn.type = 'button';
+            editBtn.className = 'btn-row-action';
+            editBtn.title = 'ကျေးရွာ အချက်အလက် ပြင်ဆင်ရန်';
+            editBtn.setAttribute('aria-label', 'ကျေးရွာ အချက်အလက် ပြင်ဆင်ရန်');
+            editBtn.innerHTML = '<i class="bi bi-pencil-square"></i><span>ပြင်ဆင်မည်</span>';
+            editBtn.addEventListener('click', function () {
+                openEditModal(row);
+            });
+
+            const deleteBtn = document.createElement('button');
+            deleteBtn.type = 'button';
+            deleteBtn.className = 'btn-row-action btn-row-danger';
+            deleteBtn.title = 'ကျေးရွာ ဖျက်ရန်';
+            deleteBtn.setAttribute('aria-label', 'ကျေးရွာ ဖျက်ရန်');
+            deleteBtn.innerHTML = '<i class="bi bi-trash"></i><span>ဖျက်မည်</span>';
+            deleteBtn.addEventListener('click', function () {
+                openDeleteModal(row);
+            });
+
+            actionTd.appendChild(editBtn);
+            actionTd.appendChild(deleteBtn);
+
+            tr.appendChild(noTd);
+            tr.appendChild(nameTd);
+            tr.appendChild(qvTd);
+            tr.appendChild(actionTd);
+            fragment.appendChild(tr);
+        });
+
+        tbody.appendChild(fragment);
+    }
+
+    function appendPageButton(label, targetPage, options) {
+        const opts = options || {};
+        const li = document.createElement('li');
+        li.className = 'page-item'
+            + (opts.active ? ' active' : '')
+            + (opts.disabled ? ' disabled' : '');
+
+        const btn = document.createElement('button');
+        btn.type = 'button';
+        btn.className = 'page-link';
+        btn.innerHTML = label;
+        btn.disabled = !!opts.disabled;
+
+        if (opts.label) {
+            btn.setAttribute('aria-label', opts.label);
+            btn.title = opts.label;
+        }
+        if (opts.active) btn.setAttribute('aria-current', 'page');
+
+        if (!opts.disabled && !opts.active) {
+            btn.addEventListener('click', function () {
+                loadVillages(activeDistrict, activeTownship, activeQv, targetPage, true);
+            });
+        }
+
+        li.appendChild(btn);
+        pagerList.appendChild(li);
+    }
+
+    function renderPagination(page, pages, total, size) {
+        if (!pager || !pagerStatus || !pagerList) return;
+
+        totalPages = Math.max(1, Number(pages) || 1);
+        currentPage = Math.min(Math.max(1, Number(page) || 1), totalPages);
+        pageSize = Math.max(1, Number(size) || 10);
+
+        if (!total || totalPages <= 1) {
+            pager.classList.add('d-none');
+            pagerStatus.textContent = '';
+            pagerList.replaceChildren();
+            return;
+        }
+
+        pager.classList.remove('d-none');
+        const firstRow = (currentPage - 1) * pageSize + 1;
+        const lastRow = Math.min(currentPage * pageSize, total);
+        pagerStatus.textContent = firstRow.toLocaleString()
+            + '–' + lastRow.toLocaleString()
+            + ' / ' + Number(total).toLocaleString() + ' ရွာ';
+
+        pagerList.replaceChildren();
+        appendPageButton(
+            '<i class="bi bi-chevron-left"></i>',
+            currentPage - 1,
+            { disabled: currentPage <= 1, label: 'ယခင်စာမျက်နှာ' }
+        );
+
+        let startPage = Math.max(1, currentPage - 2);
+        let endPage = Math.min(totalPages, startPage + 4);
+        startPage = Math.max(1, endPage - 4);
+
+        for (let pageNumber = startPage; pageNumber <= endPage; pageNumber += 1) {
+            appendPageButton(
+                String(pageNumber),
+                pageNumber,
+                {
+                    active: pageNumber === currentPage,
+                    label: 'စာမျက်နှာ ' + pageNumber
+                }
+            );
+        }
+
+        appendPageButton(
+            '<i class="bi bi-chevron-right"></i>',
+            currentPage + 1,
+            { disabled: currentPage >= totalPages, label: 'နောက်စာမျက်နှာ' }
+        );
+    }
+
+    function currentFilters() {
+        return {
+            district: filterDistrict ? filterDistrict.value : '',
+            township: filterTownship ? filterTownship.value : '',
+            qv: filterQv ? filterQv.value : ''
+        };
+    }
+
+    async function loadVillages(district, township, qv, page, updateUrl) {
+        district = district || '';
+        township = township || '';
+        qv = qv || '';
+        page = Math.max(1, Number(page) || 1);
+
+        showTableLoading();
+        if (refreshBtn) refreshBtn.disabled = true;
+
+        const params = new URLSearchParams();
+        if (district) params.set('district', district);
+        if (township) params.set('township', township);
+        if (qv) params.set('qv', qv);
+        params.set('page', String(page));
+
+        try {
+            const response = await fetch(
+                '/api/township/temporary-villages?' + params.toString(),
+                {
+                    credentials: 'same-origin',
+                    headers: { 'Accept': 'application/json' }
+                }
+            );
+
+            let payload = {};
+            try { payload = await response.json(); } catch (err) { payload = {}; }
+
+            if (!response.ok) {
+                throw new Error(payload.detail || 'ကျေးရွာစာရင်း ရယူမရပါ။');
+            }
+
+            const responsePage = Math.max(1, Number(payload.page || page) || 1);
+            const responseSize = Math.max(1, Number(payload.page_size || pageSize) || 10);
+            const responseTotal = Math.max(0, Number(payload.total || 0) || 0);
+            const responseTotalAll = Math.max(
+                0,
+                Number(payload.total_all !== undefined ? payload.total_all : responseTotal) || 0
+            );
+            const responsePages = Math.max(1, Number(payload.pages || 1) || 1);
+
+            activeDistrict = district;
+            activeTownship = township;
+            activeQv = qv;
+            currentPage = responsePage;
+            pageSize = responseSize;
+            totalFiltered = responseTotal;
+            totalPages = responsePages;
+
+            renderVillages(payload.villages || [], responsePage, responseSize);
+            updateTotal(responseTotalAll);
+            if (heroQvCount) {
+                heroQvCount.textContent = Number(payload.qv_count || 0).toLocaleString();
+            }
+            updateListCount(responseTotal);
+            renderPagination(responsePage, responsePages, responseTotal, responseSize);
+
+            if (updateUrl !== false) {
+                const nextUrl = new URL(window.location.href);
+                if (activeDistrict) nextUrl.searchParams.set('district', activeDistrict);
+                else nextUrl.searchParams.delete('district');
+                if (activeTownship) nextUrl.searchParams.set('township', activeTownship);
+                else nextUrl.searchParams.delete('township');
+                if (activeQv) nextUrl.searchParams.set('qv', activeQv);
+                else nextUrl.searchParams.delete('qv');
+                if (currentPage > 1) nextUrl.searchParams.set('page', String(currentPage));
+                else nextUrl.searchParams.delete('page');
+                history.replaceState(null, '', nextUrl.pathname + (nextUrl.search || ''));
+            }
+        } catch (err) {
+            showTableError(err && err.message ? err.message : 'ကျေးရွာစာရင်း ရယူမရပါ။');
+        } finally {
+            if (refreshBtn) refreshBtn.disabled = false;
+        }
+    }
+
+    function showAddAlert(type, message) {
+        if (!addAlert) return;
+        addAlert.className = 'village-alert alert alert-' + type;
+        addAlert.replaceChildren();
+
+        const icon = document.createElement('i');
+        icon.className = type === 'success'
+            ? 'bi bi-check-circle-fill'
+            : (type === 'warning' ? 'bi bi-exclamation-circle-fill' : 'bi bi-exclamation-triangle-fill');
+
+        const text = document.createElement('span');
+        text.textContent = message;
+
+        addAlert.appendChild(icon);
+        addAlert.appendChild(text);
+        addAlert.classList.remove('d-none');
+    }
+
+    function clearAddAlert() {
+        if (!addAlert) return;
+        addAlert.classList.add('d-none');
+        addAlert.replaceChildren();
+    }
+
+    function setAddBusy(busy) {
+        if (!addBtn) return;
+        addBtn.disabled = !!busy;
+        addBtn.innerHTML = busy ? ADD_BUTTON_BUSY : ADD_BUTTON_HTML;
+    }
+
+    function clearImportAlert() {
+        if (!importAlert) return;
+        importAlert.classList.add('d-none');
+        importAlert.replaceChildren();
+    }
+
+    function showImportAlert(type, message) {
+        if (!importAlert) return;
+        importAlert.className = 'village-alert alert alert-' + type;
+        importAlert.replaceChildren();
+
+        const icon = document.createElement('i');
+        icon.className = type === 'success'
+            ? 'bi bi-check-circle-fill'
+            : (type === 'warning' ? 'bi bi-exclamation-circle-fill' : 'bi bi-exclamation-triangle-fill');
+
+        const text = document.createElement('span');
+        text.textContent = message;
+
+        importAlert.appendChild(icon);
+        importAlert.appendChild(text);
+        importAlert.classList.remove('d-none');
+    }
+
+    function clearImportResult() {
+        if (!importResult) return;
+        importResult.classList.add('d-none');
+        importResult.replaceChildren();
+    }
+
+    function showImportResult(errors) {
+        if (!importResult) return;
+        importResult.replaceChildren();
+
+        if (!Array.isArray(errors) || errors.length === 0) {
+            importResult.classList.add('d-none');
+            return;
+        }
+
+        const title = document.createElement('div');
+        title.className = 'import-result-title';
+        title.innerHTML = '<i class="bi bi-exclamation-circle"></i> ကျော်လွှားခဲ့သော ကျေးရွာအုပ်စု များ';
+
+        const list = document.createElement('ul');
+        errors.forEach(function (item) {
+            const li = document.createElement('li');
+            const row = item && item.row ? String(item.row) : '?';
+            const name = item && item.villageName ? String(item.villageName) : '—';
+            const reason = item && item.reason ? String(item.reason) : '';
+            li.textContent = 'တန်း ' + row + ': ' + name + ' — ' + reason;
+            list.appendChild(li);
+        });
+
+        importResult.appendChild(title);
+        importResult.appendChild(list);
+        importResult.classList.remove('d-none');
+    }
+
+    async function openImportModal() {
+        clearImportAlert();
+        clearImportResult();
+        if (importFile) importFile.value = '';
+
+        const district = (addDistrict && addDistrict.value) || activeDistrict;
+        const township = (addTownship && addTownship.value) || activeTownship;
+        const qv = (addQv && addQv.value) || activeQv;
+
+        if (importDistrict) importDistrict.value = district;
+        if (importTownship) importTownship.value = township;
+        if (importQv) importQv.value = qv;
+
+        if (importModalEl && window.bootstrap) {
+            window.bootstrap.Modal.getOrCreateInstance(importModalEl).show();
+        }
+
+        if (!district) return;
+        try {
+            await populateTownships(district, importTownship, importQv, township);
+            const selectedTownship = importTownship ? importTownship.value : '';
+            if (selectedTownship) {
+                await populateQvs(district, selectedTownship, importQv, qv);
+            }
+        } catch (err) {
+            showImportAlert('warning', err && err.message ? err.message : 'ကျေးရွာအုပ်စု စာရင်း ရယူမရပါ။');
+        }
+    }
+
+    function clearEditAlert() {
+        if (!editAlert) return;
+        editAlert.classList.add('d-none');
+        editAlert.replaceChildren();
+    }
+
+    function showEditAlert(type, message) {
+        if (!editAlert) return;
+        editAlert.className = 'village-alert alert alert-' + type;
+        editAlert.replaceChildren();
+
+        const icon = document.createElement('i');
+        icon.className = type === 'success'
+            ? 'bi bi-check-circle-fill'
+            : (type === 'warning' ? 'bi bi-exclamation-circle-fill' : 'bi bi-exclamation-triangle-fill');
+
+        const text = document.createElement('span');
+        text.textContent = message;
+
+        editAlert.appendChild(icon);
+        editAlert.appendChild(text);
+        editAlert.classList.remove('d-none');
+    }
+
+    async function openEditModal(row) {
+        editingVillage = row || null;
+        if (editQv) {
+            editQv.replaceChildren();
+            const current = document.createElement('option');
+            current.value = row.QVID || '';
+            current.textContent = row.QVName || row.QVID || '—';
+            editQv.appendChild(current);
+        }
+        if (editVillageName) editVillageName.value = row.villageName || '';
+        clearEditAlert();
+
+        if (editModalEl && window.bootstrap) {
+            window.bootstrap.Modal.getOrCreateInstance(editModalEl).show();
+        }
+
+        const district = row.districtID || activeDistrict;
+        const township = row.townshipID || activeTownship;
+        if (district && township) {
+            try {
+                await populateQvs(district, township, editQv, row.QVID || '');
+            } catch (err) {
+                // Keep the row's current QV option when the lookup fails.
+            }
+        }
+        if (editVillageName) editVillageName.focus();
+    }
+
+    function clearDeleteAlert() {
+        if (!deleteAlert) return;
+        deleteAlert.classList.add('d-none');
+        deleteAlert.replaceChildren();
+    }
+
+    function showDeleteAlert(type, message) {
+        if (!deleteAlert) return;
+        deleteAlert.className = 'village-alert alert alert-' + type;
+        deleteAlert.replaceChildren();
+
+        const icon = document.createElement('i');
+        icon.className = type === 'warning'
+            ? 'bi bi-exclamation-circle-fill'
+            : 'bi bi-exclamation-triangle-fill';
+
+        const text = document.createElement('span');
+        text.textContent = message;
+
+        deleteAlert.appendChild(icon);
+        deleteAlert.appendChild(text);
+        deleteAlert.classList.remove('d-none');
+    }
+
+    function openDeleteModal(row) {
+        pendingDelete = row || null;
+        if (deleteNameEl) deleteNameEl.textContent = (row && row.villageName) || '—';
+        clearDeleteAlert();
+        if (deleteConfirmBtn) {
+            deleteConfirmBtn.disabled = false;
+            deleteConfirmBtn.innerHTML = DELETE_BUTTON_HTML;
+        }
+        if (deleteModalEl && window.bootstrap) {
+            window.bootstrap.Modal.getOrCreateInstance(deleteModalEl).show();
+        }
+    }
+
+    async function confirmDeleteVillage() {
+        if (!pendingDelete) return;
+        clearDeleteAlert();
+
+        if (deleteConfirmBtn) {
+            deleteConfirmBtn.disabled = true;
+            deleteConfirmBtn.innerHTML = DELETE_BUTTON_BUSY;
+        }
+
+        try {
+            const response = await fetch(
+                '/api/township/temporary-villages/'
+                + encodeURIComponent(pendingDelete.districtID || activeDistrict) + '/'
+                + encodeURIComponent(pendingDelete.townshipID || activeTownship) + '/'
+                + encodeURIComponent(pendingDelete.QVID || '') + '/'
+                + encodeURIComponent(pendingDelete.villageID || ''),
+                {
+                    method: 'DELETE',
+                    credentials: 'same-origin',
+                    headers: { 'Accept': 'application/json' }
+                }
+            );
+
+            let payload = {};
+            try { payload = await response.json(); } catch (err) { payload = {}; }
+
+            if (!response.ok) {
+                throw new Error(payload.detail || 'ကျေးရွာ ဖျက်မရပါ။');
+            }
+
+            if (deleteModalEl && window.bootstrap) {
+                window.bootstrap.Modal.getOrCreateInstance(deleteModalEl).hide();
+            }
+
+            pendingDelete = null;
+            showAddAlert('success', payload.message || 'ကျေးရွာကို ဖျက်ပြီးပါပြီ။');
+            updateTotal(Math.max(0, totalVillages - 1));
+            await loadVillages(activeDistrict, activeTownship, activeQv, currentPage, true);
+        } catch (err) {
+            showDeleteAlert('danger', err && err.message ? err.message : 'ကျေးရွာ ဖျက်မရပါ။');
+        } finally {
+            if (deleteConfirmBtn) {
+                deleteConfirmBtn.disabled = false;
+                deleteConfirmBtn.innerHTML = DELETE_BUTTON_HTML;
+            }
+        }
+    }
+
+    if (deleteConfirmBtn) {
+        deleteConfirmBtn.addEventListener('click', confirmDeleteVillage);
+    }
+
+    if (filterDistrict) {
+        filterDistrict.addEventListener('change', async function () {
+            try {
+                await populateTownships(
+                    filterDistrict.value, filterTownship, filterQv, ''
+                );
+                const township = filterTownship ? filterTownship.value : '';
+                if (township) {
+                    await populateQvs(
+                        filterDistrict.value, township, filterQv, '', true
+                    );
+                }
+            } catch (err) {
+                // Keep the existing options when the lookup fails.
+            }
+        });
+    }
+
+    if (filterTownship) {
+        filterTownship.addEventListener('change', async function () {
+            try {
+                await populateQvs(
+                    filterDistrict ? filterDistrict.value : '',
+                    filterTownship.value,
+                    filterQv,
+                    '',
+                    true
+                );
+            } catch (err) {
+                // Keep the existing options when the lookup fails.
+            }
+        });
+    }
+
+    if (filterQv) {
+        filterQv.addEventListener('change', function () {
+            if (filterQv.value && addQv) addQv.value = filterQv.value;
+        });
+    }
+
+    if (filterForm) {
+        filterForm.addEventListener('submit', function (event) {
+            event.preventDefault();
+            const filters = currentFilters();
+
+            if (addDistrict) addDistrict.value = filters.district;
+            if (addTownship) {
+                populateTownships(
+                    filters.district, addTownship, addQv, filters.township
+                ).then(function () {
+                    if (filters.township && addTownship) {
+                        addTownship.value = filters.township;
+                    }
+                    return populateQvs(
+                        filters.district,
+                        filters.township,
+                        addQv,
+                        filters.qv,
+                        false
+                    );
+                }).catch(function () {
+                    // Leave the existing add-form options when the lookup fails.
+                });
+            }
+
+            loadVillages(filters.district, filters.township, filters.qv, 1, true);
+        });
+    }
+
+    if (addDistrict) {
+        addDistrict.addEventListener('change', async function () {
+            try {
+                await populateTownships(addDistrict.value, addTownship, addQv, '');
+                const township = addTownship ? addTownship.value : '';
+                if (township) {
+                    await populateQvs(addDistrict.value, township, addQv, '');
+                }
+            } catch (err) {
+                clearAddAlert();
+            }
+        });
+    }
+
+    if (addTownship) {
+        addTownship.addEventListener('change', async function () {
+            try {
+                await populateQvs(
+                    addDistrict ? addDistrict.value : '',
+                    addTownship.value,
+                    addQv,
+                    ''
+                );
+            } catch (err) {
+                clearAddAlert();
+            }
+        });
+    }
+
+    if (refreshBtn) {
+        refreshBtn.addEventListener('click', function () {
+            loadVillages(activeDistrict, activeTownship, activeQv, currentPage, false);
+        });
+    }
+
+    if (nameInput) nameInput.addEventListener('input', clearAddAlert);
+    if (addQv) addQv.addEventListener('change', clearAddAlert);
+
+    if (addForm) {
+        addForm.addEventListener('submit', async function (event) {
+            event.preventDefault();
+            clearAddAlert();
+
+            const district = addDistrict ? addDistrict.value : '';
+            const township = addTownship ? addTownship.value : '';
+            const qv = addQv ? addQv.value : '';
+            const name = nameInput ? nameInput.value.trim() : '';
+
+            if (!district) {
+                showAddAlert('warning', 'ခရိုင် တစ်ခု ရွေးချယ်ပါ။');
+                if (addDistrict) addDistrict.focus();
+                return;
+            }
+            if (!township) {
+                showAddAlert('warning', 'မြို့နယ် တစ်ခု ရွေးချယ်ပါ။');
+                if (addTownship) addTownship.focus();
+                return;
+            }
+            if (!qv) {
+                showAddAlert('warning', 'ကျေးရွာအုပ်စု တစ်ခု ရွေးချယ်ပါ။');
+                if (addQv) addQv.focus();
+                return;
+            }
+            if (!name) {
+                showAddAlert('warning', 'ကျေးရွာအမည် ထည့်သွင်းပါ။');
+                if (nameInput) nameInput.focus();
+                return;
+            }
+
+            if (nameInput) nameInput.disabled = true;
+            if (addDistrict) addDistrict.disabled = true;
+            if (addTownship) addTownship.disabled = true;
+            if (addQv) addQv.disabled = true;
+            setAddBusy(true);
+
+            try {
+                const response = await fetch('/api/township/temporary-villages', {
+                    method: 'POST',
+                    credentials: 'same-origin',
+                    headers: {
+                        'Accept': 'application/json',
+                        'Content-Type': 'application/x-www-form-urlencoded;charset=UTF-8'
+                    },
+                    body: new URLSearchParams({
+                        district: district,
+                        township: township,
+                        qv: qv,
+                        villageName: name
+                    })
+                });
+
+                let payload = {};
+                try { payload = await response.json(); } catch (err) { payload = {}; }
+
+                if (!response.ok) {
+                    throw new Error(payload.detail || 'ကျေးရွာ ထည့်သွင်းမရပါ။');
+                }
+
+                const created = payload.village || {};
+                showAddAlert(
+                    'success',
+                    (payload.message || 'ကျေးရွာကို အောင်မြင်စွာ ထည့်သွင်းပြီးပါပြီ။')
+                );
+
+                updateTotal(totalVillages + 1);
+
+                if (nameInput) nameInput.value = '';
+                if (addDistrict) addDistrict.value = created.districtID || district;
+                if (addTownship) addTownship.value = created.townshipID || township;
+                if (addQv) addQv.value = created.QVID || qv;
+
+                await switchFilterToLocation(
+                    created.districtID || district,
+                    created.townshipID || township,
+                    created.QVID || qv
+                );
+                await loadVillages(
+                    created.districtID || district,
+                    created.townshipID || township,
+                    created.QVID || qv,
+                    1,
+                    true
+                );
+                if (nameInput) nameInput.focus();
+            } catch (err) {
+                showAddAlert('danger', err && err.message ? err.message : 'ကျေးရွာ ထည့်သွင်းမရပါ။');
+            } finally {
+                if (nameInput) nameInput.disabled = false;
+                if (addDistrict) addDistrict.disabled = false;
+                if (addTownship) addTownship.disabled = false;
+                if (addQv) addQv.disabled = false;
+                setAddBusy(false);
+            }
+        });
+    }
+
+    if (editForm) {
+        editForm.addEventListener('submit', async function (event) {
+            event.preventDefault();
+            if (!editingVillage) return;
+            clearEditAlert();
+
+            const newQv = editQv ? editQv.value : '';
+            const newName = editVillageName ? editVillageName.value.trim() : '';
+
+            if (!newQv) {
+                showEditAlert('warning', 'ကျေးရွာအုပ်စု တစ်ခု ရွေးချယ်ပါ။');
+                if (editQv) editQv.focus();
+                return;
+            }
+            if (!newName) {
+                showEditAlert('warning', 'ကျေးရွာအမည် ထည့်သွင်းပါ။');
+                if (editVillageName) editVillageName.focus();
+                return;
+            }
+
+            const originalButtonHtml = editSaveBtn ? editSaveBtn.innerHTML : '';
+            if (editSaveBtn) {
+                editSaveBtn.disabled = true;
+                editSaveBtn.innerHTML = '<span class="spinner-border spinner-border-sm" role="status" aria-hidden="true"></span> သိမ်းဆည်းနေသည်…';
+            }
+
+            try {
+                const response = await fetch(
+                    '/api/township/temporary-villages/'
+                    + encodeURIComponent(editingVillage.districtID || activeDistrict) + '/'
+                    + encodeURIComponent(editingVillage.townshipID || activeTownship) + '/'
+                    + encodeURIComponent(editingVillage.QVID || '') + '/'
+                    + encodeURIComponent(editingVillage.villageID || ''),
+                    {
+                        method: 'PUT',
+                        credentials: 'same-origin',
+                        headers: {
+                            'Accept': 'application/json',
+                            'Content-Type': 'application/x-www-form-urlencoded;charset=UTF-8'
+                        },
+                        body: new URLSearchParams({ qv: newQv, villageName: newName })
+                    }
+                );
+
+                let payload = {};
+                try { payload = await response.json(); } catch (err) { payload = {}; }
+
+                if (!response.ok) {
+                    throw new Error(payload.detail || 'ကျေးရွာ ပြင်ဆင်မရပါ။');
+                }
+
+                if (editModalEl && window.bootstrap) {
+                    window.bootstrap.Modal.getOrCreateInstance(editModalEl).hide();
+                }
+
+                showAddAlert('success', payload.message || 'ကျေးရွာ အချက်အလက်ကို အောင်မြင်စွာ ပြင်ဆင်ပြီးပါပြီ။');
+                if (addQv) addQv.value = newQv;
+                if (filterQv && filterQv.value) {
+                    filterQv.value = newQv;
+                }
+                activeQv = filterQv ? filterQv.value : activeQv;
+
+                editingVillage = null;
+                await loadVillages(activeDistrict, activeTownship, activeQv, currentPage, true);
+            } catch (err) {
+                showEditAlert('danger', err && err.message ? err.message : 'ကျေးရွာ ပြင်ဆင်မရပါ။');
+            } finally {
+                if (editSaveBtn) {
+                    editSaveBtn.disabled = false;
+                    editSaveBtn.innerHTML = originalButtonHtml;
+                }
+            }
+        });
+    }
+
+    if (editVillageName) editVillageName.addEventListener('input', clearEditAlert);
+    if (editQv) editQv.addEventListener('change', clearEditAlert);
+
+    if (openImportBtn) openImportBtn.addEventListener('click', openImportModal);
+
+    if (importDistrict) {
+        importDistrict.addEventListener('change', async function () {
+            try {
+                await populateTownships(
+                    importDistrict.value, importTownship, importQv, ''
+                );
+                const township = importTownship ? importTownship.value : '';
+                if (township) {
+                    await populateQvs(
+                        importDistrict.value, township, importQv, ''
+                    );
+                }
+            } catch (err) {
+                clearImportAlert();
+            }
+        });
+    }
+
+    if (importTownship) {
+        importTownship.addEventListener('change', async function () {
+            try {
+                await populateQvs(
+                    importDistrict ? importDistrict.value : '',
+                    importTownship.value,
+                    importQv,
+                    ''
+                );
+            } catch (err) {
+                clearImportAlert();
+            }
+        });
+    }
+
+    if (importQv) importQv.addEventListener('change', clearImportAlert);
+    if (importFile) {
+        importFile.addEventListener('change', function () {
+            clearImportAlert();
+            clearImportResult();
+        });
+    }
+
+    if (importForm) {
+        importForm.addEventListener('submit', async function (event) {
+            event.preventDefault();
+            clearImportAlert();
+            clearImportResult();
+
+            const district = importDistrict ? importDistrict.value : '';
+            const township = importTownship ? importTownship.value : '';
+            const qv = importQv ? importQv.value : '';
+            const file = importFile && importFile.files ? importFile.files[0] : null;
+
+            if (!district) {
+                showImportAlert('warning', 'ခရိုင် တစ်ခု ရွေးချယ်ပါ။');
+                if (importDistrict) importDistrict.focus();
+                return;
+            }
+            if (!township) {
+                showImportAlert('warning', 'မြို့နယ် တစ်ခု ရွေးချယ်ပါ။');
+                if (importTownship) importTownship.focus();
+                return;
+            }
+            if (!qv) {
+                showImportAlert('warning', 'ကျေးရွာအုပ်စု တစ်ခု ရွေးချယ်ပါ။');
+                if (importQv) importQv.focus();
+                return;
+            }
+            if (!file) {
+                showImportAlert('warning', 'Excel ဖိုင်ကို ရွေးချယ်ပါ။');
+                return;
+            }
+            if (!/\.xlsx$/i.test(file.name || '')) {
+                showImportAlert('warning', 'Excel ဖိုင် (.xlsx) ကိုသာ ရွေးချယ်ပါ။');
+                return;
+            }
+
+            const formData = new FormData();
+            formData.append('district', district);
+            formData.append('township', township);
+            formData.append('qv', qv);
+            formData.append('file', file);
+
+            if (importDistrict) importDistrict.disabled = true;
+            if (importTownship) importTownship.disabled = true;
+            if (importQv) importQv.disabled = true;
+            if (importFile) importFile.disabled = true;
+            if (importBtn) {
+                importBtn.disabled = true;
+                importBtn.innerHTML = IMPORT_BUTTON_BUSY;
+            }
+
+            try {
+                const response = await fetch('/api/township/temporary-villages/import-excel', {
+                    method: 'POST',
+                    credentials: 'same-origin',
+                    headers: { 'Accept': 'application/json' },
+                    body: formData
+                });
+
+                let payload = {};
+                try { payload = await response.json(); } catch (err) { payload = {}; }
+
+                if (!response.ok) {
+                    throw new Error(payload.detail || 'Excel မှ ကျေးရွာများ ထည့်သွင်းမရပါ။');
+                }
+
+                showImportAlert('success', payload.message || 'ကျေးရွာများ ထည့်သွင်းပြီးပါပြီ။');
+                showImportResult(payload.errors || []);
+
+                if (importFile) importFile.value = '';
+                if (importDistrict) importDistrict.value = district;
+                if (importTownship) importTownship.value = township;
+                if (importQv) importQv.value = qv;
+                const inserted = Number(payload.inserted || 0);
+                if (inserted > 0) {
+                    updateTotal(totalVillages + inserted);
+                    if (addDistrict) addDistrict.value = district;
+                    try {
+                        await populateTownships(district, addTownship, addQv, township);
+                        if (township && addTownship) addTownship.value = township;
+                        await populateQvs(district, township, addQv, qv, false);
+                    } catch (err) {
+                        // Keep the existing add-form options when the lookup fails.
+                    }
+                    await switchFilterToLocation(district, township, qv);
+                    await loadVillages(district, township, qv, 1, true);
+                }
+            } catch (err) {
+                showImportAlert('danger', err && err.message ? err.message : 'Excel မှ ကျေးရွာများ ထည့်သွင်းမရပါ။');
+            } finally {
+                if (importDistrict) importDistrict.disabled = false;
+                if (importTownship) importTownship.disabled = false;
+                if (importQv) importQv.disabled = false;
+                if (importFile) importFile.disabled = false;
+                if (importBtn) {
+                    importBtn.disabled = false;
+                    importBtn.innerHTML = IMPORT_BUTTON_HTML;
+                }
+            }
+        });
+    }
+
+    // Mirror the active location into the add and import forms, then show the
+    // rows that were rendered by the server for the first page load.
+    if (addDistrict) addDistrict.value = activeDistrict;
+    if (addTownship) addTownship.value = activeTownship;
+    if (addQv) {
+        if (activeQv) {
+            addQv.value = activeQv;
+        } else if (addQv.options.length > 1) {
+            addQv.selectedIndex = 1;
+        }
+    }
+
+    if (importDistrict) importDistrict.value = activeDistrict;
+    if (importTownship) importTownship.value = activeTownship;
+    if (importQv) {
+        if (activeQv) {
+            importQv.value = activeQv;
+        } else if (importQv.options.length > 1) {
+            importQv.selectedIndex = 1;
+        }
+    }
+
+    renderVillages(initialVillages, currentPage, pageSize);
+    updateTotal(totalVillages);
+    updateListCount(totalFiltered);
+    renderPagination(currentPage, totalPages, totalFiltered, pageSize);
+})();
+</script>
+{% endblock %}

@@ -9,6 +9,8 @@ from slowapi.errors import RateLimitExceeded
 from starlette.middleware.sessions import SessionMiddleware
 from sqlalchemy import inspect
 from sqlalchemy.exc import SQLAlchemyError
+from fastapi.responses import JSONResponse
+from app.redis_client import redis_client, check_redis, close_redis
 
 from app.config import (
     APP_NAME, APP_VERSION, COOKIE_HTTPS_ONLY, DEBUG, SESSION_SECRET,
@@ -20,8 +22,6 @@ from app.routers import (
     auth, dashboard, enumerator, exports, households, locations,
     reports, settings, survey, system_admin, updates, villages,
 )
-from fastapi.responses import JSONResponse
-
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger("lbvd")
 
@@ -42,13 +42,63 @@ def init_db():
         logger.warning("init_db: %s", e)
 
 
+# def ensure_indexes():
+#     try:
+#         with engine.begin() as conn:
+#             conn.exec_driver_sql("CREATE INDEX IF NOT EXISTS idx_district_state ON district(stateID, districtID)")
+#             conn.exec_driver_sql("CREATE INDEX IF NOT EXISTS idx_township_state_district ON township(stateID, districtID, townshipID)")
+#             conn.exec_driver_sql("CREATE INDEX IF NOT EXISTS idx_personcv_state_district_township ON personcv(stateID, districtID, townshipID)")
+#         logger.info("Database indexes ensured.")
+#     except SQLAlchemyError as e:
+#         logger.warning("ensure_indexes: %s", e)
+
+
 def ensure_indexes():
+    index_specs = [
+        ("district", "idx_district_state", ["stateID", "districtID"]),
+        (
+            "township",
+            "idx_township_state_district",
+            ["stateID", "districtID", "townshipID"],
+        ),
+        (
+            "personcv",
+            "idx_personcv_state_district_township",
+            ["stateID", "districtID", "townshipID"],
+        ),
+    ]
+
     try:
         with engine.begin() as conn:
-            conn.exec_driver_sql("CREATE INDEX IF NOT EXISTS idx_district_state ON district(stateID, districtID)")
-            conn.exec_driver_sql("CREATE INDEX IF NOT EXISTS idx_township_state_district ON township(stateID, districtID, townshipID)")
-            conn.exec_driver_sql("CREATE INDEX IF NOT EXISTS idx_personcv_state_district_township ON personcv(stateID, districtID, townshipID)")
+            for table, index_name, columns in index_specs:
+                inspector = inspect(conn)
+
+                if table not in inspector.get_table_names():
+                    logger.warning(
+                        "ensure_indexes: table %s does not exist",
+                        table,
+                    )
+                    continue
+
+                existing_indexes = {
+                    index["name"]
+                    for index in inspector.get_indexes(table)
+                }
+
+                if index_name not in existing_indexes:
+                    column_sql = ", ".join(f"`{c}`" for c in columns)
+
+                    conn.exec_driver_sql(
+                        f"CREATE INDEX `{index_name}` "
+                        f"ON `{table}` ({column_sql})"
+                    )
+
+                    logger.info("Created index: %s", index_name)
+                else:
+                    logger.info("Index already exists: %s", index_name)
+
         logger.info("Database indexes ensured.")
+
     except SQLAlchemyError as e:
         logger.warning("ensure_indexes: %s", e)
 
@@ -91,14 +141,29 @@ def ensure_village_table():
         logger.warning("ensure_village_table: %s", e)
 
 
+# @asynccontextmanager
+# async def lifespan(app: FastAPI):
+#     init_db()
+#     ensure_personcv_status()
+#     ensure_indexes()
+#     ensure_village_table()
+#     yield
 @asynccontextmanager
 async def lifespan(app: FastAPI):
     init_db()
     ensure_personcv_status()
     ensure_indexes()
     ensure_village_table()
+
+    try:
+        await check_redis()
+        logger.info("Redis connected successfully")
+    except Exception as e:
+        logger.warning("Redis connection failed: %s", e)
+
     yield
 
+    await close_redis()
 
 app = FastAPI(
     title=APP_NAME, version=APP_VERSION, debug=DEBUG, lifespan=lifespan,
@@ -162,7 +227,15 @@ app.mount(
     name="apks",
 )
 
+@app.get("/test-redis")
+async def test_redis():
+    await redis_client.set("lbvd_test", "Redis is working")
+    value = await redis_client.get("lbvd_test")
 
+    return {
+        "redis": "connected",
+        "value": value
+    }
 if __name__ == "__main__":
     import uvicorn
     uvicorn.run(

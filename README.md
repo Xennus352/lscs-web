@@ -89,3 +89,153 @@ The `Dockerfile` runs only FastAPI with Uvicorn. The database runs separately.
 The image includes the templates and static assets used by the FastAPI routes.
 For APK uploads that must survive redeploys, attach a persistent disk and set
 `APK_DIR` to a directory on that disk.
+
+
+
+===========================read me KNO===================
+=========================================================
+# LBVD Project – Docker Local Run Guide
+
+**Project:** `lscs-web`  
+**Technology:** FastAPI + MySQL 8.0 + Redis 7 + Docker Compose  
+**Local URL:** http://localhost:5000
+
+## Step 1. Docker Desktop ဖွင့်ပါ
+
+Windows မှာ Docker Desktop ကို ဖွင့်ပါ။
+
+Docker Engine Running ဖြစ်ကြောင်း စစ်ဆေးပါ။
+
+```powershell
+docker version
+docker compose version
+```
+
+## Step 2. Project Folder ကို ဝင်ပါ
+
+PowerShell ဖွင့်ပြီး—
+
+```powershell
+cd C:\Users\khinn\LBVDProject\lscs-web
+```
+
+## Step 3. Environment File ရှိကြောင်း စစ်ပါ
+
+```powershell
+Test-Path .env.docker.local
+```
+
+`True` ဖြစ်ရပါမယ်။
+
+**သတိ:** `.env.docker.local` ထဲက Password နဲ့ Secret တွေကို မဖျက်ပါနှင့်။ GitHub ပေါ်လည်း မတင်ပါနှင့်။
+
+## Step 4. Docker Containers များ စတင်ပါ
+
+ပုံမှန်နေ့စဉ် အသုံးပြုတဲ့အခါ ဒီ Command တစ်ခုတည်းနဲ့ စတင်နိုင်ပါတယ်။
+
+```powershell
+docker compose --env-file .env.docker.local -f docker-compose.local.yml up -d
+```
+
+ဒီ Command က MySQL, Redis နဲ့ FastAPI ကို စတင်ပေးပါမယ်။
+
+## Step 5. Container Status စစ်ပါ
+
+```powershell
+docker compose --env-file .env.docker.local -f docker-compose.local.yml ps
+```
+
+မျှော်မှန်းထားတဲ့ Status—
+
+- `lbvd-local-app` – Up
+- `lbvd-local-mysql` – Up (healthy)
+- `lbvd-local-redis` – Up (healthy)
+
+## Step 6. Application Logs စစ်ပါ
+
+```powershell
+docker compose --env-file .env.docker.local -f docker-compose.local.yml logs --tail=50 app
+```
+
+အောက်ပါစာသားတွေ တွေ့ရရင် ကောင်းပါတယ်။
+
+```text
+Database indexes ensured.
+Redis connected successfully
+Application startup complete.
+Uvicorn running on http://0.0.0.0:5000
+```
+
+## Step 7. Browser မှာ ဖွင့်ပါ
+
+http://localhost:5000
+
+သို့မဟုတ်
+
+http://127.0.0.1:5000
+
+## Step 8. Redis စစ်ဆေးရန် (Optional)
+
+```powershell
+docker exec lbvd-local-redis redis-cli ping
+```
+
+မျှော်မှန်းထားသော Result—
+
+```text
+PONG
+```
+
+## Step 9. MySQL စစ်ဆေးရန် (Optional)
+
+```powershell
+docker exec -it lbvd-local-mysql mysql -uroot -p -D lbvd
+```
+
+Password ရိုက်ထည့်ပြီး—
+
+```sql
+SHOW TABLES;
+SELECT COUNT(*) FROM personcv;
+```
+
+ထွက်ရန်—
+
+```sql
+exit;
+```
+
+## Step 10. အသုံးပြုပြီး ရပ်နားရန်
+
+Container တွေကို ရပ်ထားချင်ရင်—
+
+```powershell
+docker compose --env-file .env.docker.local -f docker-compose.local.yml stop
+```
+
+နောက်တစ်ခါ ပြန်စချင်ရင်—
+
+```powershell
+docker compose --env-file .env.docker.local -f docker-compose.local.yml start
+```
+
+---
+
+## Important Notes
+
+1. နေ့စဉ် Run ရုံသာဆိုရင် `up -d` ကို သုံးပါ။
+2. Python Code ပြင်ပြီးရင် App ကို ပြန် Build လုပ်ပါ။
+3. `docker compose down -v` ကို မသုံးပါနှင့်။ Database Volume ပျက်သွားနိုင်ပါတယ်။
+4. MySQL Database ကို `lbvd_local_db_data` Volume မှာ သိမ်းထားပါတယ်။
+5. Redis Data ကို `lbvd_local_redis_data` Volume မှာ သိမ်းထားပါတယ်။
+6. Docker Container ရပ်သွားခြင်းနဲ့ Database Data ပျက်သွားခြင်းဟာ မတူပါ။
+
+**နေ့စဉ်အသုံးပြုရန် အဓိက Command**
+
+```powershell
+cd C:\Users\khinn\LBVDProject\lscs-web
+
+docker compose --env-file .env.docker.local -f docker-compose.local.yml up -d
+
+docker compose --env-file .env.docker.local -f docker-compose.local.yml ps
+```

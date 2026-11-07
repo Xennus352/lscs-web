@@ -11,3 +11,4 @@ __pycache__/
 # Production secrets and backups
 .env.prod
 backups/
+Add-Content .gitignore "`n.env.docker.local"

@@ -26,7 +26,7 @@ from app.database import engine
 from app.extensions import limiter
 from app.routers import (
     auth, dashboard, enumerator, exports, households, locations,
-    reports, settings, survey, system_admin, updates, villages,
+    reports, settings, survey, sync, system_admin, updates, villages,
 )
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger("lbvd")
@@ -46,7 +46,6 @@ def init_db():
         logger.info("users table ready")
     except SQLAlchemyError as e:
         logger.warning("init_db: %s", e)
-
 
 
 def ensure_indexes():
@@ -117,6 +116,41 @@ def ensure_personcv_status():
             )
 
 
+def ensure_personcv_record_uuid():
+    """Add record_uuid for idempotent offline sync.
+    Existing rows keep NULL; new synced rows must provide a UUID. The unique
+    index allows multiple NULLs while preventing duplicate UUIDs.
+    """
+    try:
+        with engine.begin() as conn:
+            columns = [c["name"] for c in inspect(conn).get_columns("personcv")]
+            if "record_uuid" not in columns:
+                conn.exec_driver_sql(
+                    "ALTER TABLE personcv ADD COLUMN record_uuid CHAR(36) NULL"
+                )
+            indexes = inspect(conn).get_indexes("personcv")
+            has_unique = any(
+                idx.get("unique") and idx.get("column_names") == ["record_uuid"]
+                for idx in indexes
+            )
+            if not has_unique:
+                try:
+                    conn.exec_driver_sql(
+                        "CREATE UNIQUE INDEX uk_personcv_record_uuid "
+                        "ON personcv(record_uuid)"
+                    )
+                except SQLAlchemyError as idx_err:
+                    # Existing duplicate/invalid data should not block startup;
+                    # the sync endpoint still checks record_uuid before insert.
+                    logger.warning(
+                        "ensure_personcv_record_uuid: unique index skipped: %s",
+                        idx_err,
+                    )
+        logger.info("personcv.record_uuid ready")
+    except SQLAlchemyError as e:
+        logger.warning("ensure_personcv_record_uuid: %s", e)
+
+
 def ensure_village_table():
     try:
         with engine.begin() as conn:
@@ -137,19 +171,113 @@ def ensure_village_table():
         logger.warning("ensure_village_table: %s", e)
 
 
-# @asynccontextmanager
-# async def lifespan(app: FastAPI):
-#     init_db()
-#     ensure_personcv_status()
-#     ensure_indexes()
-#     ensure_village_table()
-#     yield
+def ensure_sync_devices_table():
+    try:
+        with engine.begin() as conn:
+            conn.exec_driver_sql("""
+                CREATE TABLE IF NOT EXISTS sync_devices (
+                    device_id CHAR(36) NOT NULL,
+                    userID INT NOT NULL,
+                    platform VARCHAR(30) NOT NULL,
+                    device_name VARCHAR(100) DEFAULT NULL,
+                    status TINYINT NOT NULL DEFAULT 1,
+                    PRIMARY KEY (device_id, userID),
+                    KEY idx_sync_device_user (userID),
+                    CONSTRAINT sync_devices_ibfk_1 FOREIGN KEY (userID)
+                        REFERENCES user (userID)
+                        ON DELETE CASCADE ON UPDATE CASCADE
+                ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci
+            """)
+            primary_key = inspect(conn).get_pk_constraint("sync_devices")
+            constrained_columns = primary_key.get("constrained_columns") or []
+            if constrained_columns == ["device_id"]:
+                conn.exec_driver_sql(
+                    "ALTER TABLE sync_devices DROP PRIMARY KEY, "
+                    "ADD PRIMARY KEY (device_id, userID)"
+                )
+                logger.info(
+                    "sync_devices primary key upgraded to (device_id, userID)"
+                )
+        logger.info("sync_devices table ready")
+    except SQLAlchemyError as e:
+        logger.warning("ensure_sync_devices_table: %s", e)
+
+
+def _ensure_sync_operations_columns(conn):
+    """Add any missing columns to an existing sync_operations table."""
+    required = {
+        "operation_uuid": "ALTER TABLE sync_operations ADD COLUMN operation_uuid CHAR(36) NOT NULL",
+        "operation_type": "ALTER TABLE sync_operations ADD COLUMN operation_type VARCHAR(30) NOT NULL DEFAULT 'insert'",
+        "record_uuid": "ALTER TABLE sync_operations ADD COLUMN record_uuid CHAR(36) NOT NULL",
+        "device_uuid": "ALTER TABLE sync_operations ADD COLUMN device_uuid CHAR(36) DEFAULT NULL",
+        "userID": "ALTER TABLE sync_operations ADD COLUMN userID INT DEFAULT NULL",
+        "table_name": "ALTER TABLE sync_operations ADD COLUMN table_name VARCHAR(64) NOT NULL DEFAULT 'personcv'",
+        "form_id": "ALTER TABLE sync_operations ADD COLUMN form_id VARCHAR(20) DEFAULT NULL",
+        "base_version": "ALTER TABLE sync_operations ADD COLUMN base_version INT NOT NULL DEFAULT 0",
+        "result_version": "ALTER TABLE sync_operations ADD COLUMN result_version INT DEFAULT NULL",
+        "status": "ALTER TABLE sync_operations ADD COLUMN status VARCHAR(20) NOT NULL DEFAULT 'pending'",
+        "error_message": "ALTER TABLE sync_operations ADD COLUMN error_message TEXT DEFAULT NULL",
+        "created_at": "ALTER TABLE sync_operations ADD COLUMN created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP",
+    }
+    existing = {c["name"] for c in inspect(conn).get_columns("sync_operations")}
+    for col, ddl in required.items():
+        if col not in existing:
+            try:
+                conn.exec_driver_sql(ddl)
+                logger.info("sync_operations: added missing column %s", col)
+            except SQLAlchemyError as col_err:
+                logger.warning("sync_operations: could not add column %s: %s", col, col_err)
+
+
+def ensure_sync_operations_table():
+    """Audit/sync operation log for personcv inserts."""
+    create_sql = """
+        CREATE TABLE IF NOT EXISTS sync_operations (
+            operation_uuid CHAR(36) NOT NULL,
+            operation_type VARCHAR(30) NOT NULL,
+            record_uuid CHAR(36) NOT NULL,
+            device_uuid CHAR(36) DEFAULT NULL,
+            userID INT DEFAULT NULL,
+            table_name VARCHAR(64) NOT NULL DEFAULT 'personcv',
+            form_id VARCHAR(20) DEFAULT NULL,
+            base_version INT NOT NULL DEFAULT 0,
+            result_version INT DEFAULT NULL,
+            status VARCHAR(20) NOT NULL,
+            error_message TEXT DEFAULT NULL,
+            created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+            PRIMARY KEY (operation_uuid),
+            KEY idx_sync_op_record (record_uuid),
+            KEY idx_sync_op_user (userID),
+            KEY idx_sync_op_device (device_uuid),
+            KEY idx_sync_op_status (status){fk}
+        ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci
+    """
+    fk = """,
+            CONSTRAINT fk_sync_op_user FOREIGN KEY (userID)
+                REFERENCES user (userID)
+                ON DELETE SET NULL ON UPDATE CASCADE"""
+    try:
+        with engine.begin() as conn:
+            try:
+                conn.exec_driver_sql(create_sql.format(fk=fk))
+            except SQLAlchemyError:
+                conn.exec_driver_sql(create_sql.format(fk=""))
+                logger.info("sync_operations table created without FK constraint")
+            _ensure_sync_operations_columns(conn)
+        logger.info("sync_operations table ready")
+    except SQLAlchemyError as e:
+        logger.warning("ensure_sync_operations_table: %s", e)
+
+
 @asynccontextmanager
 async def lifespan(app: FastAPI):
     init_db()
     ensure_personcv_status()
+    ensure_personcv_record_uuid()
     ensure_indexes()
     ensure_village_table()
+    ensure_sync_devices_table()
+    ensure_sync_operations_table()
 
     try:
         await check_redis()
@@ -168,8 +296,7 @@ app = FastAPI(
     
 )
 # ⭐ Extra protection — block docs paths even if someone guesses them
-# @app.middleware("http")
-
+@app.middleware("http")
 async def block_docs_endpoints(request: Request, call_next):
     blocked_exact = {"/docs", "/redoc", "/openapi.json"}
     blocked_prefixes = ("/docs/", "/redoc/")
@@ -206,12 +333,21 @@ app.include_router(settings.router)
 app.include_router(system_admin.router)
 app.include_router(exports.router)
 app.include_router(updates.router)   # public: /api/check-update, /api/download-latest
+app.include_router(sync.router)
 app.include_router(villages.router)
 
 # ---------- Static ----------
 _current_dir = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 _assets_dir = os.path.join(_current_dir, "assets")
 app.mount("/assets", StaticFiles(directory=_assets_dir), name="assets")
+
+# Application-owned static files (offline DB client, local JS/CSS helpers)
+_static_dir = os.path.join(_current_dir, "app", "static")
+app.mount(
+    "/static",
+    StaticFiles(directory=_static_dir, check_dir=False),
+    name="static",
+)
 
 # APK downloads (public, referenced by /api/check-update)
 try:

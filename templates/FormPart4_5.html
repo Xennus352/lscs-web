@@ -159,15 +159,35 @@
                     });
                     if (!res5.ok) throw new Error('Interviewer save failed');
 
-                    // 3) Final submit
-                    const resSubmit = await fetch(`${SURVEY_PREFIX}/submit/${encodeURIComponent(FORM_ID)}`);
+                    // 3) Final submit (record_uuid must be stable across retries until committed)
+                    var submitUrl = `${SURVEY_PREFIX}/submit/${encodeURIComponent(FORM_ID)}`;
+                    var recordUuid = '';
+                    try {
+                        var savedFormData = JSON.parse(sessionStorage.getItem('lbvdFormData') || '{}');
+                        recordUuid = (savedFormData && savedFormData.record_uuid) ? String(savedFormData.record_uuid).trim() : '';
+                        if (!/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(recordUuid)) {
+                            recordUuid = (window.crypto && window.crypto.randomUUID) ? window.crypto.randomUUID()
+                                : 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, function(c){ var r=Math.random()*16|0,v=c==='x'?r:(r&0x3|0x8); return v.toString(16); });
+                            savedFormData = savedFormData || {};
+                            savedFormData.record_uuid = recordUuid;
+                            sessionStorage.setItem('lbvdFormData', JSON.stringify(savedFormData));
+                        }
+                        submitUrl += '?record_uuid=' + encodeURIComponent(recordUuid);
+                    } catch (e) {}
+                    const resSubmit = await fetch(submitUrl, { credentials: 'same-origin' });
                     if (!resSubmit.ok) throw new Error('Submit failed');
+                    var submitResult = {};
+                    try { submitResult = await resSubmit.json(); } catch (e) {}
 
-                    // 4) sessionStorage ရှင်း
+                    // 4) sessionStorage ရှင်း (confirmed success or already existed)
                     clearFormData();
 
-                    // 5) Success modal — OK နှိပ်ရင် FormPart1 ကို သွား
-                    showModal('success', 'အောင်မြင်ပါသည်', 'အချက်အလက်များ အားလုံး အောင်မြင်စွာ သိမ်းဆည်းပြီးပါပြီ။', function() {
+                    // 5) Success modal — different message for already-existed records
+                    var successTitle = submitResult.already_existed ? 'သိမ်းဆည်းပြီးသား ဖြစ်ပါသည်' : 'အောင်မြင်ပါသည်';
+                    var successMessage = submitResult.message || (submitResult.already_existed
+                        ? 'ဤအချက်အလက်ကို ဒေတာဘေ့စ်တွင် သိမ်းဆည်းပြီးသားဖြစ်ပါသည်။'
+                        : 'အချက်အလက်များ အားလုံး အောင်မြင်စွာ သိမ်းဆည်းပြီးပါပြီ။');
+                    showModal('success', successTitle, successMessage, function() {
                         window.location.href = (SURVEY_PREFIX === '/enumerator') ? '/enumerator/part1' : '/survey/part1';
                     });
                 } catch (err) {

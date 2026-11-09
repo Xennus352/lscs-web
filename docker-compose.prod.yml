@@ -1,4 +1,4 @@
-# Production stack for a VPS: app + MariaDB + Caddy (automatic HTTPS).
+# Production stack for a VPS: app + MariaDB + Redis + Caddy (automatic HTTPS).
 #
 # Usage:
 #   cp .env.prod.example .env.prod   # then edit it
@@ -29,6 +29,18 @@ services:
       retries: 12
       start_period: 30s
 
+  redis:
+    image: redis:7-alpine
+    restart: unless-stopped
+    command: ["redis-server", "--appendonly", "yes"]
+    volumes:
+      - redis_data:/data
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 10s
+      timeout: 3s
+      retries: 5
+
   app:
     build:
       context: .
@@ -37,8 +49,11 @@ services:
     depends_on:
       db:
         condition: service_healthy
+      redis:
+        condition: service_healthy
     environment:
       DATABASE_URL: mysql+pymysql://lbvd:${DB_PASSWORD}@db:3306/lbvd?charset=utf8mb4
+      REDIS_URL: ${REDIS_URL:-redis://redis:6379/0}
       APP_NAME: LBVD Dashboard
       APP_VERSION: ${APP_VERSION:-1.0.0}
       DEBUG: "false"
@@ -85,6 +100,7 @@ services:
 
 volumes:
   db_data:
+  redis_data:
   apk_data:
   caddy_data:
   caddy_config:

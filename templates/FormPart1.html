@@ -179,6 +179,7 @@
         </div>
     </div>
     <input type="hidden" name="formID" value="{{ form_id }}">
+    <input type="hidden" name="record_uuid" id="recordUuid" value="">
 </div>
 {% endblock %}
 
@@ -772,6 +773,33 @@ async function loadVillageOptions() {
     }
 }
 
+function generateRecordUuid() {
+    if (window.crypto && typeof window.crypto.randomUUID === 'function') {
+        return window.crypto.randomUUID();
+    }
+    return 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, function(c) {
+        var r = Math.random() * 16 | 0, v = c === 'x' ? r : (r & 0x3 | 0x8);
+        return v.toString(16);
+    });
+}
+function ensureRecordUuid() {
+    var el = document.getElementById('recordUuid');
+    if (!el) return '';
+    var saved = null;
+    try { saved = JSON.parse(sessionStorage.getItem('lbvdFormData') || '{}'); } catch (e) {}
+    var uuid = (el.value || (saved && saved.record_uuid) || '').trim();
+    if (!/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(uuid)) {
+        uuid = generateRecordUuid();
+    }
+    el.value = uuid;
+    try {
+        var data = saved || {};
+        data.record_uuid = uuid;
+        sessionStorage.setItem('lbvdFormData', JSON.stringify(data));
+    } catch (e) {}
+    return uuid;
+}
+
 document.addEventListener('DOMContentLoaded', async function () {
     updateProgress(20, 'အပိုင်း (၁) / ၅ - လူတွေ့မေးမြန်းခြင်းဆိုင်ရာ အချက်များ');
     const backBtn = document.getElementById('backBtn');
@@ -782,6 +810,7 @@ document.addEventListener('DOMContentLoaded', async function () {
     if (nextBtn) nextBtn.classList.remove('d-none');
     if (submitBtn) submitBtn.classList.add('d-none');
     loadFormData();
+    ensureRecordUuid();
     const syncHouseholdHead = setupRespondentHeadSync(form);
     const today = new Date();
     document.getElementById('interviewDate').value =
@@ -936,7 +965,11 @@ document.addEventListener('DOMContentLoaded', async function () {
                 throw new Error(typeof result.detail === 'string' ? result.detail : 'သိမ်းဆည်းမှု မအောင်မြင်ပါ။');
             }
             clearFormData();
-                       showModal('success', 'သိမ်းဆည်းပြီးပါပြီ', 'အချက်အလက် မကောက်ယူသည့် အိမ်ထောင်စုကို သိမ်းဆည်းပြီးပါပြီ။', function () {
+            var successTitle = result.already_existed ? 'သိမ်းဆည်းပြီးသား ဖြစ်ပါသည်' : 'သိမ်းဆည်းပြီးပါပြီ';
+            var successMessage = result.message || (result.already_existed
+                ? 'ဤအချက်အလက်ကို ဒေတာဘေ့စ်တွင် သိမ်းဆည်းပြီးသားဖြစ်ပါသည်။'
+                : 'အချက်အလက် မကောက်ယူသည့် အိမ်ထောင်စုကို သိမ်းဆည်းပြီးပါပြီ။');
+            showModal('success', successTitle, successMessage, function () {
                 window.location.href = '/enumerator/part1';
             });
         } catch (error) {

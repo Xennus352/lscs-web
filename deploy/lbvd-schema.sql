@@ -145,8 +145,10 @@ CREATE TABLE `personcv` (
   `headAge` int NOT NULL,
   `Interviewer` varchar(30) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci NOT NULL,
   `interviewerPhoneNo` varchar(15) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci NOT NULL,
+  `record_uuid` char(36) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci DEFAULT NULL,
   `status` tinyint NOT NULL DEFAULT '0',
   PRIMARY KEY (`formID`),
+  UNIQUE KEY `uk_personcv_record_uuid` (`record_uuid`),
   KEY `fk_personcv_user` (`userId`),
   CONSTRAINT `fk_personcv_user` FOREIGN KEY (`userId`) REFERENCES `user` (`userID`) ON DELETE SET NULL ON UPDATE CASCADE,
   CONSTRAINT `ck_personcv_status` CHECK ((`status` in (0,1)))
@@ -216,6 +218,44 @@ CREATE TABLE `user` (
   `phone` varchar(20) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci DEFAULT NULL,
   PRIMARY KEY (`userID`)
 ) ENGINE=InnoDB AUTO_INCREMENT=11 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+/*!40101 SET character_set_client = @saved_cs_client */;
+DROP TABLE IF EXISTS `sync_devices`;
+/*!40101 SET @saved_cs_client     = @@character_set_client */;
+/*!50503 SET character_set_client = utf8mb4 */;
+CREATE TABLE `sync_devices` (
+  `device_id` char(36) NOT NULL,
+  `userID` int NOT NULL,
+  `platform` varchar(30) NOT NULL,
+  `device_name` varchar(100) DEFAULT NULL,
+  `status` tinyint NOT NULL DEFAULT '1',
+  PRIMARY KEY (`device_id`,`userID`),
+  KEY `idx_sync_device_user` (`userID`),
+  CONSTRAINT `sync_devices_ibfk_1` FOREIGN KEY (`userID`) REFERENCES `user` (`userID`) ON DELETE CASCADE ON UPDATE CASCADE
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
+/*!40101 SET character_set_client = @saved_cs_client */;
+DROP TABLE IF EXISTS `sync_operations`;
+/*!40101 SET @saved_cs_client     = @@character_set_client */;
+/*!50503 SET character_set_client = utf8mb4 */;
+CREATE TABLE `sync_operations` (
+  `operation_uuid` char(36) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci NOT NULL,
+  `operation_type` varchar(30) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci NOT NULL,
+  `record_uuid` char(36) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci NOT NULL,
+  `device_uuid` char(36) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci DEFAULT NULL,
+  `userID` int DEFAULT NULL,
+  `table_name` varchar(64) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci NOT NULL DEFAULT 'personcv',
+  `form_id` varchar(20) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci DEFAULT NULL,
+  `base_version` int NOT NULL DEFAULT '0',
+  `result_version` int DEFAULT NULL,
+  `status` varchar(20) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci NOT NULL,
+  `error_message` text CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci,
+  `created_at` datetime NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  PRIMARY KEY (`operation_uuid`),
+  KEY `idx_sync_op_record` (`record_uuid`),
+  KEY `idx_sync_op_user` (`userID`),
+  KEY `idx_sync_op_device` (`device_uuid`),
+  KEY `idx_sync_op_status` (`status`),
+  CONSTRAINT `fk_sync_op_user` FOREIGN KEY (`userID`) REFERENCES `user` (`userID`) ON DELETE SET NULL ON UPDATE CASCADE
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 /*!40101 SET character_set_client = @saved_cs_client */;
 DROP TABLE IF EXISTS `userrole`;
 /*!40101 SET @saved_cs_client     = @@character_set_client */;

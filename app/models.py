@@ -13,6 +13,7 @@ class PersonCV(Base):
 
     status = Column(Integer, nullable=False, default=0, server_default="0")
     formID = Column(String(50), primary_key=True, index=True)
+    record_uuid = Column(String(36), nullable=True, unique=True, index=True)
     stateID = Column(String(100), nullable=False)
     districtID = Column(String(100), nullable=False)
     townshipID = Column(String(100), nullable=False)

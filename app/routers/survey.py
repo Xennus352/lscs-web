@@ -3,8 +3,9 @@ import logging
 from datetime import datetime
 from typing import Annotated, List, Optional
 from urllib.parse import quote
+import uuid as uuid_lib
 
-from fastapi import APIRouter, Depends, Form, HTTPException, Request
+from fastapi import APIRouter, Depends, Form, HTTPException, Query, Request
 from fastapi.encoders import jsonable_encoder
 from fastapi.responses import HTMLResponse, JSONResponse, RedirectResponse
 from pydantic import BaseModel
@@ -26,6 +27,156 @@ from app.lookups import (
 )
 from app.templating import templates
 from app.utils import generate_formatted_id
+
+
+def _insert_sync_operation(cur, operation_uuid, operation_type, record_uuid, device_uuid,
+                           user_id, status, form_id=None, base_version=0,
+                           result_version=None, error_message=None):
+    cur.execute(
+        """
+        INSERT INTO sync_operations (
+            operation_uuid, operation_type, record_uuid, device_uuid, userID,
+            table_name, form_id, base_version, result_version, status, error_message
+        ) VALUES (%s,%s,%s,%s,%s,'personcv',%s,%s,%s,%s,%s)
+        ON DUPLICATE KEY UPDATE
+            status = VALUES(status),
+            result_version = VALUES(result_version),
+            form_id = COALESCE(VALUES(form_id), form_id),
+            error_message = VALUES(error_message)
+        """,
+        (
+            operation_uuid,
+            operation_type or "insert",
+            record_uuid,
+            device_uuid,
+            user_id,
+            form_id,
+            base_version,
+            result_version,
+            status,
+            (str(error_message)[:65535] if error_message else None),
+        ),
+    )
+
+
+_sync_operations_table_ready = False
+
+_SYNC_OPERATIONS_COLUMNS = [
+    ("operation_uuid", "ALTER TABLE sync_operations ADD COLUMN operation_uuid CHAR(36) NOT NULL"),
+    ("operation_type", "ALTER TABLE sync_operations ADD COLUMN operation_type VARCHAR(30) NOT NULL DEFAULT 'insert'"),
+    ("record_uuid", "ALTER TABLE sync_operations ADD COLUMN record_uuid CHAR(36) NOT NULL"),
+    ("device_uuid", "ALTER TABLE sync_operations ADD COLUMN device_uuid CHAR(36) DEFAULT NULL"),
+    ("userID", "ALTER TABLE sync_operations ADD COLUMN userID INT DEFAULT NULL"),
+    ("table_name", "ALTER TABLE sync_operations ADD COLUMN table_name VARCHAR(64) NOT NULL DEFAULT 'personcv'"),
+    ("form_id", "ALTER TABLE sync_operations ADD COLUMN form_id VARCHAR(20) DEFAULT NULL"),
+    ("base_version", "ALTER TABLE sync_operations ADD COLUMN base_version INT NOT NULL DEFAULT 0"),
+    ("result_version", "ALTER TABLE sync_operations ADD COLUMN result_version INT DEFAULT NULL"),
+    ("status", "ALTER TABLE sync_operations ADD COLUMN status VARCHAR(20) NOT NULL DEFAULT 'pending'"),
+    ("error_message", "ALTER TABLE sync_operations ADD COLUMN error_message TEXT DEFAULT NULL"),
+    ("created_at", "ALTER TABLE sync_operations ADD COLUMN created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP"),
+]
+
+
+def _ensure_sync_operations_table(cur):
+    global _sync_operations_table_ready
+    if _sync_operations_table_ready:
+        return
+    try:
+        cur.execute("""
+            CREATE TABLE IF NOT EXISTS sync_operations (
+                operation_uuid CHAR(36) NOT NULL,
+                operation_type VARCHAR(30) NOT NULL,
+                record_uuid CHAR(36) NOT NULL,
+                device_uuid CHAR(36) DEFAULT NULL,
+                userID INT DEFAULT NULL,
+                table_name VARCHAR(64) NOT NULL DEFAULT 'personcv',
+                form_id VARCHAR(20) DEFAULT NULL,
+                base_version INT NOT NULL DEFAULT 0,
+                result_version INT DEFAULT NULL,
+                status VARCHAR(20) NOT NULL,
+                error_message TEXT DEFAULT NULL,
+                created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+                PRIMARY KEY (operation_uuid),
+                KEY idx_sync_op_record (record_uuid),
+                KEY idx_sync_op_user (userID),
+                KEY idx_sync_op_device (device_uuid),
+                KEY idx_sync_op_status (status)
+            ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci
+        """)
+    except Exception:
+        # Table may already exist with an incompatible legacy schema; column
+        # ensure below will repair it.
+        pass
+    _sync_operations_table_ready = True
+
+
+def _ensure_sync_operations_columns(cur, conn):
+    try:
+        cur.execute("SHOW COLUMNS FROM sync_operations")
+        existing = {row[0] for row in (cur.fetchall() or [])}
+    except Exception:
+        return
+    changed = False
+    for col, ddl in _SYNC_OPERATIONS_COLUMNS:
+        if col not in existing:
+            try:
+                cur.execute(ddl)
+                changed = True
+                logger.info("sync_operations: added missing column %s", col)
+            except Exception as col_err:
+                msg = str(col_err).lower()
+                if "duplicate" not in msg and "1060" not in msg:
+                    logger.warning("sync_operations: could not add column %s: %s", col, col_err)
+    if changed:
+        try:
+            conn.commit()
+        except Exception:
+            pass
+
+
+def _log_sync_operation_standalone(*args, **kwargs):
+    global _sync_operations_table_ready
+    c2 = cur2 = None
+    try:
+        c2 = get_db_connection()
+        cur2 = c2.cursor()
+        try:
+            _insert_sync_operation(cur2, *args, **kwargs)
+        except Exception as insert_err:
+            err = str(insert_err).lower()
+            try:
+                c2.rollback()
+            except Exception:
+                pass
+            if "sync_operations" in err and (
+                "doesn't exist" in err or "does not exist" in err or "1146" in err
+                or "unknown column" in err or "1054" in err
+            ):
+                _ensure_sync_operations_table(cur2)
+                _ensure_sync_operations_columns(cur2, c2)
+                _insert_sync_operation(cur2, *args, **kwargs)
+            else:
+                raise
+        c2.commit()
+    except Exception:
+        _sync_operations_table_ready = False
+        logger.exception("Failed to write sync_operations audit row")
+        if c2:
+            try:
+                c2.rollback()
+            except Exception:
+                pass
+    finally:
+        if cur2:
+            try:
+                cur2.close()
+            except Exception:
+                pass
+        if c2:
+            try:
+                c2.close()
+            except Exception:
+                pass
 
 logger = logging.getLogger("lbvd")
 router = APIRouter(tags=["survey"])
@@ -141,10 +292,28 @@ async def compat_process_step_1(
     headPhoneNo: Annotated[str, Form()] = "",
     headAge: Annotated[str, Form()] = "",
     collection_status: Annotated[str, Form(alias="status")] = "1",
+    record_uuid: Annotated[Optional[str], Form()] = None,
     db: Session = Depends(get_db),
 ):
     logger.info("formID from part1 %s", formID)
     enumerator_user = _guard_enumerator_web_route(request)
+
+    # Stable id per logical survey record for idempotent saves/retries.
+    cleaned_record_uuid = None
+    if record_uuid:
+        try:
+            cleaned_record_uuid = str(uuid_lib.UUID(str(record_uuid))).lower()
+        except Exception:
+            cleaned_record_uuid = None
+    if not cleaned_record_uuid:
+        existing_uuid = request.session.get("record_uuid")
+        try:
+            cleaned_record_uuid = str(uuid_lib.UUID(str(existing_uuid))).lower() if existing_uuid else None
+        except Exception:
+            cleaned_record_uuid = None
+    if not cleaned_record_uuid:
+        cleaned_record_uuid = str(uuid_lib.uuid4()).lower()
+    request.session["record_uuid"] = cleaned_record_uuid
 
     if enumerator_user:
         state_id = str(enumerator_user["stateID"])
@@ -343,7 +512,12 @@ async def compat_save_interviewer_info(form_id: str, data: dict, request: Reques
 # ============================================================
 @router.get("/survey/submit/{formID}")
 @router.get("/enumerator/submit/{formID}")
-async def compat_submit_survey(formID: str, request: Request, db: Session = Depends(get_db)):
+async def compat_submit_survey(
+    formID: str,
+    request: Request,
+    db: Session = Depends(get_db),
+    record_uuid: Optional[str] = Query(None),
+):
     enumerator_user = _guard_enumerator_web_route(request)
     state_id = str(enumerator_user["stateID"]) if enumerator_user else _compat_session_state_id(request)
 
@@ -352,6 +526,26 @@ async def compat_submit_survey(formID: str, request: Request, db: Session = Depe
     user_id = session_user.get("id")
     if user_id is None:
         raise HTTPException(400, "User session မတွေ့ပါ။ ပြန် Login လုပ်ပါ။")
+
+    # Idempotency key: same logical record must not be duplicated on retry.
+    cleaned_record_uuid = None
+    raw_uuid = record_uuid or request.session.get("record_uuid")
+    if raw_uuid:
+        try:
+            cleaned_record_uuid = str(uuid_lib.UUID(str(raw_uuid))).lower()
+        except Exception:
+            cleaned_record_uuid = None
+    if not cleaned_record_uuid:
+        cleaned_record_uuid = str(uuid_lib.uuid4()).lower()
+    request.session["record_uuid"] = cleaned_record_uuid
+
+    operation_uuid = str(uuid_lib.uuid4())
+    session_device_uuid = None
+    try:
+        raw_device_uuid = session_user.get("device_uuid")
+        session_device_uuid = str(uuid_lib.UUID(str(raw_device_uuid))).lower() if raw_device_uuid else None
+    except Exception:
+        session_device_uuid = None
 
     if enumerator_user:
         if (str(step1.get("districtID")) != str(enumerator_user["districtID"])
@@ -384,130 +578,184 @@ async def compat_submit_survey(formID: str, request: Request, db: Session = Depe
     if not collecting:
         all_animals = []
 
-    current_year = datetime.now().year
-    try:
-        row = db.execute(
-            text("""SELECT COALESCE(MAX(CAST(SUBSTRING(formID, 11) AS UNSIGNED)), 0) + 1 AS next_num
-                    FROM personcv WHERE formID LIKE :pattern"""),
-            {"pattern": f"FORM-{current_year}-%"},
-        ).fetchone()
-        next_num = int(row[0]) if row and row[0] else 1
-    except Exception as e:
-        logger.error("Form ID generation failed: %s", e)
-        raise HTTPException(500, "Form ID ဖန်တီးမှု မအောင်မြင်ပါ။")
-
-    new_form_id = generate_formatted_id(next_num)
-    logger.info("tempID=%s, generated FormID=%s (MAX-based)", formID, new_form_id)
-    formID = new_form_id
-
     conn = get_db_connection(); cur = conn.cursor()
+    already_existed = False
     try:
         conn.start_transaction()
 
-        cur.execute("SELECT userId FROM personcv WHERE formID = %s FOR UPDATE", (formID,))
-        existing_form = cur.fetchone()
+        # Idempotency: if this record_uuid was already saved (e.g. DB commit
+        # succeeded but the response was lost), return success without duplicating.
+        if cleaned_record_uuid:
+            cur.execute(
+                "SELECT formID FROM personcv WHERE record_uuid = %s LIMIT 1 FOR UPDATE",
+                (cleaned_record_uuid,),
+            )
+            existing_by_uuid = cur.fetchone()
+            if existing_by_uuid:
+                formID = str(existing_by_uuid[0])
+                already_existed = True
+                conn.commit()
+                _log_sync_operation_standalone(
+                    operation_uuid, "insert", cleaned_record_uuid, session_device_uuid,
+                    user_id, "conflict", formID, 0, 1,
+                    "record_uuid already exists in personcv",
+                )
+            # fall through to response construction with already_existed=True
 
-        if existing_form:
-            existing_user_id = existing_form[0]
-            if existing_user_id is None or str(existing_user_id) != str(user_id):
-                raise HTTPException(403, "ဤ Survey Form ကို ပြင်ဆင်ခွင့်မရှိပါ။")
+        if not already_existed:
+            current_year = datetime.now().year
+            cur.execute(
+                "SELECT COALESCE(MAX(CAST(SUBSTRING(formID, 11) AS UNSIGNED)), 0) + 1 "
+                "FROM personcv WHERE formID LIKE %s FOR UPDATE",
+                (f"FORM-{current_year}-%",),
+            )
+            row = cur.fetchone()
+            next_num = int(row[0]) if row and row[0] else 1
+            new_form_id = generate_formatted_id(next_num)
+            logger.info("tempID=%s, generated FormID=%s (MAX-based)", formID, new_form_id)
+            formID = new_form_id
 
-            cur.execute("""
-                UPDATE personcv
-                SET stateID = %s, districtID = %s, townshipID = %s, QVID = %s,
-                    WardName = %s, householdNo = %s, interviewDate = %s,
-                    name = %s, gender = %s, eduStatus = %s, phoneNo = %s, age = %s,
-                    headName = %s, headEduStatus = %s, headGender = %s,
-                    headPhoneNo = %s, headAge = %s, Interviewer = %s,
-                    interviewerPhoneNo = %s, status = %s
-                WHERE formID = %s AND userId = %s
-            """, (
-                state_id, step1.get("districtID"), step1.get("townshipID"),
-                step1.get("qvID"), step1.get("wardName"), step1.get("houseHoldNo"),
-                step1.get("interviewDate"), step1.get("name"), step1.get("gender"),
-                step1.get("eduStatus"), step1.get("phoneNo"),
-                int(step1.get("age") or 0), step1.get("headName"),
-                step1.get("headEduStatus"), step1.get("headGender"),
-                step1.get("headPhoneNo"), step1.get("headAge"),
-                interviewer, interviewer_phone, int(collecting),
-                formID, user_id,
-            ))
-            if cur.rowcount == 0:
-                cur.execute("SELECT 1 FROM personcv WHERE formID = %s AND userId = %s",
-                            (formID, user_id))
-                if not cur.fetchone():
-                    raise HTTPException(403, "Survey Form ကို ပြင်ဆင်ခွင့်မရှိပါ။")
-            cur.execute("DELETE FROM collecteddata WHERE formID = %s", (formID,))
-        else:
-            cur.execute("""
-                INSERT INTO personcv (
-                    formID, userId, stateID, districtID, townshipID, QVID,
-                    WardName, householdNo, interviewDate, name, gender, eduStatus,
-                    phoneNo, age, headName, headEduStatus, headGender, headPhoneNo,
-                    headAge, Interviewer, interviewerPhoneNo, status
-                ) VALUES (%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s)
-            """, (
-                formID, user_id, state_id, step1.get("districtID"),
-                step1.get("townshipID"), step1.get("qvID"), step1.get("wardName"),
-                step1.get("houseHoldNo"), step1.get("interviewDate"), step1.get("name"),
-                step1.get("gender"), step1.get("eduStatus"), step1.get("phoneNo"),
-                int(step1.get("age") or 0), step1.get("headName"),
-                step1.get("headEduStatus"), step1.get("headGender"),
-                step1.get("headPhoneNo"), step1.get("headAge"),
-                interviewer, interviewer_phone, int(collecting),
-            ))
+            cur.execute("SELECT userId, record_uuid FROM personcv WHERE formID = %s FOR UPDATE", (formID,))
+            existing_form = cur.fetchone()
 
-        for item in all_animals:
-            cur.execute("""
-                INSERT INTO collecteddata
-                    (formID, animalTypeID, animalID, speciesID, ageID, genderID, dataCount)
-                VALUES (%s, %s, %s, %s, %s, %s, %s)
-            """, (
-                formID,
-                str(item.get("animalTypeID") or ""),
-                str(item.get("animalID") or ""),
-                str(item.get("speciesID") or ""),
-                str(item.get("ageID") or ""),
-                str(item.get("genderID") or ""),
-                int(item.get("dataCount") or 0),
-            ))
+            if existing_form:
+                existing_user_id = existing_form[0]
+                if existing_user_id is None or str(existing_user_id) != str(user_id):
+                    raise HTTPException(403, "ဤ Survey Form ကို ပြင်ဆင်ခွင့်မရှိပါ။")
 
-        try:
-            cur.execute("""
-                UPDATE householdRegister
-                SET collectionStatus = %s, updatedAt = NOW()
-                WHERE stateID = %s AND districtID = %s AND townshipID = %s
-                  AND QVID = %s AND WardName = %s AND householdNo = %s
-                  AND createdBy = %s
-            """, (
-                "collected" if collecting else "cannot_collect",
-                state_id, step1.get("districtID"), step1.get("townshipID"),
-                step1.get("qvID"), step1.get("wardName"),
-                step1.get("houseHoldNo"), user_id,
-            ))
-        except Exception as e:
-            logger.warning("householdRegister status update skipped: %s", e)
+                cur.execute("""
+                    UPDATE personcv
+                    SET stateID = %s, districtID = %s, townshipID = %s, QVID = %s,
+                        WardName = %s, householdNo = %s, interviewDate = %s,
+                        name = %s, gender = %s, eduStatus = %s, phoneNo = %s, age = %s,
+                        headName = %s, headEduStatus = %s, headGender = %s,
+                        headPhoneNo = %s, headAge = %s, Interviewer = %s,
+                        interviewerPhoneNo = %s, status = %s,
+                        record_uuid = COALESCE(record_uuid, %s)
+                    WHERE formID = %s AND userId = %s
+                """, (
+                    state_id, step1.get("districtID"), step1.get("townshipID"),
+                    step1.get("qvID"), step1.get("wardName"), step1.get("houseHoldNo"),
+                    step1.get("interviewDate"), step1.get("name"), step1.get("gender"),
+                    step1.get("eduStatus"), step1.get("phoneNo"),
+                    int(step1.get("age") or 0), step1.get("headName"),
+                    step1.get("headEduStatus"), step1.get("headGender"),
+                    step1.get("headPhoneNo"), step1.get("headAge"),
+                    interviewer, interviewer_phone, int(collecting),
+                    cleaned_record_uuid,
+                    formID, user_id,
+                ))
+                if cur.rowcount == 0:
+                    cur.execute("SELECT 1 FROM personcv WHERE formID = %s AND userId = %s",
+                                (formID, user_id))
+                    if not cur.fetchone():
+                        raise HTTPException(403, "Survey Form ကို ပြင်ဆင်ခွင့်မရှိပါ။")
+                cur.execute("DELETE FROM collecteddata WHERE formID = %s", (formID,))
+            else:
+                cur.execute("""
+                    INSERT INTO personcv (
+                        formID, userId, stateID, districtID, townshipID, QVID,
+                        WardName, householdNo, interviewDate, name, gender, eduStatus,
+                        phoneNo, age, headName, headEduStatus, headGender, headPhoneNo,
+                        headAge, Interviewer, interviewerPhoneNo, status, record_uuid
+                    ) VALUES (%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s)
+                """, (
+                    formID, user_id, state_id, step1.get("districtID"),
+                    step1.get("townshipID"), step1.get("qvID"), step1.get("wardName"),
+                    step1.get("houseHoldNo"), step1.get("interviewDate"), step1.get("name"),
+                    step1.get("gender"), step1.get("eduStatus"), step1.get("phoneNo"),
+                    int(step1.get("age") or 0), step1.get("headName"),
+                    step1.get("headEduStatus"), step1.get("headGender"),
+                    step1.get("headPhoneNo"), step1.get("headAge"),
+                    interviewer, interviewer_phone, int(collecting),
+                    cleaned_record_uuid,
+                ))
 
-        conn.commit()
+            for item in all_animals:
+                cur.execute("""
+                    INSERT INTO collecteddata
+                        (formID, animalTypeID, animalID, speciesID, ageID, genderID, dataCount)
+                    VALUES (%s, %s, %s, %s, %s, %s, %s)
+                """, (
+                    formID,
+                    str(item.get("animalTypeID") or ""),
+                    str(item.get("animalID") or ""),
+                    str(item.get("speciesID") or ""),
+                    str(item.get("ageID") or ""),
+                    str(item.get("genderID") or ""),
+                    int(item.get("dataCount") or 0),
+                ))
+
+        if not already_existed:
+            try:
+                cur.execute("""
+                    UPDATE householdRegister
+                    SET collectionStatus = %s, updatedAt = NOW()
+                    WHERE stateID = %s AND districtID = %s AND townshipID = %s
+                      AND QVID = %s AND WardName = %s AND householdNo = %s
+                      AND createdBy = %s
+                """, (
+                    "collected" if collecting else "cannot_collect",
+                    state_id, step1.get("districtID"), step1.get("townshipID"),
+                    step1.get("qvID"), step1.get("wardName"),
+                    step1.get("houseHoldNo"), user_id,
+                ))
+            except Exception as e:
+                logger.warning("householdRegister status update skipped: %s", e)
+
+            conn.commit()
+            _log_sync_operation_standalone(
+                operation_uuid, "insert", cleaned_record_uuid, session_device_uuid,
+                user_id, "commit", formID, 0, 1, None,
+            )
 
         for key in ("stateID", "formID", "step1", "animals_data", "livestock_data",
-                    "breeding_animals_data", "interviewer", "interviewerPhoneNo"):
+                    "breeding_animals_data", "interviewer", "interviewerPhoneNo", "record_uuid"):
             request.session.pop(key, None)
+
+        if already_existed:
+            return {
+                "status": "success",
+                "already_existed": True,
+                "message": "ဤအချက်အလက်ကို ဒေတာဘေ့စ်တွင် သိမ်းဆည်းပြီးသားဖြစ်ပါသည်။",
+                "formID": formID,
+                "animalRecordsSaved": 0,
+                "collectionStatus": int(collecting),
+                "userId": user_id,
+                "record_uuid": cleaned_record_uuid,
+            }
 
         return {
             "status": "success",
-            "message": "Survey saved successfully",
+            "already_existed": False,
+            "message": "အချက်အလက်ကို အောင်မြင်စွာ သိမ်းဆည်းပြီးပါပြီ။",
             "formID": formID,
             "animalRecordsSaved": len(all_animals),
             "collectionStatus": int(collecting),
             "userId": user_id,
+            "record_uuid": cleaned_record_uuid,
         }
 
-    except HTTPException:
-        conn.rollback(); raise
-    except Exception:
-        conn.rollback()
+    except HTTPException as http_err:
+        try:
+            conn.rollback()
+        except Exception:
+            pass
+        _log_sync_operation_standalone(
+            operation_uuid, "insert", cleaned_record_uuid, session_device_uuid,
+            user_id, "rollback", formID, 0, None, getattr(http_err, "detail", str(http_err)),
+        )
+        raise
+    except Exception as exc:
+        try:
+            conn.rollback()
+        except Exception:
+            pass
         logger.exception("Survey submit failed for formID=%s userId=%s", formID, user_id)
+        _log_sync_operation_standalone(
+            operation_uuid, "insert", cleaned_record_uuid, session_device_uuid,
+            user_id, "rollback", formID, 0, None, str(exc)[:1000],
+        )
         raise HTTPException(500, "Survey သိမ်းဆည်းမှု မအောင်မြင်ပါ။")
     finally:
         cur.close(); conn.close()

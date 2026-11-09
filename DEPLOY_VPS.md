@@ -1,7 +1,7 @@
 # Deploying LBVD on your own VPS
 
-This is the production path: Docker Compose runs MariaDB + the FastAPI app +
-Caddy (automatic HTTPS). The root `docker-compose.yml` is a **development**
+This is the production path: Docker Compose runs MariaDB + Redis + the FastAPI
+app + Caddy (automatic HTTPS). The root `docker-compose.yml` is a **development**
 file (DEBUG on, empty DB password, port 3306 published, source bind-mount) —
 do not use it on the VPS.
 
@@ -63,8 +63,8 @@ sudo ufw allow 443/tcp
 sudo ufw enable
 ```
 
-Do **not** open 3306 or 5000. Compose only publishes Caddy; MariaDB and the
-app are on the private Docker network.
+Do **not** open 3306, 6379 or 5000. Compose only publishes Caddy; MariaDB,
+Redis and the app are on the private Docker network.
 
 ## 6. Start it
 
@@ -119,7 +119,13 @@ Schedule it nightly (root crontab):
 ```
 
 Copy `backups/` off the VPS as well (a backup on the same disk is not a
-backup). To restore: `gunzip -c file.sql.gz | docker compose ... exec -T db mariadb -u root -p"$MARIADB_ROOT_PASSWORD" lbvd`.
+backup). To restore:
+
+```bash
+gunzip -c file.sql.gz | docker compose --env-file .env.prod \
+  -f docker-compose.prod.yml exec -T db \
+  sh -c 'exec mariadb -u root -p"$MARIADB_ROOT_PASSWORD" "$MARIADB_DATABASE"'
+```
 
 ## 9. Updating the app
 

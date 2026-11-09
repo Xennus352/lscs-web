@@ -647,6 +647,29 @@
       const errorModalEl = document.getElementById("errorModal");
       const errorModal = new bootstrap.Modal(errorModalEl);
 
+      // Enumerator device identity: reuse the UUID already kept by this browser.
+      const DEVICE_UUID_KEY = "device_uuid";
+
+      function getStoredDeviceUuid() {
+        try {
+          return localStorage.getItem(DEVICE_UUID_KEY);
+        } catch (err) {
+          console.warn("Unable to read device_uuid from local storage", err);
+          return null;
+        }
+      }
+
+      function persistDeviceUuid(value) {
+        if (!value) return;
+        try {
+          // The server echoes the existing UUID or returns a newly created one.
+          // Writing it also repairs an invalid/stale local value.
+          localStorage.setItem(DEVICE_UUID_KEY, value);
+        } catch (err) {
+          console.warn("Unable to save device_uuid to local storage", err);
+        }
+      }
+
       function showModal(message) {
         document.getElementById("modalMessage").textContent = message;
         errorModal.show();
@@ -772,7 +795,14 @@
             const formData = new FormData();
             formData.append("username", username);
             formData.append("password", password);
-            // ⭐ device_type ကို ဖြုတ်လိုက်ပါပြီ
+
+            // Send the existing UUID so the server can reuse this device ID.
+            // On a shared device, the server links that same UUID to the
+            // current enumerator account with a separate sync_devices row.
+            const existingDeviceUuid = getStoredDeviceUuid();
+            if (existingDeviceUuid) {
+              formData.append("device_uuid", existingDeviceUuid);
+            }
 
             const res = await fetch("/api/login", {
               method: "POST",
@@ -783,6 +813,10 @@
             const data = await res.json();
 
             if (res.ok && data.status === "success") {
+              // New enumerator device UUID returned by the server: keep it in
+              // local storage so subsequent logins reuse the same UUID.
+              persistDeviceUuid(data.device_uuid);
+
               // ⭐ Role အလိုက် သွားရောက်ရမည့် စာမျက်နှာများ
               if (data.role === "admin") {
                 window.location.href = "/system/dashboard"; // Admin Dashboard သို့

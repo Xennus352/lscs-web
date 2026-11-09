@@ -14,10 +14,6 @@ CSV_ENCODING = os.getenv("CSV_ENCODING", "utf-8")
 PASSWORD_ITERATIONS = 310_000
 DEFAULT_PASSWORD    = "12345678"
 
-JWT_SECRET_KEY      = os.getenv("JWT_SECRET_KEY", "lbvd-super-secret-jwt-key-change-in-production")
-JWT_ALGORITHM       = "HS256"
-JWT_EXPIRATION_DAYS = 7
-
 SESSION_SECRET       = os.getenv("SESSION_SECRET", "lbvd-change-this-secret-in-production")
 COOKIE_HTTPS_ONLY    = os.getenv("COOKIE_HTTPS_ONLY", "false").lower() == "true"
 SESSION_MAX_AGE_HOURS = int(os.getenv("SESSION_MAX_AGE_HOURS", "8"))

@@ -651,6 +651,7 @@ CREATE TABLE `personcv` (
   `headAge` int(11) NOT NULL,
   `Interviewer` varchar(30) NOT NULL,
   `interviewerPhoneNo` varchar(15) NOT NULL,
+  `record_uuid` char(36) DEFAULT NULL,
   `status` tinyint(4) DEFAULT 0
 ) ;
 
@@ -19231,6 +19232,7 @@ ALTER TABLE `livestockspecies`
 --
 ALTER TABLE `personcv`
   ADD PRIMARY KEY (`formID`),
+  ADD UNIQUE KEY `uk_personcv_record_uuid` (`record_uuid`),
   ADD KEY `fk_personcv_user` (`userId`);
 
 --
@@ -19304,6 +19306,46 @@ CREATE TABLE IF NOT EXISTS `village` (
   `villageName` text DEFAULT NULL,
   PRIMARY KEY (`stateID`,`districtID`,`townshipID`,`QVID`,`villageID`),
   KEY `villageindex` (`stateID`,`districtID`,`townshipID`,`QVID`,`villageID`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+--
+-- Table structure for table `sync_devices`
+--
+
+CREATE TABLE IF NOT EXISTS `sync_devices` (
+  `device_id` char(36) NOT NULL,
+  `userID` int(11) NOT NULL,
+  `platform` varchar(30) NOT NULL,
+  `device_name` varchar(100) DEFAULT NULL,
+  `status` tinyint(4) NOT NULL DEFAULT 1,
+  PRIMARY KEY (`device_id`,`userID`),
+  KEY `idx_sync_device_user` (`userID`),
+  CONSTRAINT `sync_devices_ibfk_1` FOREIGN KEY (`userID`) REFERENCES `user` (`userID`) ON DELETE CASCADE ON UPDATE CASCADE
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
+
+--
+-- Table structure for table `sync_operations`
+--
+
+CREATE TABLE IF NOT EXISTS `sync_operations` (
+  `operation_uuid` char(36) NOT NULL,
+  `operation_type` varchar(30) NOT NULL,
+  `record_uuid` char(36) NOT NULL,
+  `device_uuid` char(36) DEFAULT NULL,
+  `userID` int(11) DEFAULT NULL,
+  `table_name` varchar(64) NOT NULL DEFAULT 'personcv',
+  `form_id` varchar(20) DEFAULT NULL,
+  `base_version` int(11) NOT NULL DEFAULT 0,
+  `result_version` int(11) DEFAULT NULL,
+  `status` varchar(20) NOT NULL,
+  `error_message` text DEFAULT NULL,
+  `created_at` datetime NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  PRIMARY KEY (`operation_uuid`),
+  KEY `idx_sync_op_record` (`record_uuid`),
+  KEY `idx_sync_op_user` (`userID`),
+  KEY `idx_sync_op_device` (`device_uuid`),
+  KEY `idx_sync_op_status` (`status`),
+  CONSTRAINT `fk_sync_op_user` FOREIGN KEY (`userID`) REFERENCES `user` (`userID`) ON DELETE SET NULL ON UPDATE CASCADE
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 COMMIT;

@@ -1,7 +1,5 @@
-import jwt
-from fastapi import Request, HTTPException, status, Depends
+from fastapi import Request, HTTPException, status
 
-from app.config import JWT_SECRET_KEY, JWT_ALGORITHM
 from app.extensions import security
 
 
@@ -16,17 +14,6 @@ def get_signed_in_user(request: Request):
             detail="Login လုပ်ပါ။",
         )
     return user
-
-
-def verify_mobile_token(credentials=Depends(security)):
-    token = credentials.credentials
-    try:
-        payload = jwt.decode(token, JWT_SECRET_KEY, algorithms=[JWT_ALGORITHM])
-        return payload
-    except jwt.ExpiredSignatureError:
-        raise HTTPException(401, "Token သက်တမ်းကုန်သွားပါပြီ။ ပြန် Login လုပ်ပါ။")
-    except jwt.InvalidTokenError:
-        raise HTTPException(401, "Token မမှန်ကန်ပါ။")
 
 
 # ============================================================

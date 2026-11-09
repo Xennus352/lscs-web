@@ -7,4 +7,4 @@ exec python -m uvicorn app.main:app \
   --host 0.0.0.0 \
   --port "${PORT:-5000}" \
   --proxy-headers \
-  --forwarded-allow-ips="*"
+  --forwarded-allow-ips="127.18.0.5"

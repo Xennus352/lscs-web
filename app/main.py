@@ -12,8 +12,14 @@ from sqlalchemy.exc import SQLAlchemyError
 from fastapi.responses import JSONResponse
 from app.redis_client import redis_client, check_redis, close_redis
 
+
 from app.config import (
-    APP_NAME, APP_VERSION, COOKIE_HTTPS_ONLY, DEBUG, SESSION_SECRET,
+    APP_NAME,
+    APP_VERSION,
+    COOKIE_HTTPS_ONLY,
+    DEBUG,
+    SESSION_SECRET,
+    SESSION_MAX_AGE_HOURS,
 )
 from app.constants import APK_DIR
 from app.database import engine
@@ -41,16 +47,6 @@ def init_db():
     except SQLAlchemyError as e:
         logger.warning("init_db: %s", e)
 
-
-# def ensure_indexes():
-#     try:
-#         with engine.begin() as conn:
-#             conn.exec_driver_sql("CREATE INDEX IF NOT EXISTS idx_district_state ON district(stateID, districtID)")
-#             conn.exec_driver_sql("CREATE INDEX IF NOT EXISTS idx_township_state_district ON township(stateID, districtID, townshipID)")
-#             conn.exec_driver_sql("CREATE INDEX IF NOT EXISTS idx_personcv_state_district_township ON personcv(stateID, districtID, townshipID)")
-#         logger.info("Database indexes ensured.")
-#     except SQLAlchemyError as e:
-#         logger.warning("ensure_indexes: %s", e)
 
 
 def ensure_indexes():
@@ -172,7 +168,8 @@ app = FastAPI(
     
 )
 # ⭐ Extra protection — block docs paths even if someone guesses them
-@app.middleware("http")
+# @app.middleware("http")
+
 async def block_docs_endpoints(request: Request, call_next):
     blocked_exact = {"/docs", "/redoc", "/openapi.json"}
     blocked_prefixes = ("/docs/", "/redoc/")
@@ -187,7 +184,7 @@ app.add_middleware(
     SessionMiddleware,
     secret_key=SESSION_SECRET,
     session_cookie="lbvd_session",       # custom cookie name
-    max_age=None,                  # 8 hours (working day)
+    max_age=SESSION_MAX_AGE_HOURS * 60 * 60,                  # 8 hours (working day)
     same_site="lax",
     https_only=COOKIE_HTTPS_ONLY,         # production: True
 )

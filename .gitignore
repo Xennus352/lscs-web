@@ -7,8 +7,14 @@ deploy/lbvd-accounts.sql
 __pycache__/
 *.pyc
 .venv/
+venv/
 
-# Production secrets and backups
+# Local / production secrets (keep the examples)
+.env
+.env.docker.local
 .env.prod
+.env.*
+!.env*.example
+
+# Backups
 backups/
-Add-Content .gitignore "`n.env.docker.local"

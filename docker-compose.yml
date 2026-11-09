@@ -35,10 +35,19 @@ services:
       DEBUG: "true"
       SESSION_SECRET: lbvd-change-this-secret-in-production
       COOKIE_HTTPS_ONLY: "false"
-    ports:
-      - "5000:5000"
+     expose:
+      - "5000"
     volumes:
       - .:/app
-
+  nginx:
+    image: nginx:alpine
+    container_name: lbvd-local-nginx
+    restart: unless-stopped
+    depends_on:
+      - app
+    ports:
+      - "80:80"
+    volumes:
+      - ./nginx/nginx.conf:/etc/nginx/nginx.conf:ro
 volumes:
   db_data:

@@ -147,7 +147,8 @@ async def get_form_for_edit(formID: str, request: Request):
     conn = get_db_connection(); cur = conn.cursor(dictionary=True)
     try:
         cur.execute("""
-            SELECT p.*, s.stateName, d.districtName, t.townshipName, q.QVName
+            SELECT p.*, s.stateName, d.districtName, t.townshipName, q.QVName,
+                   v.villageName as VillageName
             FROM personcv p
             LEFT JOIN state    s ON s.stateID = p.stateID
             LEFT JOIN district d ON d.stateID = p.stateID AND d.districtID = p.districtID
@@ -155,6 +156,11 @@ async def get_form_for_edit(formID: str, request: Request):
                                 AND t.townshipID = p.townshipID
             LEFT JOIN qv       q ON q.stateID = p.stateID AND q.districtID = p.districtID
                                 AND q.townshipID = p.townshipID AND q.QVID = p.QVID
+            LEFT JOIN village  v ON v.villageID = p.WardName
+                                AND v.stateID = p.stateID
+                                AND v.districtID = p.districtID
+                                AND v.townshipID = p.townshipID
+                                AND v.QVID = p.QVID
             WHERE p.formID = %s AND p.userId = %s LIMIT 1
         """, (formID, user_id))
         person = cur.fetchone()
@@ -254,6 +260,7 @@ async def get_my_forms(
     head_name: str = Query(""), household_no: str = Query(""),
     form_id: str = Query(""), date_from: str = Query(""),
     date_to: str = Query(""), collection_status: str = Query(""),
+    village: str = Query(""),
 ):
     user = get_signed_in_user(request)
     if str(user.get("role", "")).lower() != "enumerator":
@@ -266,10 +273,16 @@ async def get_my_forms(
     try:
         sql = """
             SELECT p.formID, p.name, p.householdNo, p.interviewDate, p.WardName,
-                   q.QVName, p.Interviewer, p.headName, p.status
+                   q.QVName, v.villageName as VillageName,
+                   p.Interviewer, p.headName, p.status
             FROM personcv p
             LEFT JOIN qv q ON q.QVID = p.QVID AND q.stateID = p.stateID
                          AND q.districtID = p.districtID AND q.townshipID = p.townshipID
+            LEFT JOIN village v ON v.villageID = p.WardName
+                               AND v.stateID = p.stateID
+                               AND v.districtID = p.districtID
+                               AND v.townshipID = p.townshipID
+                               AND v.QVID = p.QVID
             WHERE p.userId = %s
         """
         params = [user_id]
@@ -277,6 +290,8 @@ async def get_my_forms(
             sql += " AND p.status = %s"; params.append(int(collection_status))
         if qv.strip():
             sql += " AND p.QVID = %s"; params.append(qv.strip())
+        if village.strip():
+            sql += " AND p.WardName = %s"; params.append(village.strip())
         if interviewer.strip():
             sql += " AND p.Interviewer LIKE %s"; params.append(f"%{interviewer.strip()}%")
         if head_name.strip():
@@ -307,12 +322,26 @@ async def get_my_forms_filters(request: Request):
     user_id = user["id"]
     conn = get_db_connection(); cur = conn.cursor(dictionary=True)
     try:
+        # Get QV filters
         cur.execute("""SELECT DISTINCT p.QVID, q.QVName FROM personcv p
                        LEFT JOIN qv q ON q.QVID = p.QVID AND q.stateID = p.stateID
-                                    AND q.districtID = p.districtID AND q.townshipID = p.townshipID
+                                   AND q.districtID = p.districtID AND q.townshipID = p.townshipID
                        WHERE p.userId = %s AND p.QVID IS NOT NULL AND p.QVID != ''""",
                     (user_id,))
         qvs = cur.fetchall()
+
+        # Get Village filters - join village table to get villageName
+        cur.execute("""SELECT DISTINCT p.WardName as villageID, v.villageName
+                       FROM personcv p
+                       LEFT JOIN village v ON v.villageID = p.WardName
+                                   AND v.stateID = p.stateID
+                                   AND v.districtID = p.districtID
+                                   AND v.townshipID = p.townshipID
+                                   AND v.QVID = p.QVID
+                       WHERE p.userId = %s AND p.WardName IS NOT NULL AND p.WardName != ''""",
+                    (user_id,))
+        villages = cur.fetchall()
+
         cur.execute("SELECT DISTINCT Interviewer FROM personcv "
                     "WHERE userId = %s AND Interviewer IS NOT NULL AND Interviewer != ''",
                     (user_id,))
@@ -329,8 +358,49 @@ async def get_my_forms_filters(request: Request):
                     "WHERE userId = %s AND formID IS NOT NULL AND formID != ''",
                     (user_id,))
         formIDs = [r["formID"] for r in cur.fetchall()]
-        return {"status": "success", "qvs": qvs, "interviewers": interviewers,
-                "headNames": headNames, "householdNos": householdNos, "formIDs": formIDs}
+        return {"status": "success", "qvs": qvs, "villages": villages,
+                "interviewers": interviewers, "headNames": headNames,
+                "householdNos": householdNos, "formIDs": formIDs}
+    finally:
+        cur.close(); conn.close()
+
+
+@router.get("/enumerator/api/villages")
+async def get_villages(
+    request: Request,
+    stateID: str = Query(""),
+    districtID: str = Query(""),
+    townshipID: str = Query(""),
+    QVID: str = Query(""),
+):
+    user = get_signed_in_user(request)
+    if str(user.get("role", "")).lower() != "enumerator":
+        raise HTTPException(403, "Enumerator role only")
+    
+    # Use user's location if not provided
+    if not stateID:
+        stateID = user.get("stateID", "")
+    if not districtID:
+        districtID = user.get("districtID", "")
+    if not townshipID:
+        townshipID = user.get("townshipID", "")
+    
+    conn = get_db_connection(); cur = conn.cursor(dictionary=True)
+    try:
+        sql = """
+            SELECT villageID, villageName
+            FROM village
+            WHERE stateID = %s AND districtID = %s AND townshipID = %s
+        """
+        params = [stateID, districtID, townshipID]
+        if QVID.strip():
+            sql += " AND QVID = %s"; params.append(QVID.strip())
+        sql += " ORDER BY villageName"
+        cur.execute(sql, tuple(params))
+        return {"status": "success", "villages": cur.fetchall()}
+    except SQLAlchemyError:
+        logger.exception("Failed to load villages")
+        raise HTTPException(503, "ကျေးရွာဒေတာ ရယူမရပါ။")
     finally:
         cur.close(); conn.close()
 

@@ -66,6 +66,23 @@
     }
 
     /* =========================================================
+       Readonly/Disabled Fields - Location fields that cannot be edited
+       ========================================================= */
+    .readonly-field {
+        background-color: #f8fafc !important;
+        border-color: #e2e8f0 !important;
+        color: #64748b !important;
+        cursor: not-allowed;
+    }
+    .readonly-field:focus {
+        box-shadow: none !important;
+        border-color: #e2e8f0 !important;
+    }
+    .readonly-field::placeholder {
+        color: #94a3b8;
+    }
+
+    /* =========================================================
    ⭐ Button အားလုံးကို သေးသေးလေးဖြစ်အောင်
    ========================================================= */
 #formsListView .btn,
@@ -407,19 +424,25 @@
         <!-- ⭐ Search Filters -->
         <div class="search-box-container">
             <div class="row g-3 mb-3">
-                <div class="col-md-4">
+                <div class="col-md-3">
                     <label class="form-label">ကျေးရွာအုပ်စု</label>
                     <select id="filterQV" class="form-select">
                         <option value="">-- အားလုံး --</option>
                     </select>
                 </div>
-                <div class="col-md-4">
+                <div class="col-md-3">
+                    <label class="form-label">ကျေးရွာ/ရပ်ကွက်</label>
+                    <select id="filterVillage" class="form-select">
+                        <option value="">-- အားလုံး --</option>
+                    </select>
+                </div>
+                <div class="col-md-3">
                     <label class="form-label">စာရင်းကောက်သူ</label>
                     <select id="filterInterviewer" class="form-select">
                         <option value="">-- အားလုံး --</option>
                     </select>
                 </div>
-                <div class="col-md-4">
+                <div class="col-md-3">
                     <label class="form-label">Form ID</label>
                     <input type="text" id="filterFormID" class="form-control" list="formIDList" placeholder="ဥပမာ - FORM-2024-00001">
                     <datalist id="formIDList"></datalist>
@@ -531,12 +554,15 @@
             <input class="form-control person-field readonly-field" id="townshipID" data-field="townshipID" type="text" readonly>
         </div>
         <div class="col-md-6 col-lg-3">
-            <label class="form-label" for="QVID">ကျေးရွာအုပ်စု/ရပ်ကွက်</label>
+            <label class="form-label" for="QVID">ကျေးရွာအုပ်စု</label>
             <input class="form-control person-field readonly-field" id="QVID" data-field="QVID" type="text" readonly>
+        </div>
+        <div class="col-md-6 col-lg-3">
+            <label class="form-label" for="WardName">ကျေးရွာ/ရပ်ကွက်</label>
+            <input class="form-control person-field readonly-field" id="WardName" data-field="WardName" type="text" readonly>
         </div>
 
         {% set person_location_fields = [
-            ('WardName', 'ရပ်ကွက်/ကျေးရွာအမည်', 'text'),
             ('householdNo', 'အိမ်ထောင်စုအမှတ်', 'text'),
         ] %}
         {% for key, label, typ in person_location_fields %}
@@ -647,11 +673,11 @@
         <table class="table table-bordered table-hover align-middle bg-white" id="collectedTable">
             <thead style="background:#ecfdf5; color:#065f46;">
                 <tr>
-                    <th>Animal Type ID</th>
-                    <th>Animal ID</th>
-                    <th>Species ID</th>
-                    <th>Age ID</th>
-                    <th>Gender ID</th>
+                    <th>တိရစ္ဆာန်အမျိုးအစား</th>
+                    <th>တိရစ္ဆာန်အမည်</th>
+                    <th>မျိုးစိတ်</th>
+                    <th>အသက်</th>
+                    <th>အထီး/အမ</th>
                     <th>အရေအတွက်</th>
                     <th>လုပ်ဆောင်ချက်</th>
                 </tr>
@@ -714,6 +740,7 @@ document.addEventListener('DOMContentLoaded', function() {
     // ⭐ Filter Elements
     const filterCollectionStatus = document.getElementById('filterCollectionStatus');
     const filterQV = document.getElementById('filterQV');
+    const filterVillage = document.getElementById('filterVillage');
     const filterInterviewer = document.getElementById('filterInterviewer');
     const filterHeadName = document.getElementById('filterHeadName');
     const filterHouseholdNo = document.getElementById('filterHouseholdNo');
@@ -815,6 +842,11 @@ document.addEventListener('DOMContentLoaded', function() {
                 filterQV.innerHTML += `<option value="${q.QVID}">${q.QVName || q.QVID}</option>`;
             });
 
+            filterVillage.innerHTML = '<option value="">-- အားလုံး --</option>';
+            (data.villages || []).forEach(v => {
+                filterVillage.innerHTML += `<option value="${v.villageID}">${v.villageName || v.villageID}</option>`;
+            });
+
             filterInterviewer.innerHTML = '<option value="">-- အားလုံး --</option>';
             (data.interviewers || []).forEach(name => {
                 filterInterviewer.innerHTML += `<option value="${name}">${name}</option>`;
@@ -870,7 +902,7 @@ document.addEventListener('DOMContentLoaded', function() {
                 <td>${f.formID || '-'}</td>
                 <td>${f.headName || '-'}</td>
                 <td>${f.householdNo || '-'}</td>
-                <td>${f.QVName || '-'}${f.WardName ? ' / ' + f.WardName : ''}</td>
+                <td>${f.QVName || '-'}${f.VillageName ? ' / ' + f.VillageName : ''}</td>
                 <td>${f.interviewDate || '-'}</td>
                 <td>${statusBadge}</td>
                 <td class="text-center">
@@ -970,6 +1002,7 @@ document.addEventListener('DOMContentLoaded', function() {
         try {
             const params = new URLSearchParams({
                 qv: filterQV.value,
+                village: filterVillage.value,
                 interviewer: filterInterviewer.value,
                 head_name: filterHeadName.value,
                 household_no: filterHouseholdNo.value,
@@ -1012,6 +1045,7 @@ document.addEventListener('DOMContentLoaded', function() {
     }
 
     // ============================================================
+    // 🌾 // ============================================================
     // 🔍 Form တစ်ခုချင်းစီကို Load လုပ်ခြင်း
     // ============================================================
     async function loadFormDataForEdit(id) {
@@ -1039,7 +1073,8 @@ document.addEventListener('DOMContentLoaded', function() {
                 stateID: 'stateName',
                 districtID: 'districtName',
                 townshipID: 'townshipName',
-                QVID: 'QVName'
+                QVID: 'QVName',
+                WardName: 'VillageName'
             };
 
             document.querySelectorAll('.person-field').forEach(function(input) {
@@ -1073,6 +1108,10 @@ document.addEventListener('DOMContentLoaded', function() {
             loadedFormID = id;
             editingFormID.textContent = id;
             formFields.classList.remove('d-none');
+            
+            // Load village names for WardName datalist
+            
+            
             clearMessage();
 
         } catch (error) {
@@ -1243,6 +1282,7 @@ document.addEventListener('DOMContentLoaded', function() {
     btnClearSearch.addEventListener('click', function() {
         filterCollectionStatus.value = '';
         filterQV.value = '';
+        filterVillage.value = '';
         filterInterviewer.value = '';
         filterHeadName.value = '';
         filterHouseholdNo.value = '';

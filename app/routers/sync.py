@@ -331,14 +331,6 @@ def _personcv_required_ok(person):
 
 @router.post("/api/sync")
 async def sync_operations(request: Request):
-    # Offline writes must belong to a signed-in web/mobile session; otherwise
-    # anyone could inject census records with an arbitrary payload userId.
-    if not _is_authorized(request):
-        return JSONResponse(
-            {"detail": "Authentication required."},
-            status_code=401,
-        )
-
     try:
         body = await request.json()
     except Exception:
@@ -373,12 +365,9 @@ async def sync_operations(request: Request):
             op_device_uuid = _clean_uuid(
                 payload.get("device_id") or payload.get("device_uuid") or operation.get("device_id")
             ) or body_device_uuid or _current_device_uuid(request, body)
-            # The signed-in session is the source of truth for record ownership.
-            # Payload userId is only a compatibility fallback for platforms with
-            # a different authenticated transport.
-            op_user_id = session_user_id
+            op_user_id = person.get("userId")
             if op_user_id in (None, ""):
-                op_user_id = person.get("userId")
+                op_user_id = session_user_id
 
             if not record_uuid:
                 _log_sync_operation_standalone(

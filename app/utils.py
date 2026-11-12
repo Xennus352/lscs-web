@@ -13,6 +13,35 @@ from app.config import CSV_ENCODING
 logger = logging.getLogger("lbvd")
 
 
+# ============================================================
+# 🔢 MYANMAR NUMERAL CONVERSION
+# ============================================================
+_MYANMAR_DIGITS = {
+    '၀': '0', '၁': '1', '၂': '2', '၃': '3', '၄': '4',
+    '၅': '5', '၆': '6', '၇': '7', '၈': '8', '၉': '9',
+}
+
+_MYANMAR_DIGIT_PATTERN = re.compile(r'[၀-၉]')
+
+
+def myanmar_to_arabic(value: str) -> str:
+    """Convert Myanmar numerals (၀-၉) to Arabic numerals (0-9)."""
+    if not isinstance(value, str):
+        return str(value)
+    return _MYANMAR_DIGIT_PATTERN.sub(lambda m: _MYANMAR_DIGITS[m.group()], value)
+
+
+def parse_int_myanmar(value: str, default: int = 0) -> int:
+    """Parse a string that may contain Myanmar numerals to int."""
+    if not value:
+        return default
+    converted = myanmar_to_arabic(str(value).strip())
+    try:
+        return int(converted)
+    except ValueError:
+        return default
+
+
 
 
 import hashlib

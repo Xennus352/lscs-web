@@ -26,7 +26,7 @@ from app.lookups import (
     _get_all_states,
 )
 from app.templating import templates
-from app.utils import generate_formatted_id
+from app.utils import generate_formatted_id, parse_int_myanmar
 
 
 def _insert_sync_operation(cur, operation_uuid, operation_type, record_uuid, device_uuid,
@@ -360,7 +360,10 @@ async def compat_process_step_1(
             headName, headEduStatus, headGender, headPhoneNo, headAge,
         )):
             raise HTTPException(400, "ဖြေဆိုသူနှင့် အိမ်ထောင်ဦးစီး အချက်အလက်များ ပြည့်စုံစွာဖြည့်ပါ။")
-        if not age.isdigit() or not headAge.isdigit():
+        # Convert Myanmar numerals to Arabic and validate
+        age_clean = parse_int_myanmar(age)
+        head_age_clean = parse_int_myanmar(headAge)
+        if age_clean <= 0 or head_age_clean <= 0:
             raise HTTPException(400, "အသက်ကို ကိန်းဂဏန်းဖြင့် ဖြည့်ပါ။")
     else:
         name = gender = eduStatus = phoneNo = headName = headEduStatus = headGender = headPhoneNo = ""
@@ -376,9 +379,9 @@ async def compat_process_step_1(
         "wardName": wardName, "houseHoldNo": houseHoldNo,
         "interviewDate": interviewDate,
         "name": name, "gender": gender, "eduStatus": eduStatus,
-        "phoneNo": phoneNo, "age": age,
+        "phoneNo": phoneNo, "age": str(age_clean),
         "headName": headName, "headEduStatus": headEduStatus,
-        "headGender": headGender, "headPhoneNo": headPhoneNo, "headAge": headAge,
+        "headGender": headGender, "headPhoneNo": headPhoneNo, "headAge": str(head_age_clean),
     }
 
     if collection_status == "0":
@@ -638,9 +641,9 @@ async def compat_submit_survey(
                     step1.get("qvID"), step1.get("wardName"), step1.get("houseHoldNo"),
                     step1.get("interviewDate"), step1.get("name"), step1.get("gender"),
                     step1.get("eduStatus"), step1.get("phoneNo"),
-                    int(step1.get("age") or 0), step1.get("headName"),
+                    parse_int_myanmar(step1.get("age")), step1.get("headName"),
                     step1.get("headEduStatus"), step1.get("headGender"),
-                    step1.get("headPhoneNo"), step1.get("headAge"),
+                    step1.get("headPhoneNo"), parse_int_myanmar(step1.get("headAge")),
                     interviewer, interviewer_phone, int(collecting),
                     cleaned_record_uuid,
                     formID, user_id,
@@ -664,9 +667,9 @@ async def compat_submit_survey(
                     step1.get("townshipID"), step1.get("qvID"), step1.get("wardName"),
                     step1.get("houseHoldNo"), step1.get("interviewDate"), step1.get("name"),
                     step1.get("gender"), step1.get("eduStatus"), step1.get("phoneNo"),
-                    int(step1.get("age") or 0), step1.get("headName"),
+                    parse_int_myanmar(step1.get("age")), step1.get("headName"),
                     step1.get("headEduStatus"), step1.get("headGender"),
-                    step1.get("headPhoneNo"), step1.get("headAge"),
+                    step1.get("headPhoneNo"), parse_int_myanmar(step1.get("headAge")),
                     interviewer, interviewer_phone, int(collecting),
                     cleaned_record_uuid,
                 ))
@@ -685,23 +688,7 @@ async def compat_submit_survey(
                     str(item.get("genderID") or ""),
                     int(item.get("dataCount") or 0),
                 ))
-
-        if not already_existed:
-            try:
-                cur.execute("""
-                    UPDATE householdRegister
-                    SET collectionStatus = %s, updatedAt = NOW()
-                    WHERE stateID = %s AND districtID = %s AND townshipID = %s
-                      AND QVID = %s AND WardName = %s AND householdNo = %s
-                      AND createdBy = %s
-                """, (
-                    "collected" if collecting else "cannot_collect",
-                    state_id, step1.get("districtID"), step1.get("townshipID"),
-                    step1.get("qvID"), step1.get("wardName"),
-                    step1.get("houseHoldNo"), user_id,
-                ))
-            except Exception as e:
-                logger.warning("householdRegister status update skipped: %s", e)
+            
 
             conn.commit()
             _log_sync_operation_standalone(

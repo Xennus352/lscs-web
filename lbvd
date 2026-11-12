@@ -1,0 +1,5 @@
+#!/usr/bin/env bash
+# LBVD CLI wrapper - adds to PATH or can be sourced
+
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+exec python "$SCRIPT_DIR/cli.py" "$@"

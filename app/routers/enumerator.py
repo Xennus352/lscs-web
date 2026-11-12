@@ -461,20 +461,6 @@ async def create_household(request: Request):
         if not cur.fetchone():
             conn.rollback()
             raise HTTPException(403, "သတ်မှတ်ထားသော မြို့နယ်အတွင်းရှိ ကျေးရွာအုပ်စု ကို ရွေးပါ။")
-        cur.execute("""SELECT householdID FROM householdRegister
-                       WHERE stateID=%s AND districtID=%s AND townshipID=%s
-                         AND QVID=%s AND WardName=%s AND householdNo=%s LIMIT 1""",
-                    (state_id, district_id, township_id, qv_id, ward_name, household_no))
-        if cur.fetchone():
-            conn.rollback()
-            raise HTTPException(409, "ဤအိမ်ထောင်စု ရှိပြီးသားဖြစ်ပါသည်။")
-        cur.execute("""INSERT INTO householdRegister
-                       (stateID, districtID, townshipID, QVID, WardName,
-                        householdNo, collectionStatus, remarks, createdBy)
-                       VALUES (%s,%s,%s,%s,%s,%s,%s,%s,%s)""",
-                    (state_id, district_id, township_id, qv_id, ward_name,
-                     household_no, collection_status, remarks, user_id))
-        new_id = cur.lastrowid
         conn.commit()
         return {"status": "success",
                 "message": ("အိမ်ထောင်စုစာရင်း (ကောက်ယူလို့မရနိုင်) သိမ်းဆည်းပြီးပါပြီ။"

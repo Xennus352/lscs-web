@@ -50,6 +50,44 @@ def _date(value):
         return value or ""
 
 
+def _records_metadata(households):
+    location_fields = (
+        ("တိုင်းဒေသကြီး/ပြည်နယ်", "state_name"),
+        ("ခရိုင်", "district_name"),
+        ("မြို့နယ်", "township_name"),
+        ("ကျေးရွာအုပ်စု", "qv_name"),
+        ("ကျေးရွာ/ရပ်ကွက်", "village_name"),
+    )
+    parts = []
+    for label, key in location_fields:
+        values = [str(row.get(key) or "").strip() for row in households]
+        present = {value for value in values if value}
+        if not present:
+            continue
+        if len(present) == 1 and all(values):
+            value = next(iter(present))
+        elif len(present) == 1:
+            value = f"{next(iter(present))} (အချို့ မရှိပါ)"
+        else:
+            value = "အများအပြား"
+        parts.append(f"{label} - {value}")
+
+    dates = []
+    for row in households:
+        value = _date(row.get("interviewDate"))
+        if isinstance(value, datetime):
+            dates.append(value.date())
+        elif isinstance(value, date):
+            dates.append(value)
+    if dates:
+        first, last = min(dates), max(dates)
+        if first == last:
+            parts.append(f"ရက်စွဲ - {first.isoformat()}")
+        else:
+            parts.append(f"ရက်စွဲ - {first.isoformat()} မှ {last.isoformat()} ထိ")
+    return " | ".join(parts)
+
+
 def _animal_block(detail):
     kind, animal = detail["animalTypeID"], detail["animalID"]
     if kind == "atID01":
@@ -86,8 +124,18 @@ def _count_column(detail, start):
 def build_records_workbook(households, details):
     workbook = load_workbook(TEMPLATE)
     sheet = workbook.active
-    sheet.freeze_panes = "T6"
     sheet.print_title_rows = "1:5"
+    metadata = _records_metadata(households)
+    if metadata:
+        title = sheet.cell(1, 1)
+        title.value = f"{title.value}\n{metadata}"
+        title.alignment = copy(title.alignment)
+        title.alignment = Alignment(
+            horizontal=title.alignment.horizontal,
+            vertical=title.alignment.vertical,
+            wrap_text=True,
+        )
+        sheet.row_dimensions[1].height = max(sheet.row_dimensions[1].height or 0, 108)
     # Full source detail also preserves categories absent from the supplied layout
     # (for example bsID10), and legacy records with unrecognised age/sex IDs.
     raw = workbook.create_sheet("Animal details")

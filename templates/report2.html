@@ -975,7 +975,12 @@
         if (stateName) parts.push(stateName);
         if (districtName) parts.push(districtName);
         if (townshipName) parts.push(townshipName);
-        return parts.length ? parts.join(' — ') : 'တည်နေရာအမည် မသတ်မှတ်ရသေးပါ';
+        if (parts.length) return parts.join(' — ');
+        if (el.dataset.role === 'union') return 'တစ်နိုင်ငံလုံး (တိုင်းဒေသကြီး/ပြည်နယ်အလိုက်)';
+        if (el.dataset.role === 'admin' && ROW_LEVEL === 'state') {
+            return 'တိုင်းဒေသကြီး/ပြည်နယ်အားလုံး';
+        }
+        return 'တည်နေရာအမည် မသတ်မှတ်ရသေးပါ';
     }
 
     function getDateRangeLabel() {

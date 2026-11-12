@@ -51,7 +51,11 @@ class WorkbookTests(unittest.TestCase):
         for row in template.iter_rows(max_row=5):
             for cell in row:
                 actual = sheet[cell.coordinate]
-                self.assertEqual(actual.value, cell.value)
+                if cell.coordinate == "A1":
+                    self.assertTrue(actual.value.startswith(cell.value + "\n"))
+                    self.assertIn("ရက်စွဲ - 2026-12-12", actual.value)
+                else:
+                    self.assertEqual(actual.value, cell.value)
                 self.assertEqual(actual._style, cell._style)
         expected = {"B6": "form1", "H6": "00102", "J6": "=1+1", "M6": "091111111",
                     "T6": "breed A", "W6": 1, "AA6": 2, "AD6": 3,

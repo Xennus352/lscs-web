@@ -90,10 +90,8 @@ def build_district_report_workbook(townships, state_name: str, district_name: st
     _put(ws, 2, 1, report_title, font=title_font, alignment=center_align)
     ws.row_dimensions[2].height = 32
 
-    ws.merge_cells("A3:B3")
-    _put(ws, 3, 1, f"တိုင်းဒေသကြီး/ပြည်နယ် - {state_name}", font=info_font, alignment=left_align)
-    ws.merge_cells("A4:B4")
-    _put(ws, 4, 1, f"ခရိုင် - {district_name}", font=info_font, alignment=left_align)
+    ws.merge_cells("A3:E3")
+    _put(ws, 3, 1, " | ".join(value for value in (state_name, district_name) if value), font=info_font, alignment=left_align)
     ws.merge_cells("A5:E5")
     _put(ws, 5, 1, report_date_line(start_date, end_date), font=info_font, alignment=right_align)
     for row in range(3, 6):

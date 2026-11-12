@@ -59,7 +59,7 @@ def build_state_report_workbook(townships, state_name: str,
 
     ws.merge_cells("A3:C3")
     _put(
-        ws, 3, 1, f"တိုင်းဒေသကြီး/ပြည်နယ် - {state_name}",
+        ws, 3, 1, state_name,
         font=info_font, alignment=left_align,
     )
     ws.merge_cells("A4:F4")

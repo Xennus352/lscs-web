@@ -1251,12 +1251,11 @@ function getFilterTitle() {
         parts.push(txt);
     }
     addText(selState); addText(selDistrict); addText(selTownship); addText(selVillage);
-    var locPart = (parts.length === 0)
-        ? 'တိုင်းဒေသကြီး/ပြည်နယ်အားလုံးအတွင်း'
-        : (parts.join('၊ ') + ' အတွင်း');
-
+    var locPart = parts.length === 0
+        ? 'တိုင်းဒေသကြီး/ပြည်နယ်အားလုံး'
+        : parts.join(' | ');
     var datePart = getDateRangeLabel();
-    return locPart + ' တိရစ္စာန်ကောင်ရေစာရင်း' + (datePart ? ' (' + datePart + ')' : '');
+    return locPart + (datePart ? ' | ' + datePart : '');
 }
 
 function buildFilename() {

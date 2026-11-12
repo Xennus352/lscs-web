@@ -79,12 +79,11 @@ def build_township_report_workbook(villages, state_name: str, district_name: str
     info_font = Font(name=FONT_NAME, size=10.5)
     info_align = Alignment(horizontal="left", vertical="center", wrap_text=True)
 
-    ws.merge_cells("A2:B2")
-    _put(ws, 2, 1, f"တိုင်းဒေသကြီး/ပြည်နယ် - {state_name}", font=info_font, alignment=info_align)
-    ws.merge_cells("A3:B3")
-    _put(ws, 3, 1, f"ခရိုင် - {district_name}", font=info_font, alignment=info_align)
-    ws.merge_cells("A4:B4")
-    _put(ws, 4, 1, f"မြို့နယ် - {township_name}", font=info_font, alignment=info_align)
+    ws.merge_cells("A2:E2")
+    location_line = " | ".join(
+        value for value in (state_name, district_name, township_name) if value
+    )
+    _put(ws, 2, 1, location_line, font=info_font, alignment=info_align)
 
     ws.merge_cells("A5:E5")
     _put(

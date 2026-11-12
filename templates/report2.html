@@ -975,12 +975,20 @@
         if (stateName) parts.push(stateName);
         if (districtName) parts.push(districtName);
         if (townshipName) parts.push(townshipName);
-        if (parts.length) return parts.join(' — ');
-        if (el.dataset.role === 'union') return 'တစ်နိုင်ငံလုံး (တိုင်းဒေသကြီး/ပြည်နယ်အလိုက်)';
-        if (el.dataset.role === 'admin' && ROW_LEVEL === 'state') {
-            return 'တိုင်းဒေသကြီး/ပြည်နယ်အားလုံး';
+        if (parts.length) return parts.join(' | ');
+        if (el.dataset.role === 'union' || el.dataset.role === 'admin') {
+            var names = [];
+            var seen = new Set();
+            (REPORT_ROWS || []).forEach(function(row) {
+                var name = String(row.row_name || row.row_id || '').trim();
+                if (name && !seen.has(name)) {
+                    seen.add(name);
+                    names.push(name);
+                }
+            });
+            return names.join(' | ');
         }
-        return 'တည်နေရာအမည် မသတ်မှတ်ရသေးပါ';
+        return '';
     }
 
     function getDateRangeLabel() {
@@ -1023,7 +1031,7 @@
         addText(selGender);
         var prefix = ANIMAL_TYPE_NAME ? ANIMAL_TYPE_NAME + ' — ' : '';
         var datePart = getDateRangeLabel();
-        var locPart = (parts.length === 0)
+        var locPart = parts.length === 0
             ? 'တိရစ္စာန်ကောင်ရေစာရင်း'
             : (parts.join('၊ ') + ' အတွင်း တိရစ္စာန်ကောင်ရေစာရင်း');
         return prefix + locPart + (datePart ? ' (' + datePart + ')' : '');

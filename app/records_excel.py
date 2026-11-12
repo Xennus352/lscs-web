@@ -51,26 +51,12 @@ def _date(value):
 
 
 def _records_metadata(households):
-    location_fields = (
-        ("တိုင်းဒေသကြီး/ပြည်နယ်", "state_name"),
-        ("ခရိုင်", "district_name"),
-        ("မြို့နယ်", "township_name"),
-        ("ကျေးရွာအုပ်စု", "qv_name"),
-        ("ကျေးရွာ/ရပ်ကွက်", "village_name"),
-    )
+    location_fields = ("state_name", "district_name", "township_name", "qv_name", "village_name")
     parts = []
-    for label, key in location_fields:
+    for key in location_fields:
         values = [str(row.get(key) or "").strip() for row in households]
-        present = {value for value in values if value}
-        if not present:
-            continue
-        if len(present) == 1 and all(values):
-            value = next(iter(present))
-        elif len(present) == 1:
-            value = f"{next(iter(present))} (အချို့ မရှိပါ)"
-        else:
-            value = "အများအပြား"
-        parts.append(f"{label} - {value}")
+        present = list(dict.fromkeys(value for value in values if value))
+        parts.extend(present)
 
     dates = []
     for row in households:

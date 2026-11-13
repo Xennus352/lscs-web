@@ -86,6 +86,9 @@
 </script>
 <script>
     let poultryRowCount = 0;
+    // Rehydration must not write the freshly-created blank row back over the
+    // saved dataset before the real rows are restored.
+    let isRestoringPart3 = false;
 
     document.addEventListener('DOMContentLoaded', function () {
         updateProgress(60, 'အပိုင်း (၃) / ၅ - ကြက်၊ ဘဲ၊ ငုံး စာရင်း');
@@ -296,6 +299,7 @@ window.removeRow = function (rowId) {
 
 
 function saveFormDataforPart3 () {
+    if (isRestoringPart3) return;
     const data = {};
     const radio = document.querySelector('input[name="has_poultry"]:checked');
     if (radio) data['has_poultry'] = radio.value;
@@ -322,6 +326,7 @@ function saveFormDataforPart3 () {
 function loadFormDataforPart3() {
     const saved = sessionStorage.getItem('lbvdFormData');
     if (!saved) return;
+    isRestoringPart3 = true;
     try {
         const data = JSON.parse(saved);
 
@@ -345,6 +350,8 @@ function loadFormDataforPart3() {
         }
     } catch (e) {
         console.error("Error context on rehydrating poultry tables: ", e);
+    } finally {
+        isRestoringPart3 = false;
     }
 };
 

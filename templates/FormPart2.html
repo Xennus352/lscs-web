@@ -208,20 +208,34 @@ const SURVEY_PREFIX = {{ survey_prefix|default('/survey')|tojson }};
         }
     };
 
+const LARGE_ANIMAL_KEYS = [
+        'u1_male', 'u1_castrated', 'u1_female',
+        'm1_3_male', 'm1_3_castrated', 'm1_3_female',
+        'o3_male', 'o3_castrated', 'o3_female'
+    ];
+    const SMALL_ANIMAL_KEYS = [
+        'u2m_male', 'u2m_castrated', 'u2m_female',
+        'm2_6m_male', 'm2_6m_castrated', 'm2_6m_female',
+        'o6m_male', 'o6m_castrated', 'o6m_female'
+    ];
+
 function buildNumericInputs(prefix, index, data = {}) {
-        const structuralKeys = [
-            'u1_male', 'u1_castrated', 'u1_female', 
-            'm1_3_male', 'm1_3_castrated', 'm1_3_female', 
-            'o3_male', 'o3_castrated', 'o3_female'
-        ];
-        
-        return structuralKeys.map(k => `
+        const isSmall = prefix === 'small';
+        const structuralKeys = isSmall ? SMALL_ANIMAL_KEYS : LARGE_ANIMAL_KEYS;
+
+        return structuralKeys.map((k, i) => {
+            // Drafts saved before the small-animal key fix used the large keys.
+            const legacyKey = isSmall ? LARGE_ANIMAL_KEYS[i] : null;
+            const value = data[k] !== undefined ? data[k]
+                : (legacyKey && data[legacyKey] !== undefined ? data[legacyKey] : '');
+            return `
             <td>
                 <input type="number" name="${prefix}_animals[${index}][${k}]" 
                     class="form-control form-control-sm count-input text-center" 
-                    placeholder="0" min="0" value="${data[k] !== undefined ? data[k] : ''}">
+                    placeholder="0" min="0" value="${value}">
             </td>
-        `).join('');
+        `;
+        }).join('');
     }
 
 window.addLargeAnimalRow = function (data = null) {
@@ -705,8 +719,10 @@ window.loadFormDataforPart2 = function() {
             });
         });
 
-        if (lrecords.length > 0) records.push(lrecords);
-        if (yrecords.length > 0) records.push(yrecords);
+        // if (lrecords.length > 0) records.push(lrecords);
+        // if (yrecords.length > 0) records.push(yrecords);
+        records.push(lrecords);
+        records.push(yrecords);
 
         const response = await fetch(`${SURVEY_PREFIX}/part2/${encodeURIComponent(formID)}`, {
             method: "POST",

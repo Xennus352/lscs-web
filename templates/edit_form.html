@@ -1198,12 +1198,32 @@ document.addEventListener('DOMContentLoaded', function() {
             });
         }
 
+        // 🐔 atID03 (ကြက်/ဘဲ) — Form Part3 နှင့် တူညီသော age/gender စည်းမျဉ်းများ
+        // Form Part3 ၏ poultryAgeFields() ကို edit form အတွက် ပြန်ထည့်ထားခြင်း ဖြစ်သည်။
+        function poultryAgeIDs(animalID) {
+            if (animalID === 'lsID02' || animalID === 'lsID05') return []; // အသားစားကြက် / အသားစားဘဲ → age မရှိ
+            if (animalID === 'lsID03') return ['ageID10', 'ageID11'];      // ဒေသကြက်
+            if (animalID === 'lsID04') return ['ageID12', 'ageID13', 'ageID14'];
+            if (animalID === 'lsID07') return ['ageID15', 'ageID16', 'ageID17'];
+            if (!animalID) return null; // animal မရွေးရသေးလျှင် filterByParents ရလဒ်အတိုင်း ထားမည်
+            return ['ageID07', 'ageID08', 'ageID09'];
+        }
+
+        function poultryGenderIDs(animalID, ageID) {
+            if (animalID === 'lsID02' || animalID === 'lsID05') return []; // gender မရှိ
+            if (animalID === 'lsID03' && ageID === 'ageID10') return [];   // ငယ်/လတ် စုစုပေါင်း → gender မရှိ
+            return ['g01', 'g03']; // အထီး / အမ သာ
+        }
+
         function refreshDependentDropdowns(preserveValues) {
             const typeID = selects.animalTypeID.value;
             if (!typeID) {
                 replaceOptions(selects.animalID, [], '');
                 replaceOptions(selects.speciesID, [], '');
                 replaceOptions(selects.ageID, [], '');
+                replaceOptions(selects.genderID, [], '');
+                selects.ageID.disabled = true;
+                selects.genderID.disabled = true;
                 return;
             }
             const selectedAnimalTable = animals.filter(function(item) {
@@ -1213,11 +1233,30 @@ document.addEventListener('DOMContentLoaded', function() {
             const effectiveAnimalID = preserveValues ? (row.animalID || selects.animalID.value) : selects.animalID.value;
             const speciesID = preserveValues ? (row.speciesID || selects.speciesID.value) : selects.speciesID.value;
             const ageID = preserveValues ? (row.ageID || selects.ageID.value) : selects.ageID.value;
+            const genderID = preserveValues ? (row.genderID || selects.genderID.value) : selects.genderID.value;
             const filteredSpecies = filterByParents(species, typeID, effectiveAnimalID);
-            const filteredAges = filterByParents(ages, typeID, effectiveAnimalID);
+            let filteredAges = filterByParents(ages, typeID, effectiveAnimalID);
+            let filteredGenders = genders;
+
+            if (typeID === 'atID03') {
+                const allowedAgeIDs = poultryAgeIDs(effectiveAnimalID);
+                if (allowedAgeIDs) {
+                    filteredAges = filteredAges.filter(function(item) {
+                        return allowedAgeIDs.indexOf(String(item.id)) !== -1;
+                    });
+                }
+                const allowedGenderIDs = poultryGenderIDs(effectiveAnimalID, ageID);
+                filteredGenders = filteredGenders.filter(function(item) {
+                    return allowedGenderIDs.indexOf(String(item.id)) !== -1;
+                });
+            }
+
             replaceOptions(selects.animalID, selectedAnimalTable, effectiveAnimalID);
             replaceOptions(selects.speciesID, filteredSpecies, speciesID);
             replaceOptions(selects.ageID, filteredAges, ageID);
+            replaceOptions(selects.genderID, filteredGenders, genderID);
+            selects.ageID.disabled = filteredAges.length === 0;
+            selects.genderID.disabled = filteredGenders.length === 0;
         }
 
         addSelectCell('animalTypeID', animalTypes, row.animalTypeID);
@@ -1227,14 +1266,14 @@ document.addEventListener('DOMContentLoaded', function() {
         addSelectCell('genderID', genders, row.genderID);
 
         selects.animalTypeID.addEventListener('change', function() {
-            selects.animalID.value = ''; selects.speciesID.value = ''; selects.ageID.value = '';
-            row.animalID = ''; row.speciesID = ''; row.ageID = '';
+            selects.animalID.value = ''; selects.speciesID.value = ''; selects.ageID.value = ''; selects.genderID.value = '';
+            row.animalID = ''; row.speciesID = ''; row.ageID = ''; row.genderID = '';
             refreshDependentDropdowns(false);
         });
 
         selects.animalID.addEventListener('change', function() {
-            selects.speciesID.value = ''; selects.ageID.value = '';
-            row.animalID = selects.animalID.value; row.speciesID = ''; row.ageID = '';
+            selects.speciesID.value = ''; selects.ageID.value = ''; selects.genderID.value = '';
+            row.animalID = selects.animalID.value; row.speciesID = ''; row.ageID = ''; row.genderID = '';
             refreshDependentDropdowns(false);
         });
 
@@ -1244,7 +1283,10 @@ document.addEventListener('DOMContentLoaded', function() {
             refreshDependentDropdowns(false);
         });
 
-        selects.ageID.addEventListener('change', function() { row.ageID = selects.ageID.value; });
+        selects.ageID.addEventListener('change', function() {
+            row.ageID = selects.ageID.value;
+            refreshDependentDropdowns(false);
+        });
 
         // ⭐ dataCount field — မြန်မာဂဏန်း ခွင့်ပြု
         const countTd = document.createElement('td');

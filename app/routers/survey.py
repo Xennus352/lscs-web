@@ -367,7 +367,7 @@ async def compat_process_step_1(
             raise HTTPException(400, "အသက်ကို ကိန်းဂဏန်းဖြင့် ဖြည့်ပါ။")
     else:
         name = gender = eduStatus = phoneNo = headName = headEduStatus = headGender = headPhoneNo = ""
-        age = headAge = "0"
+        age_clean = head_age_clean = 0
         for key in ("animals_data", "livestock_data", "breeding_animals_data",
                     "interviewer", "interviewerPhoneNo"):
             request.session.pop(key, None)

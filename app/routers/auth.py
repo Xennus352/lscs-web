@@ -2,6 +2,7 @@ import logging
 import uuid
 from datetime import datetime
 
+from anyio import to_thread
 from fastapi import APIRouter, Request, Form, HTTPException
 from fastapi.responses import RedirectResponse
 
@@ -199,7 +200,7 @@ async def web_login(
         _log_login_attempt(username, ip, user_agent, False, "user_not_found")
         raise HTTPException(401, "Username သို့မဟုတ် Password မှားယွင်းနေပါသည်။")
 
-    if not verify_password(password, user["password"]):
+    if not await to_thread.run_sync(verify_password, password, user["password"]):
         _log_login_attempt(username, ip, user_agent, False, "wrong_password")
         raise HTTPException(401, "Username သို့မဟုတ် Password မှားယွင်းနေပါသည်။")
 

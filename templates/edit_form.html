@@ -790,6 +790,7 @@ document.addEventListener('DOMContentLoaded', function() {
     });
 
     let loadedFormID = '';
+    let loadedVersion = null;
     let currentLookup = { animalTypes: [], animals: [], species: [], ages: [], genders: [] };
     let loading = false;
     let saving = false;
@@ -1106,6 +1107,8 @@ document.addEventListener('DOMContentLoaded', function() {
             }
 
             loadedFormID = id;
+            loadedVersion = (person.version !== undefined && person.version !== null)
+                ? Number(person.version) : null;
             editingFormID.textContent = id;
             formFields.classList.remove('d-none');
             
@@ -1400,8 +1403,16 @@ document.addEventListener('DOMContentLoaded', function() {
             const result = await apiRequest(url, {
                 method: 'PUT',
                 headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ personcv: personcv, collecteddata: collecteddata })
+                body: JSON.stringify({
+                    personcv: personcv,
+                    collecteddata: collecteddata,
+                    version: loadedVersion
+                })
             });
+
+            if (result.version !== undefined && result.version !== null) {
+                loadedVersion = Number(result.version);
+            }
 
             safeShowModal('success', 'သိမ်းဆည်းပြီးပါပြီ', result.message || 'ပြင်ဆင်ချက်များကို သိမ်းဆည်းပြီးပါပြီ။', function() {
                 formFields.classList.add('d-none');

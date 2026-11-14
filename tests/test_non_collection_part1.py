@@ -4,6 +4,7 @@ from unittest.mock import AsyncMock, MagicMock, patch
 from starlette.requests import Request
 
 from app.routers import survey
+from app.services import survey_draft
 
 
 class NonCollectionPart1Tests(unittest.IsolatedAsyncioTestCase):
@@ -44,8 +45,9 @@ class NonCollectionPart1Tests(unittest.IsolatedAsyncioTestCase):
             )
 
         self.assertEqual(result, {"status": "success"})
-        self.assertEqual(request.session["step1"]["age"], "0")
-        self.assertEqual(request.session["step1"]["headAge"], "0")
+        draft = await survey_draft.load_draft(request)
+        self.assertEqual(draft["step1"]["age"], "0")
+        self.assertEqual(draft["step1"]["headAge"], "0")
         submit.assert_awaited_once()
 
 

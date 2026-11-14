@@ -24,6 +24,10 @@ from app.config import (
 from app.constants import APK_DIR
 from app.database import engine
 from app.extensions import limiter
+from app.repositories.form_ids import ensure_form_sequence_table
+from app.repositories.sync_operations import (
+    ensure_sync_operations_table_engine,
+)
 from app.routers import (
     auth, dashboard, enumerator, exports, households, locations,
     reports, settings, survey, sync, system_admin, updates, villages,
@@ -151,6 +155,32 @@ def ensure_personcv_record_uuid():
         logger.warning("ensure_personcv_record_uuid: %s", e)
 
 
+def ensure_personcv_version():
+    """Add the optimistic-locking counter used by the edit-form PUT route."""
+    try:
+        with engine.begin() as conn:
+            columns = {c["name"] for c in inspect(conn).get_columns("personcv")}
+            if "version" not in columns:
+                conn.exec_driver_sql(
+                    "ALTER TABLE personcv ADD COLUMN version INT NOT NULL DEFAULT 1"
+                )
+                logger.info("personcv.version added")
+            else:
+                logger.info("personcv.version ready")
+    except SQLAlchemyError as e:
+        logger.warning("ensure_personcv_version: %s", e)
+
+
+def ensure_form_sequence():
+    """Create/seed the counter table used for atomic form-ID allocation."""
+    try:
+        with engine.begin() as conn:
+            ensure_form_sequence_table(conn)
+        logger.info("form_sequence table ready")
+    except SQLAlchemyError as e:
+        logger.warning("ensure_form_sequence: %s", e)
+
+
 def ensure_village_table():
     try:
         with engine.begin() as conn:
@@ -203,67 +233,11 @@ def ensure_sync_devices_table():
         logger.warning("ensure_sync_devices_table: %s", e)
 
 
-def _ensure_sync_operations_columns(conn):
-    """Add any missing columns to an existing sync_operations table."""
-    required = {
-        "operation_uuid": "ALTER TABLE sync_operations ADD COLUMN operation_uuid CHAR(36) NOT NULL",
-        "operation_type": "ALTER TABLE sync_operations ADD COLUMN operation_type VARCHAR(30) NOT NULL DEFAULT 'insert'",
-        "record_uuid": "ALTER TABLE sync_operations ADD COLUMN record_uuid CHAR(36) NOT NULL",
-        "device_uuid": "ALTER TABLE sync_operations ADD COLUMN device_uuid CHAR(36) DEFAULT NULL",
-        "userID": "ALTER TABLE sync_operations ADD COLUMN userID INT DEFAULT NULL",
-        "table_name": "ALTER TABLE sync_operations ADD COLUMN table_name VARCHAR(64) NOT NULL DEFAULT 'personcv'",
-        "form_id": "ALTER TABLE sync_operations ADD COLUMN form_id VARCHAR(20) DEFAULT NULL",
-        "base_version": "ALTER TABLE sync_operations ADD COLUMN base_version INT NOT NULL DEFAULT 0",
-        "result_version": "ALTER TABLE sync_operations ADD COLUMN result_version INT DEFAULT NULL",
-        "status": "ALTER TABLE sync_operations ADD COLUMN status VARCHAR(20) NOT NULL DEFAULT 'pending'",
-        "error_message": "ALTER TABLE sync_operations ADD COLUMN error_message TEXT DEFAULT NULL",
-        "created_at": "ALTER TABLE sync_operations ADD COLUMN created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP",
-    }
-    existing = {c["name"] for c in inspect(conn).get_columns("sync_operations")}
-    for col, ddl in required.items():
-        if col not in existing:
-            try:
-                conn.exec_driver_sql(ddl)
-                logger.info("sync_operations: added missing column %s", col)
-            except SQLAlchemyError as col_err:
-                logger.warning("sync_operations: could not add column %s: %s", col, col_err)
-
-
 def ensure_sync_operations_table():
-    """Audit/sync operation log for personcv inserts."""
-    create_sql = """
-        CREATE TABLE IF NOT EXISTS sync_operations (
-            operation_uuid CHAR(36) NOT NULL,
-            operation_type VARCHAR(30) NOT NULL,
-            record_uuid CHAR(36) NOT NULL,
-            device_uuid CHAR(36) DEFAULT NULL,
-            userID INT DEFAULT NULL,
-            table_name VARCHAR(64) NOT NULL DEFAULT 'personcv',
-            form_id VARCHAR(20) DEFAULT NULL,
-            base_version INT NOT NULL DEFAULT 0,
-            result_version INT DEFAULT NULL,
-            status VARCHAR(20) NOT NULL,
-            error_message TEXT DEFAULT NULL,
-            created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
-            PRIMARY KEY (operation_uuid),
-            KEY idx_sync_op_record (record_uuid),
-            KEY idx_sync_op_user (userID),
-            KEY idx_sync_op_device (device_uuid),
-            KEY idx_sync_op_status (status){fk}
-        ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci
-    """
-    fk = """,
-            CONSTRAINT fk_sync_op_user FOREIGN KEY (userID)
-                REFERENCES user (userID)
-                ON DELETE SET NULL ON UPDATE CASCADE"""
+    """Audit/sync operation log for personcv inserts (owned by the repository)."""
     try:
         with engine.begin() as conn:
-            try:
-                conn.exec_driver_sql(create_sql.format(fk=fk))
-            except SQLAlchemyError:
-                conn.exec_driver_sql(create_sql.format(fk=""))
-                logger.info("sync_operations table created without FK constraint")
-            _ensure_sync_operations_columns(conn)
+            ensure_sync_operations_table_engine(conn)
         logger.info("sync_operations table ready")
     except SQLAlchemyError as e:
         logger.warning("ensure_sync_operations_table: %s", e)
@@ -274,10 +248,12 @@ async def lifespan(app: FastAPI):
     init_db()
     ensure_personcv_status()
     ensure_personcv_record_uuid()
+    ensure_personcv_version()
     ensure_indexes()
     ensure_village_table()
     ensure_sync_devices_table()
     ensure_sync_operations_table()
+    ensure_form_sequence()
 
     try:
         await check_redis()

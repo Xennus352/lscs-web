@@ -193,6 +193,17 @@ async def update_existing_form(formID: str, request: Request):
     person_data  = payload.get("personcv") or {}
     animal_data  = payload.get("collecteddata") or []
 
+    # Optional optimistic-locking token. Older clients that do not send one
+    # keep the previous last-write-wins behaviour.
+    base_version = payload.get("version")
+    if base_version in (None, ""):
+        base_version = person_data.get("version")
+    if base_version not in (None, ""):
+        try:
+            base_version = int(base_version)
+        except (TypeError, ValueError):
+            raise HTTPException(422, "version မမှန်ကန်ပါ။")
+
     person_values = {k: v for k, v in person_data.items() if k in EDITABLE_PERSON_FIELDS}
     for key in ("age", "headAge"):
         if key in person_values and str(person_values[key]).strip() != "":
@@ -218,17 +229,30 @@ async def update_existing_form(formID: str, request: Request):
     conn = get_db_connection(); cur = conn.cursor(dictionary=True)
     try:
         conn.start_transaction()
-        cur.execute("""SELECT formID FROM personcv
+        cur.execute("""SELECT formID, version FROM personcv
                        WHERE formID = %s AND userId = %s LIMIT 1 FOR UPDATE""",
                     (formID, user_id))
-        if not cur.fetchone():
+        existing = cur.fetchone()
+        if not existing:
             conn.rollback()
             raise HTTPException(404, "သင့်အကောင့်ပိုင် ဒေတာမတွေ့ပါ။")
 
-        if person_values:
-            assignments = ", ".join(f"`{k}` = %s" for k in person_values)
-            cur.execute(f"UPDATE personcv SET {assignments} WHERE formID = %s AND userId = %s",
-                        tuple(list(person_values.values()) + [formID, user_id]))
+        current_version = int(existing.get("version") or 1)
+        if base_version is not None and base_version != current_version:
+            conn.rollback()
+            raise HTTPException(
+                409,
+                "ဤ Form ကို အခြားသူက ပြင်ဆင်ထားပါသည်။ "
+                "စာမျက်နှာကို ပြန်ဖွင့်ပြီး ထပ်မံပြင်ဆင်ပါ။",
+            )
+
+        assignments = [f"`{k}` = %s" for k in person_values]
+        assignments.append("version = version + 1")
+        cur.execute(
+            f"UPDATE personcv SET {', '.join(assignments)} "
+            "WHERE formID = %s AND userId = %s",
+            tuple(list(person_values.values()) + [formID, user_id]),
+        )
 
         cur.execute("DELETE FROM collecteddata WHERE formID = %s", (formID,))
         for row in cleaned_animals:
@@ -241,7 +265,8 @@ async def update_existing_form(formID: str, request: Request):
             )
         conn.commit()
         return {"status": "success", "message": "သိမ်းဆည်းပြီးပါပြီ။",
-                "formID": formID, "animalRecordsSaved": len(cleaned_animals)}
+                "formID": formID, "animalRecordsSaved": len(cleaned_animals),
+                "version": current_version + 1}
     except HTTPException:
         raise
     except Exception:

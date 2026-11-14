@@ -59,7 +59,7 @@ class EnumeratorEditTests(unittest.TestCase):
                 "formID TEXT, userId TEXT, name TEXT, age TEXT, "
                 "householdNo TEXT, interviewDate TEXT, status TEXT, "
                 "WardName TEXT, stateID TEXT, districtID TEXT, townshipID TEXT, "
-                "QVID TEXT)"
+                "QVID TEXT, version INTEGER NOT NULL DEFAULT 1)"
             ))
             connection.execute(text(
                 "CREATE TABLE collecteddata ("
@@ -67,7 +67,9 @@ class EnumeratorEditTests(unittest.TestCase):
                 "ageID TEXT, genderID TEXT, dataCount TEXT)"
             ))
             connection.execute(text(
-                "INSERT INTO personcv VALUES "
+                "INSERT INTO personcv "
+                "(formID, userId, name, age, householdNo, interviewDate, status, "
+                "WardName, stateID, districtID, townshipID, QVID) VALUES "
                 "('p1', '1', 'Old Name', '30', 'H1', '2026-11-02', '1', "
                 "'v1', 's1', 'd1', 't1', 'q1'), "
                 "('p2', '2', 'Other User', '40', 'H9', '2026-11-02', '1', "
@@ -181,6 +183,41 @@ class EnumeratorEditTests(unittest.TestCase):
                 "SELECT name FROM personcv WHERE formID = 'p2'"
             )).scalar()
             self.assertEqual(name, "Other User")
+
+    def test_stale_version_is_rejected(self):
+        self.sign_in()
+        response = self.client.put(
+            "/enumerator/api/forms/p1",
+            json={
+                "personcv": {"name": "Should Not Save"},
+                "collecteddata": [],
+                "version": 99,
+            },
+        )
+        self.assertEqual(response.status_code, 409)
+        with self.engine.connect() as connection:
+            name = connection.execute(text(
+                "SELECT name FROM personcv WHERE formID = 'p1'"
+            )).scalar()
+            self.assertEqual(name, "Old Name")
+
+    def test_current_version_is_accepted_and_incremented(self):
+        self.sign_in()
+        response = self.client.put(
+            "/enumerator/api/forms/p1",
+            json={
+                "personcv": {"name": "Versioned"},
+                "collecteddata": [],
+                "version": 1,
+            },
+        )
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(response.json()["version"], 2)
+        with self.engine.connect() as connection:
+            version = connection.execute(text(
+                "SELECT version FROM personcv WHERE formID = 'p1'"
+            )).scalar()
+            self.assertEqual(version, 2)
 
     def test_non_enumerator_cannot_use_edit_routes(self):
         self.sign_in("township")

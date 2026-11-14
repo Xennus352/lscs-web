@@ -18,6 +18,14 @@ SESSION_SECRET       = os.getenv("SESSION_SECRET", "lbvd-change-this-secret-in-p
 COOKIE_HTTPS_ONLY    = os.getenv("COOKIE_HTTPS_ONLY", "false").lower() == "true"
 SESSION_MAX_AGE_HOURS = int(os.getenv("SESSION_MAX_AGE_HOURS", "8"))
 
+# Offline sync must belong to an authenticated session. Keep an escape hatch
+# for legacy APK builds that have not started sending the session cookie yet.
+SYNC_REQUIRE_AUTH    = os.getenv("SYNC_REQUIRE_AUTH", "true").lower() in ("1", "true", "yes")
+SURVEY_DRAFT_TTL_SECONDS = int(os.getenv("SURVEY_DRAFT_TTL_SECONDS", "86400"))
+
+# Transient MySQL deadlocks / lock-wait timeouts are retried this many times.
+DB_RETRY_ATTEMPTS    = max(1, int(os.getenv("DB_RETRY_ATTEMPTS", "3")))
+
 FIXED_STATE_ID   = "s07"
 FIXED_STATE_NAME = "ပဲခူးတိုင်းဒေသကြီး"
 

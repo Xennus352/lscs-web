@@ -52,12 +52,20 @@ def _database_url():
     )
 
 
+def _env_int(name: str, default: int) -> int:
+    try:
+        return int(os.getenv(name, str(default)))
+    except (TypeError, ValueError):
+        return default
+
+
 engine = create_engine(
     _database_url(),
     pool_pre_ping=True,
-    pool_recycle=1800,
-    pool_size=20,
-    max_overflow=30,
+    pool_recycle=_env_int("DB_POOL_RECYCLE", 1800),
+    pool_size=_env_int("DB_POOL_SIZE", 20),
+    max_overflow=_env_int("DB_MAX_OVERFLOW", 30),
+    pool_timeout=_env_int("DB_POOL_TIMEOUT", 30),
     future=True,
 )
 SessionLocal = sessionmaker(bind=engine, autoflush=False, autocommit=False, future=True)

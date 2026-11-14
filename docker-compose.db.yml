@@ -1,0 +1,47 @@
+# Database server (192.168.111.100): MariaDB 11 for the LBVD schema.
+#
+# Usage on the DB VM:
+#   cp .env.db.example .env.db     # fill in passwords
+#   docker compose --env-file .env.db -f docker-compose.db.yml up -d
+#
+# deploy/seed.sql is imported only when the db_data volume is empty. For real
+# data, restore your own dump before pointing the API at this server (see
+# DEPLOY_3VM.md).
+
+name: lbvd-db
+
+services:
+  db:
+    image: mariadb:11.4
+    restart: unless-stopped
+    env_file:
+      - .env.db
+    environment:
+      MARIADB_DATABASE: ${DB_NAME:-lbvd}
+      MARIADB_USER: ${DB_USER:-lbvd}
+      MARIADB_PASSWORD: ${DB_PASSWORD:?set DB_PASSWORD in .env.db}
+      MARIADB_ROOT_PASSWORD: ${DB_ROOT_PASSWORD:?set DB_ROOT_PASSWORD in .env.db}
+      TZ: ${TZ:-Asia/Yangon}
+    ports:
+      # Only the API VM should reach this port; keep the host firewall closed
+      # to everyone else.
+      - "192.168.111.100:3306:3306"
+    volumes:
+      - db_data:/var/lib/mysql
+      - ./deploy/three-tier/mariadb/99-lbvd.cnf:/etc/mysql/conf.d/99-lbvd.cnf:ro
+      - ./deploy/seed.sql:/docker-entrypoint-initdb.d/10-seed.sql:ro
+    healthcheck:
+      test: ["CMD", "healthcheck.sh", "--connect", "--innodb_initialized"]
+      interval: 10s
+      timeout: 5s
+      retries: 12
+      start_period: 60s
+    stop_grace_period: 60s
+    logging:
+      driver: json-file
+      options:
+        max-size: "50m"
+        max-file: "5"
+
+volumes:
+  db_data:

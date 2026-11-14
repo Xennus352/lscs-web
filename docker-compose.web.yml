@@ -1,0 +1,36 @@
+# Web server (192.168.111.50): Nginx reverse proxy in front of the API VM.
+#
+# Usage on the web VM:
+#   docker compose -f docker-compose.web.yml up -d
+#
+# Nginx caches /assets, /static and /apks so the API does not re-serve the same
+# 150 MB of images/APKs on every request. For HTTPS, see the commented server
+# block in nginx/three-tier.conf and publish port 443 below.
+
+name: lbvd-web
+
+services:
+  nginx:
+    image: nginx:1.27-alpine
+    restart: unless-stopped
+    ports:
+      - "80:80"
+      # - "443:443"
+    volumes:
+      - ./nginx/three-tier.conf:/etc/nginx/nginx.conf:ro
+      # - ./deploy/three-tier/certs:/etc/nginx/certs:ro
+      - nginx_cache:/var/cache/nginx
+    healthcheck:
+      test: ["CMD-SHELL", "wget -qO- http://127.0.0.1/healthz >/dev/null || exit 1"]
+      interval: 30s
+      timeout: 5s
+      retries: 3
+      start_period: 10s
+    logging:
+      driver: json-file
+      options:
+        max-size: "50m"
+        max-file: "5"
+
+volumes:
+  nginx_cache:

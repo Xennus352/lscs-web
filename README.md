@@ -24,6 +24,9 @@ Restart Flutter after changing `API_BASE_URL`; hot reload does not change a
 compile-time define. Use the same origin to retain access to that origin's saved
 drafts and pending uploads.
 
+For the three-server deployment (web / API / database on separate VMs), see
+[`DEPLOY_3VM.md`](DEPLOY_3VM.md).
+
 `/docs`, `/redoc` and `/openapi.json` return 404 by design. The Flutter LBVD adapter
 checks authenticated `/api/locations` and discovers the submission contract from
 the server's own HTML forms. A 404 from the documentation URL alone does not mean

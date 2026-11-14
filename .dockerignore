@@ -7,6 +7,7 @@ __pycache__
 *.pyc
 *.pyo
 .env
+.env.*
 docker-compose.yml
 *.md
 deploy/lbvd-reference-data.sql

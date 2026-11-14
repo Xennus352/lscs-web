@@ -78,7 +78,12 @@ def _normalise(data) -> dict:
 
 
 async def load_draft(request) -> dict:
-    """Return the current draft (empty dict when there is none)."""
+    """Return the current draft (empty dict when there is none).
+
+    Drafts created before the Redis migration live in individual session keys
+    (``step1``, ``animals_data``, ...). They are imported once on first read so
+    a deploy does not wipe surveys that were already in progress.
+    """
     if _redis_available():
         try:
             raw = await redis_client.get(redis_key(request))
@@ -89,7 +94,32 @@ async def load_draft(request) -> dict:
         except (RedisError, json.JSONDecodeError):
             _mark_redis_down()
             logger.warning("Survey draft read failed; using session fallback", exc_info=True)
-    return _session_fallback(request)
+
+    fallback = _session_fallback(request)
+    if fallback:
+        return fallback
+
+    legacy = _legacy_session_draft(request)
+    if legacy:
+        migrated = await save_draft(request, legacy)
+        _pop_legacy_session_draft(request)
+        logger.info("Migrated legacy session draft (keys: %s)", ", ".join(legacy))
+        return migrated
+    return {}
+
+
+def _legacy_session_draft(request) -> dict:
+    """Collect a draft stored by the pre-Redis wizard."""
+    draft = {}
+    for key in DRAFT_FIELDS:
+        if key in request.session:
+            draft[key] = copy.deepcopy(request.session[key])
+    return _normalise(draft)
+
+
+def _pop_legacy_session_draft(request) -> None:
+    for key in DRAFT_FIELDS:
+        request.session.pop(key, None)
 
 
 async def save_draft(request, data: dict) -> dict:
@@ -131,3 +161,4 @@ async def clear_draft(request) -> None:
             logger.warning("Survey draft delete failed", exc_info=True)
     request.session.pop(DRAFT_SESSION_KEY, None)
     request.session.pop(DRAFT_ID_KEY, None)
+    _pop_legacy_session_draft(request)

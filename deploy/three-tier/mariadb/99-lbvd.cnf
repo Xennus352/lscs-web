@@ -1,0 +1,61 @@
+# MariaDB tuning for a dedicated 32 vCPU / 64 GB RAM / 1 TB SSD database VM.
+# Mounted at /etc/mysql/conf.d/99-lbvd.cnf by docker-compose.db.yml.
+#
+# Buffer pool = 40 GB leaves ~24 GB for the OS, page cache, connections and
+# backups. Lower it if the VM cannot dedicate 64 GB to MySQL.
+
+[mysqld]
+bind-address                    = 0.0.0.0
+skip-name-resolve
+
+character-set-server            = utf8mb4
+collation-server                = utf8mb4_unicode_ci
+max_allowed_packet              = 64M
+
+# Connections: 16 uvicorn workers x (DB_POOL_SIZE + DB_MAX_OVERFLOW) = 256.
+# 600 leaves headroom for migrations, health checks and admin sessions.
+max_connections                 = 600
+max_connect_errors              = 100000
+connect_timeout                 = 10
+wait_timeout                    = 600
+interactive_timeout             = 600
+
+# InnoDB sizing.
+innodb_buffer_pool_size         = 40G
+innodb_log_file_size            = 2G
+innodb_log_buffer_size          = 64M
+innodb_flush_log_at_trx_commit  = 1
+innodb_flush_method             = O_DIRECT
+innodb_file_per_table           = 1
+innodb_read_io_threads          = 16
+innodb_write_io_threads         = 16
+innodb_purge_threads            = 4
+innodb_io_capacity              = 4000
+innodb_io_capacity_max          = 8000
+innodb_lock_wait_timeout        = 20
+innodb_deadlock_detect          = ON
+innodb_doublewrite              = 1
+
+# Table/connection caches. Per-connection buffers are deliberately modest:
+# they are multiplied by max_connections.
+table_open_cache                = 8000
+table_open_cache_instances      = 16
+table_definition_cache          = 4000
+thread_cache_size               = 64
+open_files_limit                = 65535
+sort_buffer_size                = 2M
+join_buffer_size                = 2M
+read_buffer_size                = 1M
+read_rnd_buffer_size            = 1M
+tmp_table_size                  = 256M
+max_heap_table_size             = 256M
+bulk_insert_buffer_size         = 64M
+
+# Slow query visibility (file lives in the db_data volume).
+slow_query_log                  = 1
+slow_query_log_file             = /var/lib/mysql/slow.log
+long_query_time                 = 2
+log_queries_not_using_indexes   = 0
+
+# Keep user/table names as created on Linux.
+lower_case_table_names          = 0

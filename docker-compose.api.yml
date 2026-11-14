@@ -1,0 +1,82 @@
+# API server (192.168.111.200): FastAPI/Uvicorn + a local Redis for survey drafts.
+#
+# Usage on the API VM:
+#   cp .env.api.example .env.api    # fill in secrets/DB password
+#   docker compose --env-file .env.api -f docker-compose.api.yml up -d --build
+#
+# The app connects to the DB on 192.168.111.100 over the LAN and is reachable
+# only from the web server. Redis is not published outside the compose network.
+
+name: lbvd-api
+
+services:
+  redis:
+    image: redis:7-alpine
+    restart: unless-stopped
+    command:
+      - redis-server
+      - --appendonly
+      - "yes"
+      - --maxmemory
+      - 2gb
+      - --maxmemory-policy
+      - allkeys-lru
+    volumes:
+      - redis_data:/data
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 10s
+      timeout: 3s
+      retries: 5
+      start_period: 10s
+    logging:
+      driver: json-file
+      options:
+        max-size: "20m"
+        max-file: "5"
+
+  app:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    image: lscs-web-api:latest
+    restart: unless-stopped
+    init: true
+    depends_on:
+      redis:
+        condition: service_healthy
+    env_file:
+      - .env.api
+    environment:
+      REDIS_URL: redis://redis:6379/0
+      APK_DIR: /app/assets/apk
+      PYTHONUNBUFFERED: "1"
+    ports:
+      # Bind to the API VM's LAN address only; the web server is the only
+      # host that should be able to reach it (enforce with ufw as well).
+      - "192.168.111.200:5000:5000"
+    volumes:
+      # APK files survive image rebuilds. Upload with:
+      #   docker compose ... cp lbvd-1.2.3.apk app:/app/assets/apk/
+      - apk_data:/app/assets/apk
+    healthcheck:
+      test:
+        - CMD-SHELL
+        - >-
+          python -c 'import urllib.request;
+          urllib.request.urlopen("http://127.0.0.1:5000/api/check-update",
+          timeout=3)'
+      interval: 30s
+      timeout: 5s
+      retries: 3
+      start_period: 60s
+    stop_grace_period: 30s
+    logging:
+      driver: json-file
+      options:
+        max-size: "50m"
+        max-file: "5"
+
+volumes:
+  redis_data:
+  apk_data:
